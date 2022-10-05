@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-import pointsCalculation
+import backend.pointsCalculation as pointsCalculation
 
 app = Flask(__name__)
 @app.route('/', methods = ['GET', 'POST'])
