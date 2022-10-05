@@ -7,7 +7,7 @@ export const useForm = (callback: any, initialState = {}) => {
         setValues({...values, [event.target.name]: event.target.value})
     };
 
-    const onSubmit = async (event: any) => {
+    const onSubmit = async (event: React.ChangeEvent<HTMLFormElement>) => {
         event.preventDefault();
         await callback();
     }

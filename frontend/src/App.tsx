@@ -17,20 +17,19 @@ function App() {
   const { onChange, onSubmit, values } = useForm(sendData, initialState);
 
  
-  async function sendData() {
+  async function sendData(): Promise<any> {
+    console.log(JSON.stringify(values));
     try {
       let response = await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify(values)
       })
-      return response;
+      return response.json();
     } catch (error) {
       console.log(error);
     }
-    
-
+  
   }
-
 
 
   return (
