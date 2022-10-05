@@ -46,7 +46,7 @@ def hertz_sine(list, A, interval, sample_rate):
     norm_max = y_sum/np.max(y_sum)
     return length, x_cord, y_cord, norm_max, 
 
-    
+
 
 
 def hertz_sine_simple(list):
@@ -69,12 +69,14 @@ def hertz_sine_simple(list):
 
     # Create arrays to store points
     x_cord = np.linspace(-2*np.pi, 2*np.pi, 200)
-    y_cord = np.zeros((length,len(x_cord)))
+    time_steps = len(x_cord)
+    y_cord = np.zeros((length,time_steps))
     
+    
+    # Run through each Hertz(row) and the y-coordinate they give
     row = 0
-    # Run through each Hertz and the y-coordinate they give
     for hz in list:
-        for i in range(len(x_cord)):
+        for i in range(time_steps):
             y_cord[row][i] = np.sin(2 * np.pi * hz * x_cord[i])
         row = row + 1
 
