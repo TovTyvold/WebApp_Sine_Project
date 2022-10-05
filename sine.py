@@ -46,22 +46,41 @@ def hertz_sine(list, A, interval, sample_rate):
     norm_max = y_sum/np.max(y_sum)
     return length, x_cord, y_cord, norm_max, 
 
-        
-
-length, x, y, norm_max = hertz_sine(list, A, interval, sample_rate)
+    
 
 
-fig, ax = plt.subplots(1,length,figsize=(10,8),sharex=True)
+def hertz_sine_simple(list):
+    """  
+        Function that outputs a normalized graph corresponding to several frquencies using sine functions
+        Arguments
+        ---------
+        list - dtype list/touple: A list of the submitted frequencies
 
-for k in range(length):
-    ax[k].plot(x, y[k])
-    ax[k].set_title(f"Frequency is = {list[k]} Hz")  
+        Returns
+        --------
+        length (int): Number of submitted frequencies
+        x_cord (ndarray): Array containing x-values for intervall
+        y_cord (ndarray): n-dimensional matrix containing all y-values from different hertz
+        norm_max (ndarray): Array containing y-values that are normalized
 
-plt.tight_layout()
-
-plt.figure(2)
-plt.plot(x,norm_max,'r--')
-plt.title("Normalization through maximum")
+    """
+    length = len(list) 
 
 
-plt.show() 
+    # Create arrays to store points
+    x_cord = np.linspace(-2*np.pi, 2*np.pi, 200)
+    y_cord = np.zeros((length,len(x_cord)))
+    
+    row = 0
+    # Run through each Hertz and the y-coordinate they give
+    for hz in list:
+        for i in range(len(x_cord)):
+            y_cord[row][i] = np.sin(2 * np.pi * hz * x_cord[i])
+        row = row + 1
+
+    # Normalize through maximum
+    y_sum = 0
+    for i in range(length):
+        y_sum += y_cord[i][:] 
+    norm_max = y_sum/np.max(y_sum)
+    return length, x_cord, y_cord, norm_max, 
