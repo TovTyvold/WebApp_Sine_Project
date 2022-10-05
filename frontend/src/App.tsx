@@ -1,5 +1,6 @@
 
 import { useForm } from './useForm';
+import Graph from './components/Graph';
 import './App.css';
 
 
@@ -40,6 +41,9 @@ function App() {
           <input type="number" name='freq2' onChange={onChange} />
           <input type="number" name='freq3' onChange={onChange} />
           <button type='submit'>Generate</button>
+        </div>
+        <div>
+          <Graph></Graph>
         </div>
       </form>
     </div>
