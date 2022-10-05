@@ -15,7 +15,7 @@ def getPoints(freqs: list, sampleRate: int) -> list:
 
         points.append((xsample, ysample))
 
-    points = [(a,b/maxval) for (a,b) in points];
+    points = [(a, b/maxval) for (a, b) in points];
 
     for p in points:
         print('{:.6}'.format(p[0]) + ", " +('{:.6}'.format(p[1])))
