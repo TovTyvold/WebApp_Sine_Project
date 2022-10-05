@@ -1,10 +1,6 @@
 from flask import Flask, jsonify, request
 import pointsCalculation
 
-#disregard keys
-def jsonDictToList(d: dict) -> list:
-    return d.values()
-
 app = Flask(__name__)
 @app.route('/', methods = ['GET', 'POST'])
 def handleInput():
@@ -14,17 +10,21 @@ def handleInput():
         samples = json["samples"]
         freqs = json["freqs"]
     except:
-        return "input error", 400
+        return "input error, is samples or freqs missing?", 400
 
-    if samples <= 1 or not isinstance(samples, int):
-        return "samples is not valid", 400
+    if len(json) > 2:
+        print("warning: input has unknown fields")
+        print(json.keys())
+
+    if not isinstance(samples, int) or samples <= 1:
+        return "samples is either 1 or not an integer", 400
 
     if not isinstance(freqs, list) or len(freqs) == 0 or not all([isinstance(p, (int, float)) for p in freqs]):
-        return "freqs is not valid", 400
+        return "freqs is either not a list, empty, or contains non numeral values", 400
 
-    #output is a json list (samples long) of lists of size 2 e.g. [[1,2], [2,3], [1,2], [1,2]]
-    return jsonify(pointsCalculation.getPoints(freqs, samples))
+    #output is a list of points, e.g. [[1,2], [2,3], [1,2], [1,2]]
+    #where both the x values and y values are between 0 and 1
+    return jsonify(pointsCalculation.getPoints(freqs, samples, debug=True))
 
 if __name__ == '__main__':
-    #app.run(host="10.99.3.251", debug=True)
     app.run(debug=True)

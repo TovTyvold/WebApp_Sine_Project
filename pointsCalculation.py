@@ -1,6 +1,6 @@
 import math
 
-def getPoints(freqs: list, sampleRate: int) -> list:
+def getPoints(freqs: list, sampleRate: int, debug: bool = False) -> list:
     points = []
     maxval = 0
     for i in range(0, sampleRate):
@@ -17,7 +17,8 @@ def getPoints(freqs: list, sampleRate: int) -> list:
 
     points = [(a, b/maxval) for (a, b) in points];
 
-    for p in points:
-        print('{:.6}'.format(p[0]) + ", " +('{:.6}'.format(p[1])))
+    if (debug):
+        for p in points:
+            print('{:.6}'.format(p[0]) + ", " +('{:.6}'.format(p[1])))
 
     return points
