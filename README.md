@@ -2,4 +2,4 @@
 Repository for making a web application that showcases sine waves. 
 
 A sketch of the project: 
-![Sketch](/Figures/sketch.jpg)
+![Sketch](/figures/sketch.jpg)
