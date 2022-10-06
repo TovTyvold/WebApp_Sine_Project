@@ -1,4 +1,5 @@
 from sine import hertz_sine, hertz_sine_simple
+from pointsCalculation import getPoints
 import numpy as np
 import matplotlib.pyplot as plt
 
