@@ -4,7 +4,7 @@ import Graph from './components/Graph';
 import React, { useState, useRef } from 'react';
 
 // Globals
-const API_URL = 'https://localhost:5000/';
+const API_URL = 'http://localhost:5000/';
 
 function App() {
 
@@ -25,7 +25,7 @@ function App() {
     // Create data object to send via API
     if(freq1 && freq2 && freq3 && samples) {
       const data = {
-        samples: samples,
+        samples: parseInt(samples),
         freqs: [parseInt(freq1), parseInt(freq2), parseInt(freq3)]
       }
       sendData(data);
@@ -35,7 +35,7 @@ function App() {
   }
 
 
-  async function sendData(data: Object): Promise<any> {
+  async function sendData(data: Object) {
   
 
     console.log(JSON.stringify(data));
@@ -49,6 +49,13 @@ function App() {
         body: JSON.stringify(data)
       })
       console.log(response.json());
+      
+      const responseData = await response.json()
+
+      responseData.forEach((element: any) => {
+        console.log(element);
+      });
+
       
     } catch (error) {
       console.log(error);
