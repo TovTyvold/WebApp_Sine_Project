@@ -25,6 +25,7 @@ def hertz_sine(list, A, interval, sample_rate):
         norm_max (ndarray): Array containing y-values that are normalized
 
     """
+    A = 1 
     length = len(list) 
 
 
