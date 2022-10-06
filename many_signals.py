@@ -11,7 +11,7 @@ t = 0.1 # seconds of sampling
 N = Fs*t # total points in signal
 
 # signal information
-freq = np.array([50, 400, 180]) # in hertz, the desired natural frequency
+freq = np.array([50, 400, 180, 2000, 140, 350]) # in hertz, the desired natural frequency
 omega = 2*np.pi*freq # angular frequency for sine waves
 
 t_vec = np.arange(N)*T # time vector for plotting
@@ -21,8 +21,7 @@ amp = [1,2,5]
 k = 0
 y_sum = 0
 for i in omega:
-    #y[k][:] = amp[k] * np.sin(i*t_vec)
-    y[k][:] = t_vec % 1
+    y[k][:] = amp[k] * np.sin(i*t_vec)
     y_sum += y[k][:] 
     k += 1 
 
@@ -38,26 +37,47 @@ norm_max = y_sum/np.max(y_sum)
 plt.show() """
 
 
-# One of the ways
-Y_k = np.fft.fft(norm_max)[0:int(N/2)]/N # FFT function from numpy
-Y_k[1:] = 2*Y_k[1:] # need to take the single-sided spectrum only
-Pxx = np.abs(Y_k) # be sure to get rid of imaginary part
+def chaos_to_hertz(norm_max):
+    """  
+        Function that outputs frequencies after taking in a signal with/without noise/chaos using fft. 
+        ---------
+        norm_max - dtype ndarray: An ndarray with (x,y) values 
+        Fs - dtype int: The sample rate
 
-""" #The other way
+        Returns
+        --------
+
+    """
+    length = len(norm_max)
+
+    Y_k = np.fft.fft(norm_max)[0:int(length/2)]/length # FFT function from numpy
+    Y_k[1:] = 2*Y_k[1:] # need to take the single-sided spectrum only
+    Pxx = np.abs(Y_k) # be sure to get rid of imaginary part
+
+    f = Fs*np.arange((length/2))/length; # frequency vector
+
+    freq_list = []
+    amp_list = []
+    tol = np.mean(Pxx)
+    k = 0
+    for i in Pxx:
+        k += 1
+        if i > tol:
+            amp_list.append(Pxx[k-1])
+            freq_list.append(f[k-1])
+
+    return f, Pxx, freq_list, amp_list
+
+
+
+""" 
+#The other way, CAN BE USED FOR COMPARISON
 Y_s = np.fft.fft(norm_max)
 Pxx2 = np.abs(Y_s/N)
 Pxx1 = Pxx2[0:int(N/2)]
 Pxx1[1:-1] = 2 * Pxx1[1:-1]
  """
-
-
-
-
-
-
-f = Fs*np.arange((N/2))/N; # frequency vector
-
-#Compare the values
+#Compare the values, used when method above is also used
 #----------------------------------------------------------------------------
 """ print(np.shape(Pxx))
 print(np.shape(Pxx1))
@@ -71,25 +91,13 @@ for k in range(len(Pxx)):
 
 
 
-freq_list = []
-amp_list = []
-tol = np.mean(Pxx)
-k = 0
-for i in Pxx:
-    k += 1
-    if i > tol:
-        amp_list.append(Pxx[k-1])
-        freq_list.append(f[k-1])
-
-print(f"The frequencies are, in requested order, {freq_list}")
-print(f"The amplitudes are, in requested order, {amp_list}")
-
-
-
-
 
 #Plot 
 #----------------------------------------------------------------------------
+f, Pxx, freq_list, amp_list = chaos_to_hertz(norm_max)
+
+print(f"The frequencies are, in requested order, {freq_list}")
+print(f"The amplitudes are, in requested order, {amp_list}")
 
 fig,ax = plt.subplots()
 plt.plot(f,Pxx, marker='*', ms=15, markerfacecolor='blue')
