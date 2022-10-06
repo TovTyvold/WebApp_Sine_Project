@@ -8,6 +8,8 @@ const API_URL = 'http://localhost:5000/';
 
 function App() {
 
+  let datapoints: any[] = [];
+
   // Hooks
   const freqRef1 = useRef<HTMLInputElement>(null);
   const freqRef2 = useRef<HTMLInputElement>(null);
@@ -48,13 +50,15 @@ function App() {
         },
         body: JSON.stringify(data)
       })
-      console.log(response.json());
+      //console.log(response.json());
       
       const responseData = await response.json()
 
       responseData.forEach((element: any) => {
-        console.log(element);
+        datapoints.push(element);
       });
+
+      console.log(datapoints);
 
       
     } catch (error) {
@@ -87,12 +91,10 @@ function App() {
           </label>
           <button type='submit'>Generate</button>
         </div>
-        <div>
-          <Graph></Graph>
-        </div>
+
       </form>
       <div>
-        <Graph></Graph>
+        <Graph {...datapoints}></Graph>
       </div>
      
       
