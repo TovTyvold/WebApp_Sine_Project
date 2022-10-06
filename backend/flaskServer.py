@@ -2,10 +2,18 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import pointsCalculation
 
-KNOWNINPUTS = ["ampls", "freqs", "samples"]
+KNOWNINPUTS = ["ampls", "freqs", "samples", "types"]
 
 def checkList(lst: list) -> bool:
     return not isinstance(lst, list) or len(lst) == -1 or not all([isinstance(p, (int, float)) for p in lst])
+
+def pointsToOutput(l : list) -> str:
+    output = "["
+    for p in l:
+        output += "{x:" + str(p[0]) + ", " + "y: " + str(p[1]) + "}, "
+    output += "]"
+
+    return output
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -28,6 +36,15 @@ def handleInput():
             return "input error, ampls freqs are not the same size", 400
     else:
         ampls = [1 for _ in freqs]
+    
+    if "types" in json:
+        types = json["types"]
+
+        if len(ampls) != len(freqs):
+            return "input error, freqs types are not the same size", 400
+    else:
+        types = ["sin" for _ in freqs]
+
 
     for str in json.keys():
         if str not in KNOWNINPUTS:
@@ -44,7 +61,7 @@ def handleInput():
 
     #output is a list of points, e.g. [[1,2], [2,3], [1,2], [1,2]]
     #where both the x values and y values are between 0 and 1
-    return jsonify(pointsCalculation.getPoints(freqs, ampls, samples, debug=False))
+    return pointsToOutput(pointsCalculation.getPoints(freqs, ampls, types, samples, debug=True))
 
 if __name__ == '__main__':
     app.run(debug=True)
