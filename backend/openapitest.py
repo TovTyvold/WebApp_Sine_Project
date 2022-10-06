@@ -1,11 +1,13 @@
+from email.headerregistry import ContentTypeHeader
+from urllib import response
 from pydantic import BaseModel
 
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from flask_openapi3 import Info, Tag, ExtraRequestBody
-from flask_openapi3 import OpenAPI
+from flask_openapi3 import OpenAPI, Encoding
 
-from flask import request
+from flask_cors import CORS, cross_origin
 
 import pointsCalculation
 
@@ -33,14 +35,26 @@ def pointsToOutput(l : list) -> str:
 
     return output
 
+class FreqResponse(BaseModel):
+    data: Dict[str, str]
 
-@app.post('/points', tags=[PointsTag], extra_body=FreqBody)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+@cross_origin()
+@app.post('/points', tags=[PointsTag], extra_body=FreqBody, responses={"200": FreqResponse})
+#responses={"200": FreqResponse},
+#    extra_responses={"200": {"content": {"text/csv": {"schema": {"type": "string"}}}}},
 def createPoints(body: FreqQuery):
-    print(body.samples)
-    print(pointsToOutput((pointsCalculation.getPoints(body.freqs, body.ampls, body.types, body.samples, debug=True))))
+    if (body.types == None):
+        body.types = ["sin" for _ in range(len(body.freqs))]
+    if (body.ampls == None):
+        body.ampls = [1 for _ in range(len(body.freqs))]
 
-    #return (pointsCalculation.getPoints(body.freqs, body.ampls, body.types, body.samples, debug=True))
-    return {"code": 0, "message": "ok"}
+
+    res = (pointsToOutput((pointsCalculation.getPoints(body.freqs, body.ampls, body.types, body.samples, debug=True))))
+
+    #return {"code": 0, "message": "ok", "data": res}
+    return res
 
 if __name__ == "__main__":
     app.run(debug=True)
