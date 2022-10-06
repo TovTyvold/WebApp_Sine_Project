@@ -1,14 +1,16 @@
 //App.tsx
 import './App.css';
 import Graph from './components/Graph';
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Globals
 const API_URL = 'http://localhost:5000/';
 
 function App() {
 
-  let datapoints: any[] = [];
+  // const [inputList, setInputList] = useState([{frequency: null}])
+
+  let datapoints: Object[] = [];
 
   // Hooks
   const freqRef1 = useRef<HTMLInputElement>(null);
@@ -16,6 +18,7 @@ function App() {
   const freqRef3 = useRef<HTMLInputElement>(null);
   const sampleRef = useRef<HTMLInputElement>(null);
 
+  // Get values from inputs
   const onSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -38,7 +41,6 @@ function App() {
 
 
   async function sendData(data: Object) {
-  
 
     console.log(JSON.stringify(data));
 
@@ -50,13 +52,14 @@ function App() {
         },
         body: JSON.stringify(data)
       })
-      //console.log(response.json());
       
       const responseData = await response.json()
 
-      responseData.forEach((element: any) => {
-        datapoints.push(element);
-      });
+      console.log(responseData);
+
+      // responseData.forEach((element: any) => {
+      //   datapoints.push(element);
+      // });
 
       console.log(datapoints);
 
@@ -93,9 +96,12 @@ function App() {
         </div>
 
       </form>
+
       <div>
         <Graph {...datapoints}></Graph>
       </div>
+
+
      
       
     </>
