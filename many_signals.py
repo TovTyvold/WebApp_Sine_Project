@@ -1,5 +1,5 @@
 # sampling a sine wave programmatically
-from distutils import core
+import sys
 from statistics import mean
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,15 +8,15 @@ plt.style.use('ggplot')
 
 
 # Number of signals i.e. functions
-n_signals = 10
+n_signals = 100
 
 #List for multiple colors for multiple plots
 color_mix = cm.rainbow(np.linspace(0, 1, n_signals))
 
-
+max_freq_input = 2000
 a = np.random.rand(1,n_signals)
 #n Frequencies between [0,100)
-list_numbers = np.linspace(30,1000,n_signals)
+list_numbers = np.linspace(30,max_freq_input,n_signals)
 list_rand_freq = list_numbers * np.random.rand(1,n_signals)
 print(list_rand_freq)
 #n Amplitudes between [0,15)
@@ -61,8 +61,8 @@ for i in omega[0]:
 
 # In the future, this will be the audio submitted
 norm_max = y_sum/np.max(y_sum)
-""" plt.plot(t_vec,norm_max)
-plt.show() """
+plt.plot(t_vec,norm_max)
+plt.show()
 
 
 def chaos_to_hertz(norm_max):
@@ -125,7 +125,7 @@ print("Checking frequencies...")
 sorted_rand_freq = np.sort(list_rand_freq)
 f, Pxx, freq_list, amp_list = chaos_to_hertz(norm_max)
 #np. set_printoptions(threshold=np. inf)
-tol = 2
+tol = 1
 for k in range(n_signals):
     if tol < abs(sorted_rand_freq[0][k] - freq_list[k]):
         print(sorted_rand_freq[0][k])
@@ -137,19 +137,30 @@ for k in range(n_signals):
         print(freq_list[k])
         print("-------------")
 
+
+print("mean freq:", np.mean(freq_list))
+print("-------------")
+freq_mean2 = np.mean(freq_list)
+for j in range(len(freq_list)):
+    if abs(freq_list[j+1] - freq_list[j]) > freq_mean2:
+        freq_list = freq_list[:j]
+        break 
+      
+
+
         
 print("-----------------------------")
-
-print("Number of elements in freq_list: ", np.shape(freq_list))
-print("Number of elements in list_rand_freq: ", np.shape(list_rand_freq))
+np.set_printoptions(threshold=sys.maxsize)
+print(f"Number of elements in freq_list: {np.shape(freq_list)[0]:.3f}")
+print(freq_list)
+print(f"Number of elements in list_rand_freq: {np.shape(list_rand_freq)[1]:.3f}")
+print(np.sort(list_rand_freq))
 
 """ print(f"All the frequencies are, in ascending order, {freq_list}")
 print(f"All the amplitudes are, in ascending order, {amp_list}")
  """
 print("Plotting")
 fig,ax = plt.subplots()
-print(len(f))
-print(len(Pxx))
 if len(f) != len(Pxx):
     a = len(f) - len(Pxx) 
     f = f[:-a]
@@ -158,5 +169,6 @@ ax.set_xscale('log')
 #ax.set_yscale('log')
 plt.ylabel('Amplitude')
 plt.xlabel('Frequency [Hz]')
-plt.savefig(f"fft' {n_signals,Fs}'.png")
+plt.savefig(f"fft' {n_signals, Fs, max_freq_input}'.png")
 #plt.show()
+print(f"Saved plot as: fft {n_signals, Fs, max_freq_input}")
