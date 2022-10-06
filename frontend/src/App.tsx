@@ -1,4 +1,4 @@
-// App.tsx
+//App.tsx
 import './App.css';
 import Graph from './components/Graph';
 import React, { useState, useRef } from 'react';
@@ -86,6 +86,9 @@ function App() {
             <input type="number" name='samples' id='samples' ref={sampleRef} required/>
           </label>
           <button type='submit'>Generate</button>
+        </div>
+        <div>
+          <Graph></Graph>
         </div>
       </form>
       <div>
