@@ -1,5 +1,6 @@
 // App.tsx
 import './App.css';
+import Graph from './components/Graph';
 import React, { useState, useRef } from 'react';
 
 // Globals
@@ -80,10 +81,14 @@ function App() {
           <button type='submit'>Generate</button>
         </div>
       </form>
+      <div>
+        <Graph></Graph>
+      </div>
      
       
     </>
     </div>
+
     
   );
 }
