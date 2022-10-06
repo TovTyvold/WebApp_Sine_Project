@@ -1,20 +1,45 @@
-import React, { useState } from "react";
+// useForm.ts
+import React, { useRef, useState } from "react";
 
-export const useForm = (callback: any, initialState = {}) => {
-    const [values, setValues] = useState(initialState);
 
+const useForm = (callback: any) => {
+    let freqsList: number[] = [];
+    
+    // States
+    const [samples, setSamples] = useState(10);
+    const [freqs, setFreqs] = useState([1, 2, 3]);
+    
+
+    // Set state when user inputs data
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setValues({...values, [event.target.name]: event.target.value})
+
+        if (event.target.name === 'samples') {
+            setSamples(parseInt(event.target.value));
+        } else {
+            freqsList.push(parseInt(event.target.value));
+            console.log(freqsList);
+            setFreqs(freqsList);
+        }
     };
 
+    // Call sendData funtion
     const onSubmit = async (event: React.ChangeEvent<HTMLFormElement>) => {
         event.preventDefault();
         await callback();
     }
 
+    // Create data object to send via API
+    const data = {
+        samples: samples,
+        freqs: freqs
+    }
+
+
     return {
-        onChange, onSubmit, values
+        onChange, onSubmit, data
     };
 
 
 }
+
+export default useForm;
