@@ -1,4 +1,6 @@
 import math
+from enum import Enum
+from typing import Union, List
 
 def square(ampl: int, freq: int, x: float) -> float:
     return 2*ampl*(2*math.floor(freq*x) - math.floor(2*freq*x)+1 - 0.5)
@@ -12,14 +14,26 @@ def sin(ampl: int, freq: int, x: float) -> float:
 def triangle(ampl: int, freq: int, x: float) -> float:
     return ampl*(4 * abs(freq*x - math.floor(freq*x + 0.75)+0.25) - 1)
 
-typeToFunc = {
-    "square": square,
-    "saw": saw,
-    "sin": sin,
-    "triangle": triangle,
+class WaveType(Enum):
+    SIN = sin
+    SQUARE = square
+    SAW = saw
+    TRIANGLE = triangle
+
+conversionTable = {
+    "sin": WaveType.SIN,
+    "square": WaveType.SQUARE,
+    "saw": WaveType.SAW,
+    "triangle": WaveType.TRIANGLE,
 }
 
-def getPoints(freqs: list, ampls: list, types:list, sampleRate: int, debug: bool = False) -> list:
+def parse(s : str) -> Union[WaveType, None]:
+    if s in conversionTable:
+        return conversionTable[s]
+    else:
+        return None
+
+def getPoints(freqs: List[int], ampls: List[int], types: List[WaveType], sampleRate: int, debug: bool = False) -> list:
     points = []
     maxval = 0
     for i in range(0, sampleRate):
@@ -32,7 +46,7 @@ def getPoints(freqs: list, ampls: list, types:list, sampleRate: int, debug: bool
             freq = freqs[j]
             ampl = ampls[j]
 
-            ysample += typeToFunc[types[j]](ampl, freq, xsample)
+            ysample += types[j](ampl, freq, xsample)
         
         if ysample > maxval:
             maxval = ysample
