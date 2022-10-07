@@ -1,38 +1,84 @@
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-content: center;
+  height: 100vh;
+  background: whitesmoke;
 }
 
-.App-link {
-  color: #61dafb;
+.container {
+  margin-bottom: 15rem;
+  display: grid;
+  justify-content: center;
+  align-content: center;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+header {
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 40pt;
+  font-family: 'Times New Roman', Times, serif;
 }
+
+
+.graph {
+  margin-bottom: 4rem;
+  background-color: white;
+  padding: 4rem;
+  border-radius: 20px;
+}
+
+.inputs {
+  display: flex;
+  justify-content: center;
+  gap: calc(3vh + 3px) calc(3vw + 3px);
+}
+
+.inputs button {
+  background-color: #1f939e;
+  border: hidden;
+  border-radius: 40px;
+  width: 10rem;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 20pt;
+}
+
+.input-wrapper label {
+  display: block;
+  
+  margin: 0.5rem;
+}
+
+.input-wrapper input {
+  height: 1.5rem;
+  border-radius: 20px;
+  border: hidden;
+  padding: 8px;
+  text-align: center;
+  font-size: large;
+  outline: none;
+}
+
+/* .input-wrapper input:focus {
+  border: 3px solid #1f939e;
+} */
+
+
+/* For Chrome and Safari  */
+  
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button 
+{
+    -webkit-appearance: none;
+    margin: 0;
+}
+/* For Firefox  */
+  
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+
+
+
+
