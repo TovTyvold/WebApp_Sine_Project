@@ -24,3 +24,5 @@ Envelopes in Sound Synthesis: The Ultimate Guide
 https://github.com/meinardmueller/PCP/blob/master/PCP.ipynb
 
 [python-scipy-iir-filter](https://pythonguides.com/python-scipy-iir-filter/)
+
+![Sketch](/figures/SynthSchema.jpg)
