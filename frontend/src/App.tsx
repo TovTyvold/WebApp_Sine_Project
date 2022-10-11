@@ -94,11 +94,13 @@ function App() {
   // Get values from inputs
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setDataPoints(await sendData(API_POINTS, inputValues));
+    //setDataPoints(await sendData(API_POINTS, inputValues));
+    //console.log("Datapoints: ", dataPoints);
 
-    ws.send(JSON.stringify(inputValues));
-
-    console.log("Datapoints: ", dataPoints);
+    const payload = {
+      funcs: inputValues,
+    };
+    ws.send(JSON.stringify(payload));
   };
 
   return (
