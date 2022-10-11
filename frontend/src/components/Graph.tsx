@@ -7,13 +7,13 @@ import {
   Tooltip,
 } from "recharts";
 
-const Graph = (data: any) => {
+const Graph = (props: any) => {
   return (
     <div>
       <LineChart
         width={1200}
         height={600}
-        data={data.props}
+        data={props.data}
         margin={{ top: 5, right: 20, bottom: 5, left: 20 }}>
         <Line
           type='monotone'
