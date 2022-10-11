@@ -1,41 +1,52 @@
 import numpy as np
-import ctypes
+import struct
 import pyaudio
 import pointsCalculation
-
-p = pyaudio.PyAudio()
-
-volume = 0.5
-fs = 44100
-duration = 1.0
-f = 4*440
+from typing import List
 
 samplesCount = 44100
-harmonics = 1
 
-ampls = []
-freqs = []
-#for i in range(1,harmonics+1):
-#    ampls.append(440 * 1.0/(2.0*f*i))
-#    freqs.append(440 * f*i)
+class ChunkedBytes:
+    bytesRead = 0
+    b = bytes()
 
-ampls = [1 for _ in range(harmonics)]
-freqs = [440]
+    def __init__(self, b : bytes):
+        self.b = b
 
-samples = [volume*b for (_,b) in pointsCalculation.getPoints(freqs, ampls, ["sin" for _ in range(harmonics)], samplesCount, debug=False)]
-samples = np.array(samples).tobytes()
+    def readChunk(self, size):
+        out = self.b[self.bytesRead : self.bytesRead + size]
+        self.bytesRead += size
+        return out
 
-stream = p.open(format=pyaudio.paFloat32,
-    channels=1,
-    rate=fs,
-    output=True)
+    def empty(self):
+        return len(self.b) <= self.bytesRead
 
-while True:
-    stream.write(samples)
+def play(sounds):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paFloat32,
+            channels=1,
+            rate=samplesCount,
+            output=True)
 
-stream.write(samples)
+    while not sounds.empty():
+        stream.write(sounds.readChunk(1024))
 
-stream.stop_stream()
-stream.close()
+    stream.stop_stream()
+    stream.close()
 
-p.terminate()
+    p.terminate()
+
+def samplesToCB(samples : List[float]) -> ChunkedBytes:
+    return ChunkedBytes(struct.pack("%sf" % len(samples), *samples))
+
+if __name__ == "__main__":
+    harmonicCount = 2
+
+    ampls = [harmonicCount - i for i in range(harmonicCount)]
+    freqs = [440*i for i in range(harmonicCount)]
+
+    samples = [b for (_, b) in pointsCalculation.getPoints(freqs, ampls, [
+        "sin" for _ in range(harmonicCount)], samplesCount, debug=False, seconds=1)]
+    
+    sc = samplesToCB(samples)
+    play(sc)

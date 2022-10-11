@@ -1,11 +1,12 @@
 import uvicorn
 
-from typing import List, Optional, Dict
-from fastapi import FastAPI, Response, HTTPException
+from typing import List, Optional, Dict, Union
+from fastapi import FastAPI, Response, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
  
 import pointsCalculation
+import soundGen
 
 app = FastAPI()
 
@@ -64,40 +65,23 @@ class PointsAnswer(BaseModel):
         }
 
 class FreqQuery(BaseModel):
-    samples: Optional[int]
-    freqs: List[int]
-    ampls: Optional[List[int]]
-    types: Optional[List[str]]
+    funcs: List[Dict[ str, Union[float, int, str] ]]
+    seconds: Optional[float] = 1.0
+    samples: Optional[int] = 400
 
     class Config:
         schema_extra = {
-            "example": {
-                "samples": 10,
-                "freqs": [1,3,5],
-                "ampls": [5,3,1],
-                "types": ["sin", "triangle", "saw"],
+            "example": { 
+                "funcs" : [{"shape": "sin", "frequency": 2, "amplitude": 1}], 
+                "seconds": 1.0,
+                "samples": 400
             }
         }
 
 @app.post("/points", response_model=PointsAnswer)
 async def getPoints(query: FreqQuery):
-    query.samples = max(query.freqs)*400 if query.samples == None else query.samples
-
-    query.ampls = [1 for _ in range(len(query.freqs))] if (query.ampls == None) else query.ampls
-    query.types = ["sin" for _ in range(len(query.freqs))] if (query.types == None) else query.types
-
-    types = [pointsCalculation.parse(s) for s in query.types]
-    if None in types:
-        raise HTTPException(status_code=412, detail="Type not recognized")
-
-    if len(query.ampls) != len(query.freqs):
-        raise HTTPException(status_code=400, detail="Length not matching")
-            
-    if len(query.types) != len(query.freqs):
-        raise HTTPException(status_code=400, detail="Length not matching")
-
-    #l is a list of pairs of points
-    l = pointsCalculation.getPoints(query.freqs, query.ampls, types, query.samples, debug=True)
+    funcs = [pointsCalculation.parseJSON(func) for func in query.funcs]
+    l = pointsCalculation.getPoints(funcs, query.samples, debug=True, seconds=query.seconds)
 
     #convert l to a dictionary
     d = []
@@ -108,6 +92,24 @@ async def getPoints(query: FreqQuery):
         d.append({"x": x, "y": y})
 
     return {"points": d}
+
+chunkSize = 1024
+samplesCount = 44100
+@app.websocket("/sound")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    await websocket.send_text(str(samplesCount))
+
+    cb = soundGen.samplesToCB([y for (_,y) in pointsCalculation.getPoints([ pointsCalculation.parseJSON({"shape" : "sin", "frequency" : 440, "amplitude" : 1}) ], 44100, debug=False)])
+    data = cb.readChunk(chunkSize)
+    while data:
+        await websocket.send_bytes(data)
+        data = cb.readChunk(chunkSize)
+
+    await websocket.send_text("SIGNAL STREAM END")
+
+    await websocket.close()
 
 if __name__ == "__main__":
     config = uvicorn.Config("apiServer:app", port=5000, log_level="info", reload=True)
