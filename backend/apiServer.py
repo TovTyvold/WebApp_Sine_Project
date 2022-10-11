@@ -81,7 +81,9 @@ class FreqQuery(BaseModel):
 
 def FreqQueryToPoints(query: Dict, debug=False):
     funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
-    l = pointsCalculation.getPoints(funcs, query["samples"], debug=debug, seconds=query["seconds"])
+    samples = 44100 if "samples" not in query else query["samples"]
+    seconds = 1 if "seconds" not in query else query["seconds"]
+    l = pointsCalculation.getPoints(funcs, samples, debug=debug, seconds=seconds)
 
     return l
 
@@ -100,7 +102,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
     json = await websocket.receive_json()
     waveData = FreqQueryToPoints(json, debug=False)[1]
-    await websocket.send_json({"samples": samplesCount, "byteType": "float"})
+
+    print(waveData)
 
     cb = soundGen.samplesToCB(waveData)
 
