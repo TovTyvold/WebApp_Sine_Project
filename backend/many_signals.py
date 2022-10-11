@@ -8,7 +8,7 @@ plt.style.use('ggplot')
 
 
 # Number of signals i.e. functions
-n_signals = 100
+n_signals = 10
 
 #List for multiple colors for multiple plots
 color_mix = cm.rainbow(np.linspace(0, 1, n_signals))
@@ -141,7 +141,7 @@ for k in range(n_signals):
 print("mean freq:", np.mean(freq_list))
 print("-------------")
 freq_mean2 = np.mean(freq_list)
-for j in range(len(freq_list)):
+for j in range(len(freq_list)-1):
     if abs(freq_list[j+1] - freq_list[j]) > freq_mean2:
         freq_list = freq_list[:j]
         break 
