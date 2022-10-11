@@ -21,15 +21,17 @@ class ChunkedBytes:
     def empty(self):
         return len(self.b) <= self.bytesRead
 
-def play(sounds):
+def play(samples):
+    samples = samplesToCB(samples)
+
     p = pyaudio.PyAudio()
     stream = p.open(format=pyaudio.paFloat32,
             channels=1,
             rate=samplesCount,
             output=True)
 
-    while not sounds.empty():
-        stream.write(sounds.readChunk(1024))
+    while not samples.empty():
+        stream.write(samples.readChunk(1024))
 
     stream.stop_stream()
     stream.close()
