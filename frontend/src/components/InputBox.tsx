@@ -1,13 +1,13 @@
-import React from 'react';
+import FreqInput from "./FreqInput";
+import AmpInput from "./AmpInput";
+import WaveTypeInput from "./WaveTypeInput";
 
-const InputBox = () => {
-
-    return (
-        <div>
-            <h3>Input frequency:</h3>
-            <input type="number" name="frequency" id="frequency-input" />
-        </div>
-    )
-};
-
-export default InputBox;
+export default function InputBox(): JSX.Element {
+  return (
+    <>
+      <FreqInput />
+      <AmpInput />
+      <WaveTypeInput />
+    </>
+  );
+}

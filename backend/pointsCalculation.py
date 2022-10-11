@@ -1,38 +1,67 @@
 import math
+import ctypes
+from enum import Enum
+from typing import Union, List, Tuple
+from pyaudio import paFloat32
 
-def square(ampl: int, freq: int, x: float) -> float:
-    return 2*ampl*(2*math.floor(freq*x) - math.floor(2*freq*x)+1 - 0.5)
+def square(amplitude: float, frequency: int, x: float) -> float:
+    return 2*amplitude*(2*math.floor(frequency*x) - math.floor(2*frequency*x)+1 - 0.5)
 
-def saw(ampl: int, freq: int, x: float) -> float:
-    return 2 * ampl * freq * (x % (1/freq))-1
+def saw(amplitude: float, frequency: int, x: float) -> float:
+    return 2 * amplitude * frequency * (x % (1/frequency))-1
 
-def sin(ampl: int, freq: int, x: float) -> float:
-    return ampl*math.sin(2*math.pi*freq*x)
+def sin(amplitude: float, frequency: int, x: float) -> float:
+    return amplitude*math.sin(2*math.pi*frequency*x)
 
-def triangle(ampl: int, freq: int, x: float) -> float:
-    return ampl*(4 * abs(freq*x - math.floor(freq*x + 0.75)+0.25) - 1)
+def triangle(amplitude: float, frequency: int, x: float) -> float:
+    return amplitude*(4 * abs(frequency*x - math.floor(frequency*x + 0.75)+0.25) - 1)
 
-typeToFunc = {
-    "square": square,
-    "saw": saw,
-    "sin": sin,
-    "triangle": triangle,
+class WaveType(Enum):
+    SIN = sin
+    SQUARE = square
+    SAW = saw
+    TRIANGLE = triangle
+
+conversionTable = {
+    "sin": WaveType.SIN,
+    "square": WaveType.SQUARE,
+    "saw": WaveType.SAW,
+    "triangle": WaveType.TRIANGLE,
 }
 
-def getPoints(freqs: list, ampls: list, types:list, sampleRate: int, debug: bool = False) -> list:
+def parse(s : str) -> Union[WaveType, None]:
+    if s in conversionTable:
+        return conversionTable[s]
+    else:
+        return None
+
+class PeriodicFunc:
+    shape: str
+    amplitude: float
+    frequency: int
+
+    def __init__(self, shape, amplitude, frequency):
+        self.shape = shape
+        self.amplitude = amplitude
+        self.frequency = frequency
+  
+def parseJSON(json):
+    shape = json["shape"]
+    amplitude = json["amplitude"]
+    frequency = json["frequency"]
+    return PeriodicFunc(shape, amplitude, frequency)
+
+def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0) -> List[Tuple[float, float]]:
     points = []
     maxval = 0
-    for i in range(0, sampleRate):
+    for i in range(0, int(sampleRate * seconds)):
         #-1 to get 0th and 1th value
         #both of which will be =0
-        xsample = i / (sampleRate-1) 
+        xsample : ctypes.c_float = i / (sampleRate-1) 
 
-        ysample = 0
-        for j in range(len(freqs)):
-            freq = freqs[j]
-            ampl = ampls[j]
-
-            ysample += typeToFunc[types[j]](ampl, freq, xsample)
+        ysample : ctypes.c_float = 0
+        for func in funcs:
+            ysample += conversionTable[func.shape](func.amplitude, func.frequency, xsample)
         
         if ysample > maxval:
             maxval = ysample
@@ -44,6 +73,7 @@ def getPoints(freqs: list, ampls: list, types:list, sampleRate: int, debug: bool
 
     if (debug):
         for p in points:
-            print('{:.6}'.format(p[0]) + ", " +('{:.6}'.format(p[1])))
+            print(str(p[0]) + ", " + str(p[1]))
 
+    #points is sampleRate long
     return points
