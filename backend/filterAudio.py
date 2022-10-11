@@ -3,11 +3,12 @@ from pyparsing import line
 from scipy import signal
 import matplotlib.pyplot as plt
 from pointsFrequency import signal_to_hertz
-from pointsCreateSignal import Create_Signal
+#from pointsCreateSignal import Create_Sine
 plt.style.use('ggplot')
 
 
-# t, system, y_sum, Fs = Create_Signal([],[],[])
+#t, system, y_sum, Fs = Create_Sine([],[],[])
+
 """ plt.plot(t,system)
 plt.show() """
 
@@ -20,15 +21,16 @@ def butter_lowpass_filter(data, cutoff, Fs, order):
 
 def low_pass_Filter(t, y_sum, Fs):
 
-    cutoff_lower = 15
+    cutoff_lower = Fs/100
     order = 5
-    b, a = butter_lowpass(cutoff_lower, Fs, order)
-    w, h = signal.freqz(b, a, worN=8000, fs=Fs)
     noise = 1.5*np.cos(9*2*np.pi*t)
-    data = y_sum + noise
+    data = y_sum 
     y_filtered = butter_lowpass_filter(data, cutoff_lower, Fs, order)
 
-    """ plt.subplot(2, 1, 1)
+    """ 
+    b, a = butter_lowpass(cutoff_lower, Fs, order)
+    w, h = signal.freqz(b, a, worN=8000, fs=Fs)
+    plt.subplot(2, 1, 1)
     plt.plot(w, np.abs(h), 'b')
     plt.plot(cutoff_lower, 0.5*np.sqrt(2), 'ko')
     plt.axvline(cutoff_lower, color='k')
@@ -43,8 +45,8 @@ def low_pass_Filter(t, y_sum, Fs):
     plt.xlabel('Time [sec]')
     plt.grid()
     plt.legend()
-
-    plt.subplots_adjust(hspace=0.35)
+ """
+    """ plt.subplots_adjust(hspace=0.35)
     plt.savefig(f"filter_{cutoff_lower}.png")
     plt.show() """
     return y_filtered
