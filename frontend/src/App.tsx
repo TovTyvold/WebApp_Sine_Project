@@ -3,17 +3,26 @@ import "./App.css";
 import React, { useState, useEffect } from "react";
 import Graph from "./components/Graph";
 import sendData from "./sendData";
+import AddADSR from "./components/AddADSR";
 
 type Wave = {
   frequency: number | undefined;
   amplitude: number | undefined;
   shape: string;
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
 };
 
 const defaultInput: Wave = {
   frequency: undefined,
   amplitude: undefined,
   shape: "",
+  attack: 1,
+  decay: 1,
+  sustain: 3,
+  release: 1,
 };
 
 const API_POINTS = "http://localhost:5000/points";
@@ -81,6 +90,10 @@ function App() {
       frequency: undefined,
       amplitude: undefined,
       shape: "",
+      attack: 1,
+      decay: 1,
+      sustain: 3,
+      release: 1,
     };
     setInputValues([...inputValues, newInput]);
   };
@@ -108,6 +121,7 @@ function App() {
     ws.send(JSON.stringify(payload));
   };
 
+
   return (
     <div className='App'>
       <div className='container'>
@@ -115,6 +129,15 @@ function App() {
         <section className='graph'>
           <Graph data={dataPoints} />
         </section>
+        <div>
+          <p style={{float:"left", width:"13.5%"}}><b>Frequency:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Amplitude:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Shape:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Attack:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Decay:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Sustain:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Release:</b></p>
+        </div>
         <form onSubmit={submit}>
           {inputValues.map((element, index) => {
             return (
@@ -140,6 +163,34 @@ function App() {
                   value={element.shape}
                   onChange={(event) => handleInputChange(index, event)}
                 />
+                <input
+                  type='number'
+                  name='attack'
+                  placeholder='Attack'
+                  value={element.attack}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
+                  <input
+                  type='number'
+                  name='decay'
+                  placeholder='Decay'
+                  value={element.decay}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
+                  <input
+                  type='text'
+                  name='sustain'
+                  placeholder='Sustain'
+                  value={element.sustain}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
+                  <input
+                  type='text'
+                  name='release'
+                  placeholder='Release'
+                  value={element.release}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
                 {index ? (
                   <button
                     onClick={(event) => {
