@@ -1,3 +1,5 @@
+from asyncio.windows_events import INFINITE
+from re import A
 import uvicorn
 
 from typing import List, Optional, Dict, Union
@@ -7,6 +9,7 @@ from pydantic import BaseModel
  
 import pointsCalculation
 import soundGen
+import ADSR_mod
 
 app = FastAPI()
 
@@ -66,7 +69,7 @@ class PointsAnswer(BaseModel):
 
 
 class FreqQuery(BaseModel):
-    funcs: List[Dict[str, Union[float, int, str]]]
+    funcs: List[Dict[str, Union[float, str]]]
     seconds: Optional[float] = 1.0
     samples: Optional[int] = 400
 
@@ -81,9 +84,13 @@ class FreqQuery(BaseModel):
 
 def FreqQueryToPoints(query: Dict, debug=False):
     funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
-    samples = 44100 if "samples" not in query else query["samples"]
-    seconds = 1 if "seconds" not in query else query["seconds"]
-    l = pointsCalculation.getPoints(funcs, samples, debug=debug, seconds=seconds)
+
+    a = [{"wave": f} for f in query["funcs"]]
+    print(a)
+
+    query["samples"] = 44100 if "samples" not in query else query["samples"]
+    query["seconds"] = 1 if "seconds" not in query else query["seconds"]
+    l = pointsCalculation.getPoints(funcs, query["samples"], debug=debug, seconds=query["seconds"])
 
     return l
 
@@ -101,18 +108,35 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     json = await websocket.receive_json()
-    waveData = FreqQueryToPoints(json, debug=False)[1]
+    waveData = FreqQueryToPoints(json, debug=False)
 
-    print(waveData)
+    seconds = json["seconds"]
 
-    cb = soundGen.samplesToCB(waveData)
+    if "adsr" in json:
+        adsrData = json["adsr"] # [0.25, 0.25, 0.25, 0.25]
+    else:
+        adsrData = [0.25, 0.25, 0.25, 0.25]
+
+    adsrData = [percent * seconds for percent in adsrData] #1,1,1,1 if seconds = 4
+
+    freqWindow = 200
+    amount = int(samplesCount / freqWindow)
+    displayData = {"points": [{"x": freqWindow*x, "y": y} for (x,y) in list(zip(*waveData))[:amount]]}
+
+    await websocket.send_json(displayData)
+
+    # for d in displayData["points"]:
+    #     print(str(d["x"]) + ", " + str(d["y"]))
+
+    #await websocket.send_json(displayData)
+
+    waveData = (waveData[0], ADSR_mod.ADSR(waveData[1], adsrData, 44100, sustainAmplitude=0.7, maxAmplitude=1))
+    cb = soundGen.samplesToCB(waveData[1])
 
     data = cb.readChunk(chunkSize)
     while data:
         await websocket.send_bytes(data)
         data = cb.readChunk(chunkSize)
-
-    await websocket.send_text("SIGNAL STREAM END")
 
     await websocket.close()
 

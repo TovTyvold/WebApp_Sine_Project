@@ -1,9 +1,10 @@
 //App.tsx
 import "./App.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Graph from "./components/Graph";
 import sendData from "./sendData";
 import AddADSR from "./components/AddADSR";
+
 
 type Wave = {
   frequency: number | undefined;
@@ -28,33 +29,54 @@ const defaultInput: Wave = {
 const API_POINTS = "http://localhost:5000/points";
 const API_WS = "ws://localhost:5000/sound";
 
+let ws = new WebSocket(API_WS);
+ws.binaryType = "arraybuffer";
+const context = new AudioContext();
+
 function App() {
   // Hooks
   const [dataPoints, setDataPoints] = useState([]);
   const [inputValues, setInputValues] = useState<Wave[]>([defaultInput]);
 
-  const context = new AudioContext();
-  const ws = new WebSocket(API_WS);
-  ws.binaryType = "arraybuffer";
-
   let channels = 1;
-  const frameCount = 44100;
   let bytesRead = 0;
+  const frameCount = 44100;
+
+  if (ws.readyState == 3) {
+    ws = new WebSocket(API_WS);
+    ws.binaryType = "arraybuffer";
+  }
+
+  useEffect(() => {
+    ws.onmessage = (message: any) => {
+      console.log(message.type);
+      if (message.data instanceof ArrayBuffer) {
+        composeAudio(message.data);
+      } else {
+        console.log(JSON.parse(message.data).points);
+        setDataPoints(JSON.parse(message.data).points);
+      }
+    };
+  });
+
   const buffer = new AudioBuffer({
     numberOfChannels: channels,
     length: frameCount,
     sampleRate: 44100,
   });
 
-  ws.onmessage = (message) => {
-    const chunk = new Float32Array(message.data);
-    if (message.data instanceof ArrayBuffer) {
-      for (let i = 0; i < bytesRead; i++) {
+  function composeAudio(data: any) {
+    const chunk = new Float32Array(data);
+
+    if (data instanceof ArrayBuffer) {
+      for (let i = 0; i < chunk.length; i++) {
         buffer.getChannelData(0)[i + bytesRead] = chunk[i];
       }
       bytesRead += chunk.length;
+    } else {
+      console.log(data);
     }
-  };
+  }
 
   function playAudio() {
     const source = context.createBufferSource();
@@ -64,11 +86,9 @@ function App() {
     source.onended = () => {
       console.log("Sound is done playing!");
     };
-  }
 
-  // useEffect(() => {
-  //   testAudioStream();
-  // }, []);
+    bytesRead = 0;
+  }
 
   const handleInputChange = (
     index: number,
@@ -76,7 +96,7 @@ function App() {
   ) => {
     const { name, value } = e.currentTarget;
     let val: any = value;
-    if (!(name === "shape")) {
+    if (name != "shape") {
       val = parseInt(value);
     }
     const list: any[] = [...inputValues];
@@ -108,16 +128,11 @@ function App() {
     setInputValues(list);
   };
 
-  // Get values from inputs
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    //setDataPoints(await sendData(API_POINTS, inputValues));
-    //console.log("Datapoints: ", dataPoints);
-
-    const payload = {
+    const payload: any = {
       funcs: inputValues,
     };
-    //console.log(JSON.stringify(payload));
     ws.send(JSON.stringify(payload));
   };
 

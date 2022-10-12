@@ -1,51 +1,36 @@
-import numpy as np
-from pyparsing import line 
 from scipy import signal
-import matplotlib.pyplot as plt
-from pointsFrequency import signal_to_hertz
-#from pointsCreateSignal import Create_Sine
-plt.style.use('ggplot')
+import numpy as np
 
-
-#t, system, y_sum, Fs = Create_Sine([],[],[])
-
-""" plt.plot(t,system)
-plt.show() """
-
-def butter_lowpass(cutoff, Fs, order):
-        return signal.butter(order, cutoff, btype='low', analog=False, fs=Fs)
 def butter_lowpass_filter(data, cutoff, Fs, order):
-    b, a = butter_lowpass(cutoff, Fs, order = order)
+    b, a = signal.butter(order, cutoff, btype='low', analog=False, fs=Fs)
     y = signal.lfilter(b, a, data)
     return y
 
-def low_pass_Filter(t, y_sum, Fs, cutoff):
-    order = 5
-    noise = 1.5*np.cos(9*2*np.pi*t)
+def low_pass_Filter(y_sum, Fs, cutoff, order):
     data = y_sum 
-    y_filtered = butter_lowpass_filter(data, cutoff, Fs, order)
+    y_filtered_low = butter_lowpass_filter(data, cutoff, Fs, order)
+    # Call for low-pass
+    # y_filtered_low = low_pass_Filter(y_sum_brage[1], Fs, 0.7*periodicFunc_list[0].frequency, 10)
+    return y_filtered_low
 
-    """ 
-    b, a = butter_lowpass(cutoff_lower, Fs, order)
-    w, h = signal.freqz(b, a, worN=8000, fs=Fs)
-    plt.subplot(2, 1, 1)
-    plt.plot(w, np.abs(h), 'b')
-    plt.plot(cutoff_lower, 0.5*np.sqrt(2), 'ko')
-    plt.axvline(cutoff_lower, color='k')
-    plt.xlim(0, 0.5*Fs)
-    plt.title("Lowpass Filter Frequency Response")
-    plt.xlabel('Frequency [Hz]')
-    plt.grid()
 
-    plt.subplot(2, 1, 2)
-    plt.plot(t, data, 'b-', label='data', linewidth = 2)
-    plt.plot(t, y_filtered, 'r--', linewidth=2, label='filtered data')
-    plt.xlabel('Time [sec]')
-    plt.grid()
-    plt.legend()
- """
-    """ plt.subplots_adjust(hspace=0.35)
-    plt.savefig(f"filter_{cutoff_lower}.png")
-    plt.show() """
-    return y_filtered
+
+def butter_highpass_filter(data, cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    y = signal.filtfilt(b, a, data)
+    return y
+
+def high_pass_Filter(y_sum, Fs, cutoff, order):
+    data = y_sum 
+    y_filtered_high = butter_highpass_filter(data, cutoff, Fs, order)
+    # Call for high-pass
+    # y_filtered_high = high_pass_Filter(y_sum_brage[1], Fs, 0.3*periodicFunc_list[0].frequency, 10)
+    return y_filtered_high
+
+
+def Low_frequency_Oscillator(freq_infra, t_vec, amp):
+    LFO = 1 + amp*np.sin(2 * np.pi * freq_infra * t_vec)
+    return LFO
 
