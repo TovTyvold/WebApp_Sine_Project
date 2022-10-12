@@ -28,5 +28,4 @@ def ADSR(list_ADSR, N, t):
     Amp_array[A_time:Prog_1] = Decay
     Amp_array[Prog_1:Prog_2] = Sustain
     Amp_array[Prog_2:Prog_2 + R_time] = Release
-
     return Amp_array
