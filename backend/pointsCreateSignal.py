@@ -3,7 +3,7 @@ import time
 import numpy as np 
 import matplotlib.pyplot as plt
 import colorednoise as cn
-from filterAudio import low_pass_Filter
+from filterAudio import low_pass_Filter, high_pass_Filter
 from soundGen import play
 import subprocess as sp
 FFMPEG_BIN = "ffmpeg.exe"
@@ -35,14 +35,14 @@ def Create_Sine(amplitudes, frequencies,Fs, list_ADSR):
         frequencies = list_numbers * np.random.rand(1,n) """
         frequencies = np.array([440])
 
-    if not phase[0]:
-        """ print("-------------------------------")
+    """ if not phase[0]:
+        print("-------------------------------")
         print("No phase, list is empty.")
         print(f"Generating {n} random phases...")
         #n phases between [0,5)
         list_numbers = np.linspace(1,5,n)
-        frequencies = list_numbers * np.random.rand(1,n) """
-        phase = np.array([1])
+        frequencies = list_numbers * np.random.rand(1,n)
+        phase = np.array([1]) """
 
 
 
@@ -104,9 +104,17 @@ def Create_Sine(amplitudes, frequencies,Fs, list_ADSR):
         k += 1 
 
     #Apply low-pass filter
-    cutoff = frequencies[0]/2
-    y_filtered = low_pass_Filter(t_vec, y_sum, Fs, cutoff)
+    frequencies = sorted(frequencies)
+    cutoff_high = frequencies[-1]
+    print(cutoff_high)
+    order_low = 5
+    y_filtered_high = high_pass_Filter(y_sum, Fs, cutoff_high, order_low)
+
+    cutoff_low = frequencies[0]
+    order_high = 10
+    y_filtered_low = low_pass_Filter(y_sum, Fs, cutoff_low, order_high)
     
+    y_filtered = y_filtered_high + y_filtered_low
     t1 = time.time()
     total = t1-t0
     print(f"Timing stopped! It took {total:0.7f}s")
@@ -125,11 +133,11 @@ t_vec, y_sum2, Fs = Create_Sine(np.array([40]), np.array([392]), 44100, list_ADS
 t_vec, y_sum3, Fs = Create_Sine(np.array([40]), np.array([349]), 44100, list_ADSR = [10,10,-1,0])
 t_vec, y_sum4, Fs = Create_Sine(np.array([40]), np.array([329.63]), 44100, list_ADSR = [10,10,-1,0])
 y_sum_again = y_sum1 + y_sum2 + y_sum3 + y_sum4
-plt.plot(t_vec, y_sum_again)
-plt.savefig("lyd.png")
-plt.show()
+""" plt.plot(t_vec, y_sum_again)
+plt.savefig("lyd1.png")
+plt.show() """
 
-m = 7
+""" m = 7
 len_y = len(y_sum_again)
 ext_y = np.zeros(len_y*m)
 beta = 1         # the exponent: 0=white noite; 1=pink noise;  2=red noise (also "brownian noise")
@@ -138,14 +146,14 @@ samples = len_y*m  # number of samples to generate (time series extension)
 Color_noise = cn.powerlaw_psd_gaussian(beta, samples, fmin = 0.5)
 Color_noise1 = cn.powerlaw_psd_gaussian(2, samples, fmin = 0.5)
 Color_noise2 = cn.powerlaw_psd_gaussian(0, samples, fmin = 0.5)
-
+ """
 
 """ for i in range(m):
     ext_y[i*len_y:(i+1)*len_y] = 
  """
 
 
-ext_y[:len_y] = y_sum1
+""" ext_y[:len_y] = y_sum1
 ext_y[len_y:2*len_y] = y_sum1 
 ext_y[2*len_y:3*len_y] = y_sum1
 ext_y[3*len_y:4*len_y] = y_sum4
@@ -156,7 +164,7 @@ ext_y[6*len_y:int(6.5*len_y)] = y_sum3[:22050]
 ext_y[int(6.5*len_y):7*len_y] = y_sum3[:22050]
 
 ext_y = ext_y + Color_noise/20 + Color_noise1/20 + Color_noise2/20
-
+ """
 
 
 """ pipe = sp.Popen([ FFMPEG_BIN,
@@ -178,4 +186,32 @@ t1_func = time.time()
 total = t1_func-t0_func
 print(f"Timing outside func stopped! It took {total:0.7f}s")
 
-#play(ext_y)
+
+
+
+
+print("Running with Brage's point calc")
+from pointsCalculation import getPoints, parseDict
+
+periodicFunc_list = [parseDict({"shape" : "sin","frequency" : 440,"amplitude": 1})]
+sampleRate = 44100
+y_sum_brage = getPoints(periodicFunc_list, 44100)
+play(y_sum_brage[1])
+
+y_filtered_low = low_pass_Filter(y_sum_brage[1], Fs, 0.7*periodicFunc_list[0].frequency, 10)
+plt.figure(1)
+plt.title("Low Pass")
+plt.plot(t_vec,y_filtered_low)
+play(y_filtered_low)
+plt.show()
+
+
+y_filtered_high = high_pass_Filter(y_sum_brage[1], Fs, 0.3*periodicFunc_list[0].frequency, 10)
+plt.figure(2)
+plt.title("High Pass")
+plt.plot(t_vec, y_filtered_high)
+play(y_filtered_high)
+
+plt.show()
+
+
