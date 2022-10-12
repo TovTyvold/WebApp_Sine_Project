@@ -50,5 +50,4 @@ if __name__ == "__main__":
     samples = [b for (_, b) in pointsCalculation.getPoints(freqs, ampls, [
         "sin" for _ in range(harmonicCount)], samplesCount, debug=False, seconds=1)]
     
-    sc = samplesToCB(samples)
-    play(sc)
+    play(samples)
