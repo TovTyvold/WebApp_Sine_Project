@@ -35,6 +35,17 @@ def Create_Sine(amplitudes, frequencies,Fs, list_ADSR):
         frequencies = list_numbers * np.random.rand(1,n) """
         frequencies = np.array([440])
 
+    if not phase[0]:
+        """ print("-------------------------------")
+        print("No phase, list is empty.")
+        print(f"Generating {n} random phases...")
+        #n phases between [0,5)
+        list_numbers = np.linspace(1,5,n)
+        frequencies = list_numbers * np.random.rand(1,n) """
+        phase = np.array([1])
+
+
+
 
     n_signals = len(frequencies)
 
@@ -148,7 +159,7 @@ ext_y = ext_y + Color_noise/20 + Color_noise1/20 + Color_noise2/20
 
 
 
-pipe = sp.Popen([ FFMPEG_BIN,
+""" pipe = sp.Popen([ FFMPEG_BIN,
        '-y', # (optional) means overwrite the output file if it already exists.
        "-f", 's16le', # means 16bit input
        "-acodec", "pcm_s16le", # means raw 16bit input
@@ -162,7 +173,7 @@ pipe = sp.Popen([ FFMPEG_BIN,
         stdin=sp.PIPE,stdout=sp.PIPE, stderr=sp.PIPE)
 print("yo")
 ext_y.astype("int16").tofile(pipe)
-
+ """
 t1_func = time.time()
 total = t1_func-t0_func
 print(f"Timing outside func stopped! It took {total:0.7f}s")
