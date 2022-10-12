@@ -25,10 +25,7 @@ async def hello(uri):
                     "frequency": 3*440,
                     "amplitude": 1/10
                 },
-            ],
-
-            "samples": 44100,
-            "seconds": 1.0
+            ]
         })
         await websocket.send(waveData)
 

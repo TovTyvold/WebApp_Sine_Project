@@ -19,13 +19,11 @@ def butter_lowpass_filter(data, cutoff, Fs, order):
     y = signal.lfilter(b, a, data)
     return y
 
-def low_pass_Filter(t, y_sum, Fs):
-
-    cutoff_lower = Fs/100
+def low_pass_Filter(t, y_sum, Fs, cutoff):
     order = 5
     noise = 1.5*np.cos(9*2*np.pi*t)
     data = y_sum 
-    y_filtered = butter_lowpass_filter(data, cutoff_lower, Fs, order)
+    y_filtered = butter_lowpass_filter(data, cutoff, Fs, order)
 
     """ 
     b, a = butter_lowpass(cutoff_lower, Fs, order)

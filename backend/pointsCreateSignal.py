@@ -2,16 +2,20 @@ from matplotlib.ft2font import BOLD
 import time
 import numpy as np 
 import matplotlib.pyplot as plt
-from envelope import fade_in_func, decay_func, fade_out_func, sustain_func
+import colorednoise as cn
 from filterAudio import low_pass_Filter
+from soundGen import play
+import subprocess as sp
+FFMPEG_BIN = "ffmpeg.exe"
 plt.style.use('ggplot')
 
 
-def Create_Sine(amplitudes, frequencies,Fs):
-    n = np.random.randint(3,10)
+def Create_Sine(amplitudes, frequencies,Fs, list_ADSR):
+
     t0 = time.time()
     print("Timing started....")
-    if not amplitudes:
+
+    if not amplitudes[0]:
         """ print("-------------------------------")
         print("No amplitudes, list is empty.")
         print(f"Generating {n} random amplitudes...")
@@ -22,117 +26,156 @@ def Create_Sine(amplitudes, frequencies,Fs):
         Fs = 5000
         print(f"Sampling is {Fs}")
 
-
-    if not frequencies:
-        max_freq_input = Fs/2
+    if not frequencies[0]:
         """ print("-------------------------------")
         print("No frequencies, list is empty.")
         print(f"Generating {n} random frequencies...")
         #n Frequencies between [0,100)
         list_numbers = np.linspace(30,max_freq_input,n)
         frequencies = list_numbers * np.random.rand(1,n) """
-        frequencies = np.array([Fs/2])
+        frequencies = np.array([440])
+
+    if not phase[0]:
+        """ print("-------------------------------")
+        print("No phase, list is empty.")
+        print(f"Generating {n} random phases...")
+        #n phases between [0,5)
+        list_numbers = np.linspace(1,5,n)
+        frequencies = list_numbers * np.random.rand(1,n) """
+        phase = np.array([1])
+
+
 
 
     n_signals = len(frequencies)
 
-    """ min_freq = np.min(frequencies)
-    max_freq = np.max(frequencies)
-    """
     # Set variables
-    T = 1/(Fs) # sampling period
-    #t = max_freq/(n_signals * (1/2) * min_freq) # seconds of sampling
-    t = 1
-    N = (Fs*t)/10 # total points in signal
-    omega = 2*np.pi*frequencies # angular frequency for sine waves
-    t_vec = np.arange(N)*T # time vector for plotting
+    T = 1/(Fs) 
+    t_org = 1
+    t = t_org + np.sum(list_ADSR)
+    N = (Fs) 
+    omega = 2*np.pi*frequencies 
+    t_vec = np.arange(N)*T 
     y = np.zeros((n_signals,len(t_vec)))
+
+
+    if t != 0:
+        Amp_array = np.zeros(N)
+        A_time = int((len(t_vec)*list_ADSR[0])/t)
+        D_time = int((len(t_vec)*list_ADSR[1])/t)
+        S_time = int((len(t_vec)*(t_org + list_ADSR[2]))/t)
+        R_time = int((len(t_vec)*list_ADSR[3])/t)
+        A = np.zeros(A_time)
+        D = np.zeros(D_time)
+        S = np.zeros(S_time)
+        R = np.zeros(R_time)
+
+        A_lin = np.linspace(0,4,A_time)
+        D_lin = np.linspace(4,0.5,D_time)
+        R_lin = np.linspace(0.5,0,R_time)
+        Attack = A + A_lin
+        Decay = D + D_lin
+        Sustain = S + 0.5
+        Release = R + R_lin
+
+        Prog_1 = A_time + D_time
+        Prog_2 = A_time + D_time + S_time
+    
+
+        Amp_array[:A_time] = Attack
+        Amp_array[A_time:Prog_1] = Decay
+        Amp_array[Prog_1:Prog_2] = Sustain
+        Amp_array[Prog_2:Prog_2 + R_time] = Release
+
+    else:
+        Amp_array = 1
+        t = 1
+        N = Fs*t
+        omega = 2*np.pi*frequencies 
+        t_vec = np.arange(N)*T 
+        y = np.zeros((n_signals,len(t_vec)))
 
     k = 0
     y_sum = 0
+
     for i in omega:
-        y[k] = amplitudes[k] * np.sin(i*t_vec)
-        #y[k] = np.sin(i[k]*t_vec) #Amplitude == 1
+        y[k] = (Amp_array * amplitudes[k]) * np.sin(i*t_vec)
         y_sum += y[k] 
         k += 1 
-    
-    """
-    Blocks for ENVELOPE
-    """
-    duration = N
-
-
-    """ def envelope_slice(y_sum) """
-    # List is [Fade_in, Decay, Sustain, Fade_out]
-    boolean_env = [True, True, True, True]
-    #boolean_env = [True, False, False, True]
-    
-    dur_scale = boolean_env.count(True)
-    n_dur = int(duration / dur_scale)
-    dur_list = [0, 0, 0, 0]
-
-
-
-    counter = 0
-    for i in boolean_env:
-        if i == True:
-            dur_list[counter] = n_dur
-        counter += 1
-
-    fade_in_duration = dur_list[0]
-    decay_duration = dur_list[1]
-    sustain_duration = dur_list[2]
-    fade_out_duration = dur_list[3]
-
-    if boolean_env[0] == True:
-        y_sum = fade_in_func(y_sum, fade_in_duration)
-    
-    #Decay
-    if boolean_env[1] == True:
-        if boolean_env[0] == True:
-            y_sum, decay_val = decay_func(y_sum, decay_duration, fade_in_duration)
-            
-        else:
-            y_sum, decay_val = decay_func(y_sum, decay_duration, fade_duration = 0)
-
-    #Sustain
-    if boolean_env[2] == True:
-        if boolean_env[1] == True:
-            y_sum, sustain_val = sustain_func(y_sum, sustain_duration, fade_in_duration, decay_duration, decay_val)
-
-        elif boolean_env[1] == False:
-            y_sum, sustain_val = sustain_func(y_sum, sustain_duration, fade_in_duration, decay_duration, decay_val = 1)
-
-
-    #Fade out
-    if boolean_env[3] == True: 
-        y_sum = fade_out_func(y_sum, fade_out_duration, sustain_val)
-
 
     #Apply low-pass filter
-    y_filtered = low_pass_Filter(t_vec, y_sum, Fs)
-                
+    cutoff = frequencies[0]/2
+    y_filtered = low_pass_Filter(t_vec, y_sum, Fs, cutoff)
     
     t1 = time.time()
     total = t1-t0
     print(f"Timing stopped! It took {total:0.7f}s")
 
-    plt.figure()
-    plt.title(f"Attack: {boolean_env[0]}, Decay: {boolean_env[1]}, Sustain: {boolean_env[2]} and Release: {boolean_env[3]}. ", fontsize=8)
-    #plt.xscale('log')
+    """ plt.figure()
     plt.plot(t_vec, y_filtered)
-    plt.savefig(f"enve{dur_scale, Fs}.png")
-    #plt.show()
+    plt.show() """
 
-    #norm_max = y_sum/np.max(y_sum)
-    return t_vec, y_sum, Fs#, norm_max
+    return t_vec, y_filtered, Fs#, norm_max
 
 t0_func = time.time()
 print("Timing outside func started....")
-for i in range(2,5):
-    Fs = 10**i
-    Create_Sine([], [], Fs)
 
+t_vec, y_sum1, Fs = Create_Sine(np.array([40]), np.array([440]), 44100, list_ADSR = [10,10,-1,0])
+t_vec, y_sum2, Fs = Create_Sine(np.array([40]), np.array([392]), 44100, list_ADSR = [10,10,-1,0])
+t_vec, y_sum3, Fs = Create_Sine(np.array([40]), np.array([349]), 44100, list_ADSR = [10,10,-1,0])
+t_vec, y_sum4, Fs = Create_Sine(np.array([40]), np.array([329.63]), 44100, list_ADSR = [10,10,-1,0])
+y_sum_again = y_sum1 + y_sum2 + y_sum3 + y_sum4
+plt.plot(t_vec, y_sum_again)
+plt.savefig("lyd.png")
+plt.show()
+
+m = 7
+len_y = len(y_sum_again)
+ext_y = np.zeros(len_y*m)
+beta = 1         # the exponent: 0=white noite; 1=pink noise;  2=red noise (also "brownian noise")
+samples = len_y*m  # number of samples to generate (time series extension)
+
+Color_noise = cn.powerlaw_psd_gaussian(beta, samples, fmin = 0.5)
+Color_noise1 = cn.powerlaw_psd_gaussian(2, samples, fmin = 0.5)
+Color_noise2 = cn.powerlaw_psd_gaussian(0, samples, fmin = 0.5)
+
+
+""" for i in range(m):
+    ext_y[i*len_y:(i+1)*len_y] = 
+ """
+
+
+ext_y[:len_y] = y_sum1
+ext_y[len_y:2*len_y] = y_sum1 
+ext_y[2*len_y:3*len_y] = y_sum1
+ext_y[3*len_y:4*len_y] = y_sum4
+ext_y[4*len_y:int(4.5*len_y)] = y_sum3[:22050]
+ext_y[int(4.5*len_y):5*len_y] = y_sum3[:22050]
+ext_y[5*len_y:6*len_y] = y_sum4
+ext_y[6*len_y:int(6.5*len_y)] = y_sum3[:22050]
+ext_y[int(6.5*len_y):7*len_y] = y_sum3[:22050]
+
+ext_y = ext_y + Color_noise/20 + Color_noise1/20 + Color_noise2/20
+
+
+
+""" pipe = sp.Popen([ FFMPEG_BIN,
+       '-y', # (optional) means overwrite the output file if it already exists.
+       "-f", 's16le', # means 16bit input
+       "-acodec", "pcm_s16le", # means raw 16bit input
+       '-r', "44100", # the input will have 44100 Hz
+       '-ac','2', # the input will have 2 channels (stereo)
+       '-i', '-', # means that the input will arrive from the pipe
+       '-vn', # means "don't expect any video input"
+       '-acodec', "libfdk_aac" # output audio codec
+       '-b', "3000k", # output bitrate (=quality). Here, 3000kb/second
+       'my_awesome_output_audio_file.mp3'],
+        stdin=sp.PIPE,stdout=sp.PIPE, stderr=sp.PIPE)
+print("yo")
+ext_y.astype("int16").tofile(pipe)
+ """
 t1_func = time.time()
 total = t1_func-t0_func
 print(f"Timing outside func stopped! It took {total:0.7f}s")
+
+#play(ext_y)

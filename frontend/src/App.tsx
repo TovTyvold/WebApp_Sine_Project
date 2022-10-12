@@ -66,8 +66,12 @@ function App() {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.currentTarget;
+    let val: any = value;
+    if (!(name === "shape")) {
+      val = parseInt(value);
+    }
     const list: any[] = [...inputValues];
-    list[index][name] = value;
+    list[index][name] = val;
     setInputValues(list);
   };
 
@@ -94,11 +98,14 @@ function App() {
   // Get values from inputs
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setDataPoints(await sendData(API_POINTS, inputValues));
+    //setDataPoints(await sendData(API_POINTS, inputValues));
+    //console.log("Datapoints: ", dataPoints);
 
-    ws.send(JSON.stringify(inputValues));
-
-    console.log("Datapoints: ", dataPoints);
+    const payload = {
+      funcs: inputValues,
+    };
+    //console.log(JSON.stringify(payload));
+    ws.send(JSON.stringify(payload));
   };
 
   return (
@@ -116,21 +123,21 @@ function App() {
                   type='number'
                   name='frequency'
                   placeholder='Hz'
-                  value={element.frequency || ""}
+                  value={element.frequency}
                   onChange={(event) => handleInputChange(index, event)}
                 />
                 <input
                   type='number'
                   name='amplitude'
                   placeholder='Amplitude'
-                  value={element.amplitude || ""}
+                  value={element.amplitude}
                   onChange={(event) => handleInputChange(index, event)}
                 />
                 <input
                   type='text'
                   name='shape'
                   placeholder='Shape'
-                  value={element.shape || ""}
+                  value={element.shape}
                   onChange={(event) => handleInputChange(index, event)}
                 />
                 {index ? (
