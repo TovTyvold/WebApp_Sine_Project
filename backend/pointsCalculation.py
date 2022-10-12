@@ -45,35 +45,38 @@ class PeriodicFunc:
         self.amplitude = amplitude
         self.frequency = frequency
   
-def parseJSON(json):
+def parseDict(json):
     shape = json["shape"]
     amplitude = json["amplitude"]
     frequency = json["frequency"]
     return PeriodicFunc(shape, amplitude, frequency)
 
-def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0) -> List[Tuple[float, float]]:
-    points = []
-    maxval = 0
+def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0) -> Tuple[List[float], List[float]]:
+    xpoints: List[float] = []
+    ypoints: List[float] = []
+    maxval: float = 0
+
     for i in range(0, int(sampleRate * seconds)):
         #-1 to get 0th and 1th value
         #both of which will be =0
-        xsample : ctypes.c_float = i / (sampleRate-1) 
+        xsample : float = i / (sampleRate-1) 
+        ysample : float = 0
 
-        ysample : ctypes.c_float = 0
         for func in funcs:
             ysample += conversionTable[func.shape](func.amplitude, func.frequency, xsample)
         
         if ysample > maxval:
             maxval = ysample
 
-        points.append((xsample, ysample))
+        xpoints.append(xsample)
+        ypoints.append(ysample)
 
     #normalisation
-    points = [(a, b/maxval) for (a, b) in points]
-
+    ypoints = [y/maxval for y in ypoints]
+    
     if (debug):
-        for p in points:
+        for p in zip(xpoints, ypoints):
             print(str(p[0]) + ", " + str(p[1]))
 
     #points is sampleRate long
-    return points
+    return (xpoints, ypoints)

@@ -25,37 +25,53 @@ function App() {
   const [inputValues, setInputValues] = useState<Wave[]>([defaultInput]);
 
   const context = new AudioContext();
-  let chunks: any = [];
   const ws = new WebSocket(API_WS);
   ws.binaryType = "arraybuffer";
 
+  let channels = 1;
+  const frameCount = 44100;
+  let bytesRead = 0;
+  const buffer = new AudioBuffer({
+    numberOfChannels: channels,
+    length: frameCount,
+    sampleRate: 44100,
+  });
+
   ws.onmessage = (message) => {
-    message.data instanceof ArrayBuffer
-      ? chunks.push(message.data)
-      : createSoundSource(chunks);
+    const chunk = new Float32Array(message.data);
+    if (message.data instanceof ArrayBuffer) {
+      for (let i = 0; i < bytesRead; i++) {
+        buffer.getChannelData(0)[i + bytesRead] = chunk[i];
+      }
+      bytesRead += chunk.length;
+    }
   };
 
-  async function createSoundSource(data: any) {
-    await Promise.all(
-      data.map(async (chunk: any) => {
-        const soundBuffer = await context.decodeAudioData(chunk);
-        const soundSource = context.createBufferSource();
-        soundSource.buffer = soundBuffer;
-        soundSource.connect(context.destination);
-        soundSource.start(0);
-      })
-    );
+  function playAudio() {
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+    source.start();
+    source.onended = () => {
+      console.log("Sound is done playing!");
+    };
   }
 
-  useEffect(() => {}, []);
+  // useEffect(() => {
+  //   testAudioStream();
+  // }, []);
 
   const handleInputChange = (
     index: number,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.currentTarget;
+    let val: any = value;
+    if (!(name === "shape")) {
+      val = parseInt(value);
+    }
     const list: any[] = [...inputValues];
-    list[index][name] = value;
+    list[index][name] = val;
     setInputValues(list);
   };
 
@@ -82,15 +98,20 @@ function App() {
   // Get values from inputs
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setDataPoints(await sendData(API_POINTS, inputValues));
+    //setDataPoints(await sendData(API_POINTS, inputValues));
+    //console.log("Datapoints: ", dataPoints);
 
-    console.log("Datapoints: ", dataPoints);
+    const payload = {
+      funcs: inputValues,
+    };
+    //console.log(JSON.stringify(payload));
+    ws.send(JSON.stringify(payload));
   };
 
   return (
     <div className='App'>
       <div className='container'>
-        <header>Wave Calculator</header>
+        <header>Wave Generator</header>
         <section className='graph'>
           <Graph data={dataPoints} />
         </section>
@@ -133,6 +154,8 @@ function App() {
           <button onClick={(e) => addInput(e)}>Add</button>
           <button type='submit'>Generate</button>
         </form>
+
+        <button onClick={playAudio}>Play</button>
       </div>
     </div>
   );

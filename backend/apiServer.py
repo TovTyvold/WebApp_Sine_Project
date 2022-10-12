@@ -64,34 +64,35 @@ class PointsAnswer(BaseModel):
             }
         }
 
+
 class FreqQuery(BaseModel):
-    funcs: List[Dict[ str, Union[float, int, str] ]]
+    funcs: List[Dict[str, Union[float, int, str]]]
     seconds: Optional[float] = 1.0
     samples: Optional[int] = 400
 
     class Config:
         schema_extra = {
-            "example": { 
-                "funcs" : [{"shape": "sin", "frequency": 2, "amplitude": 1}], 
+            "example": {
+                "funcs": [{"shape": "sin", "frequency": 2, "amplitude": 1}],
                 "seconds": 1.0,
                 "samples": 400
             }
         }
 
+def FreqQueryToPoints(query: Dict, debug=False):
+    funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
+    samples = 44100 if "samples" not in query else query["samples"]
+    seconds = 1 if "seconds" not in query else query["seconds"]
+    l = pointsCalculation.getPoints(funcs, samples, debug=debug, seconds=seconds)
+
+    return l
+
+
 @app.post("/points", response_model=PointsAnswer)
 async def getPoints(query: FreqQuery):
-    funcs = [pointsCalculation.parseJSON(func) for func in query.funcs]
-    l = pointsCalculation.getPoints(funcs, query.samples, debug=True, seconds=query.seconds)
+    l = FreqQueryToPoints(query.dict(), debug=True)
 
-    #convert l to a dictionary
-    d = []
-    for p in l:
-        x = p[0]
-        y = p[1]
-
-        d.append({"x": x, "y": y})
-
-    return {"points": d}
+    return {"points": [{"x": x, "y": y} for (x, y) in zip(*l)]}
 
 chunkSize = 1024
 samplesCount = 44100
@@ -99,9 +100,13 @@ samplesCount = 44100
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    await websocket.send_text(str(samplesCount))
+    json = await websocket.receive_json()
+    waveData = FreqQueryToPoints(json, debug=False)[1]
 
-    cb = soundGen.samplesToCB([y for (_,y) in pointsCalculation.getPoints([ pointsCalculation.parseJSON({"shape" : "sin", "frequency" : 440, "amplitude" : 1}) ], 44100, debug=False)])
+    print(waveData)
+
+    cb = soundGen.samplesToCB(waveData)
+
     data = cb.readChunk(chunkSize)
     while data:
         await websocket.send_bytes(data)
