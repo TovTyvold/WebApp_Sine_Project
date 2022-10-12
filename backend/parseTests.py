@@ -1,24 +1,11 @@
-from typing import Dict
+from typing import Dict, List, Union, Optional
+import math
+import functools
 
 sines = {"+": [
     {"sin": {"ampl" : 2, "freq": 1}},
     {"sin": {"ampl" : 5, "freq": 3}},
 ]}
-
-math = {
-    "+": [ #num type
-        {"+": [ #num type
-            {"num": 1},
-            {"num": 2},
-        ]},
-        {"neg": 
-            {"*": [ #num type
-                {"num": 2},
-                {"num": 5},
-            ]}
-        }
-    ]
-}
 
 operators = ["-", "+", "x"]
 terminals = ['0','1','2','3','4','5','6','7','8','9']
@@ -79,5 +66,22 @@ def parse(math : dict) -> int:
 
         return s
 
+mathexpr = {
+    "+": [ #num type
+        {"+": [ #num type
+            {"num": 1},
+            {"num": 2},
+        ]},
+        {"neg": 
+            {"*": [ #num type
+                {"num": 2},
+                {"num": 5},
+            ]}
+        }
+    ]
+}
 
-print(parse(math))
+print(parse(mathexpr))
+
+
+#parse sine functions + : [ "sin", "sin" ] -> point list 

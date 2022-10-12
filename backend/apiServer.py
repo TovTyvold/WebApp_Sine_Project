@@ -100,7 +100,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
     json = await websocket.receive_json()
     waveData = FreqQueryToPoints(json, debug=False)[1]
-    await websocket.send_json({"samples": samplesCount, "byteType": "float"})
 
     cb = soundGen.samplesToCB(waveData)
 
