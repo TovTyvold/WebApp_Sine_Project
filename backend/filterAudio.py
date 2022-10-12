@@ -6,12 +6,8 @@ def butter_lowpass_filter(data, cutoff, Fs, order):
     y = signal.lfilter(b, a, data)
     return y
 
-<<<<<<< HEAD
 def low_pass_Filter(t, y_sum, Fs, cutoff):
     order = 5
-=======
-def low_pass_Filter(y_sum, Fs, cutoff, order):
->>>>>>> main
     data = y_sum 
     y_filtered_low = butter_lowpass_filter(data, cutoff, Fs, order)
     # Call for low-pass
