@@ -21,7 +21,6 @@ def butter_lowpass_filter(data, cutoff, Fs, order):
 
 def low_pass_Filter(t, y_sum, Fs, cutoff):
     order = 5
-    noise = 1.5*np.cos(9*2*np.pi*t)
     data = y_sum 
     y_filtered = butter_lowpass_filter(data, cutoff, Fs, order)
 
