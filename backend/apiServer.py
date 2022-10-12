@@ -69,35 +69,67 @@ class PointsAnswer(BaseModel):
 
 
 class FreqQuery(BaseModel):
-    funcs: List[Dict[str, Union[float, str]]]
+    funcs: List[Dict[str, Union[float, str, List[float]]]]
     seconds: Optional[float] = 1.0
     samples: Optional[int] = 400
 
     class Config:
         schema_extra = {
             "example": {
-                "funcs": [{"shape": "sin", "frequency": 2, "amplitude": 1}],
+                "funcs": [{"shape": "sin", "frequency": 2, "amplitude": 1, "adsr": [0.25,0.25,0.25,0.25]}],
                 "seconds": 1.0,
                 "samples": 400
             }
         }
 
-def FreqQueryToPoints(query: Dict, debug=False):
-    funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
 
-    a = [{"wave": f} for f in query["funcs"]]
-    print(a)
+def FreqQueryToPoints(query: Dict, debug = False, doEnvelope = True):
+    #funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
 
     query["samples"] = 44100 if "samples" not in query else query["samples"]
     query["seconds"] = 1 if "seconds" not in query else query["seconds"]
-    l = pointsCalculation.getPoints(funcs, query["samples"], debug=debug, seconds=query["seconds"])
 
-    return l
+    l = []
+    if doEnvelope:
+        for func in query["funcs"]:
+            d = {"envelope": {
+                "points": {
+                    "wave": {
+                        "shape": func["shape"], "frequency": func["frequency"], "amplitude": func["amplitude"]
+                    },
+                },
+                "numbers": {
+                    "list": [{"num": val*query["seconds"]} for val in ([p*query["samples"] for p in [0.25, 0.25, 0.25, 0.25]] if "adsl" not in func else func["adsl"])]
+                }
+            }}
+
+            l.append(d)
+    else:
+        for func in query["funcs"]:
+            l.append({"wave": {
+                    "shape": func["shape"], "frequency": func["frequency"], "amplitude": func["amplitude"]
+                }})
+
+    d = {"+": l}
+
+    if debug:
+        print(d)
+
+    # l = pointsCalculation.getPoints(
+    #     funcs, query["samples"], debug=debug, seconds=query["seconds"], adsr=query["adsr"])
+    ypoints = pointsCalculation.parseSine(d, query["samples"], query["seconds"])
+    xpoints = pointsCalculation.genSamples(query["samples"], query["seconds"])
+
+    if (debug):
+        for (x,y) in zip(xpoints, ypoints):
+            print(str(x) + ", " + str(y))
+
+    return (xpoints, ypoints)
 
 
 @app.post("/points", response_model=PointsAnswer)
 async def getPoints(query: FreqQuery):
-    l = FreqQueryToPoints(query.dict(), debug=True)
+    l = FreqQueryToPoints(query.dict(), debug=True, doEnvelope=False)
 
     return {"points": [{"x": x, "y": y} for (x, y) in zip(*l)]}
 
@@ -108,16 +140,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     json = await websocket.receive_json()
-    waveData = FreqQueryToPoints(json, debug=False)
-
-    seconds = json["seconds"]
-
-    if "adsr" in json:
-        adsrData = json["adsr"] # [0.25, 0.25, 0.25, 0.25]
-    else:
-        adsrData = [0.25, 0.25, 0.25, 0.25]
-
-    adsrData = [percent * seconds for percent in adsrData] #1,1,1,1 if seconds = 4
+    waveData = FreqQueryToPoints(json, debug=False,doEnvelope=False)
 
     freqWindow = 200
     amount = int(samplesCount / freqWindow)
@@ -125,12 +148,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await websocket.send_json(displayData)
 
+    waveData = FreqQueryToPoints(json, debug=False)
+
     # for d in displayData["points"]:
     #     print(str(d["x"]) + ", " + str(d["y"]))
 
     #await websocket.send_json(displayData)
 
-    waveData = (waveData[0], ADSR_mod.ADSR(waveData[1], adsrData, 44100, sustainAmplitude=0.7, maxAmplitude=1))
     cb = soundGen.samplesToCB(waveData[1])
 
     data = cb.readChunk(chunkSize)

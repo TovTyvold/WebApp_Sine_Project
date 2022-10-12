@@ -38,7 +38,7 @@ class PeriodicFunc:
     amplitude: float
     frequency: float
 
-    def __init__(self, shape, amplitude, frequency):
+    def __init__(self, shape, amplitude, frequency, adsr):
         self.shape = shape
         self.amplitude = amplitude
         self.frequency = frequency
@@ -47,9 +47,10 @@ def parseDict(d):
     shape = d["shape"]
     amplitude = d["amplitude"]
     frequency = d["frequency"]
-    return PeriodicFunc(shape, amplitude, frequency)
+    adsr = d["adsr"]
+    return PeriodicFunc(shape, amplitude, frequency, adsr)
 
-def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0) -> Tuple[List[float], List[float]]:
+def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0, adsr = None) -> Tuple[List[float], List[float]]:
     xpoints: List[float] = []
     ypoints: List[float] = []
     maxval: float = 0
@@ -71,7 +72,7 @@ def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, 
 
     #normalisation
     ypoints = [y/maxval for y in ypoints]
-    
+
     if (debug):
         for p in zip(xpoints, ypoints):
             print(str(p[0]) + ", " + str(p[1]))
@@ -80,79 +81,72 @@ def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, 
     return (xpoints, ypoints)
 
 
-samples = 10
+samples = 100
+seconds = 4
 
 def genSamples(sampleCount : int, seconds : float):
     return [i / sampleCount for i in range(int(seconds * sampleCount))]
 
-def parseSine(data : dict) -> List[float]:
+def parseSine(data : dict, samples, seconds) -> List[float]:
     for k in data.keys():
         v = data[k]
+
         if k == "wave": #-> points
             func = conversionTable[v["shape"]]
-            #def square(amplitude: float, frequency: int, x: float) -> float:
             ampl = v["amplitude"]
             freq = v["frequency"]
-            xpoints = genSamples(samples, 1.0)
-            return (map(lambda x : func(ampl, freq, x), xpoints))
+
+            xpoints = genSamples(samples, seconds)
+            ypoints = list(map(lambda x : func(ampl, freq, x), xpoints))
+            return ypoints
 
         if k == "envelope": #points, A,D,S,R -> points
-            points = parseSine(v["points"])
-            A = parseSine(v["A"])
-            D = parseSine(v["D"])
-            S = parseSine(v["S"])
-            R = parseSine(v["R"])
-            return points
+            points = parseSine(v["points"], samples, seconds)
+            adsr = parseSine(v["numbers"], samples, seconds)
+            return ADSR_mod.ADSR(points, adsr, int(samples*seconds))
 
         if k == "num": # -> num
             return v
+        
+        if k == "list":
+            return [parseSine(num, samples, seconds) for num in v]
 
         if k == "+": # points, points, ... -> points
-            l = ([parseSine(f) for f in data[k]] )
-            return list(functools.reduce(lambda xs, ys: map(lambda x, y: x+y, xs, ys), l))
+            l = ([parseSine(f, samples, seconds) for f in data[k]] )
+
+            ypoints = list(functools.reduce(lambda xs, ys: map(lambda x, y: x+y, xs, ys), l))
+            yMax = max(ypoints)
+            ypoints = [y / yMax for y in list(ypoints)]
+            return ypoints
 
 
 if __name__ == "__main__":
-    l = parseSine({"+":
-                   [
-                       {
-                           "envelope": {
-                               "points": {
-                                   "+": [
-                                       {"wave": {"shape": "sin",
-                                                 "frequency": 1, "amplitude": 1}},
-                                       {"wave": {"shape": "sin",
-                                                 "frequency": 1, "amplitude": 1}}
-                                   ],
-                               },
-                               "A": {
-                                   "num": 1
-                               },
-                               "D": {
-                                   "num": 1
-                               },
-                               "S": {
-                                   "num": 1
-                               },
-                               "R": {
-                                   "num": 1
-                               }
-                           }
-                       },
-                       {
-                           "wave": {
-                               "shape": "sin", "frequency": 3, "amplitude": 2
-                           }
-                       }
-                   ]
-                   })
+    l = parseSine({
+        "envelope" : {
+            "points" : {
+                "wave": {"shape": "sin", "frequency": 4, "amplitude": 5},
+            },
+            "numbers": {
+                "list": [
+                    {
+                        "num": 1
+                    },
+                    {
+                        "num": 1
+                    },
+                    {
+                        "num": 1
+                    },
+                    {
+                        "num": 1
+                    }
+                ]
+            }
+        }
+    }, samples, seconds)
 
-    for i in range(10):
-        print("(" + str(i/10) + ", " + str(l[i]) + ")")
+    l = parseSine({'+': [{'envelope': {'points': {'wave': {'shape': 'sin', 'frequency': 5.0, 'amplitude': 1.0}},
+                         'numbers': {'list': [{'num': 0.25}, {'num': 0.25}, {'num': 0.25}, {'num': 0.25}]}}}]}, samples, seconds)
 
-    #def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0) -> Tuple[List[float], List[float]]:
-    points = getPoints([parseDict({"shape": "sin", "frequency": 2, "amplitude": 1})], 100, debug = False, seconds = 4)
-    points = (points[0], ADSR_mod.ADSR(points[1], [1,1,1,1], 100*4, sustainAmplitude=0.7, maxAmplitude=1))
-    
-    for p in zip(*points):
-        print(str(p[0]) + ", " + str(p[1]))
+    for i in range(samples*seconds):
+        print(str(i/samples) + ", " + str(l[i]))
