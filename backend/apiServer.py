@@ -6,7 +6,7 @@ from typing import List, Optional, Dict, Union
 from fastapi import FastAPI, Response, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
- 
+
 import pointsCalculation
 import soundGen
 import ADSR_mod
@@ -14,7 +14,9 @@ import ADSR_mod
 app = FastAPI()
 
 origins = ["http://localhost", "http://localhost:3000"]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=origins,
+                   allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
 
 class PointsAnswer(BaseModel):
     points: List[Dict[str, float]]
@@ -82,6 +84,7 @@ class FreqQuery(BaseModel):
             }
         }
 
+
 def FreqQueryToPoints(query: Dict, debug=False):
     funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
 
@@ -90,7 +93,8 @@ def FreqQueryToPoints(query: Dict, debug=False):
 
     query["samples"] = 44100 if "samples" not in query else query["samples"]
     query["seconds"] = 1 if "seconds" not in query else query["seconds"]
-    l = pointsCalculation.getPoints(funcs, query["samples"], debug=debug, seconds=query["seconds"])
+    l = pointsCalculation.getPoints(
+        funcs, query["samples"], debug=debug, seconds=query["seconds"])
 
     return l
 
@@ -103,6 +107,8 @@ async def getPoints(query: FreqQuery):
 
 chunkSize = 1024
 samplesCount = 44100
+
+
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -113,24 +119,27 @@ async def websocket_endpoint(websocket: WebSocket):
     seconds = json["seconds"]
 
     if "adsr" in json:
-        adsrData = json["adsr"] # [0.25, 0.25, 0.25, 0.25]
+        adsrData = json["adsr"]  # [0.25, 0.25, 0.25, 0.25]
     else:
         adsrData = [0.25, 0.25, 0.25, 0.25]
 
-    adsrData = [percent * seconds for percent in adsrData] #1,1,1,1 if seconds = 4
+    # 1,1,1,1 if seconds = 4
+    adsrData = [percent * seconds for percent in adsrData]
 
-    freqWindow = 200
+    freqWindow = 10
     amount = int(samplesCount / freqWindow)
-    displayData = {"points": [{"x": freqWindow*x, "y": y} for (x,y) in list(zip(*waveData))[:amount]]}
+    displayData = {"points": [{"x": freqWindow*x, "y": y}
+                              for (x, y) in list(zip(*waveData))[:amount]]}
 
     await websocket.send_json(displayData)
 
     # for d in displayData["points"]:
     #     print(str(d["x"]) + ", " + str(d["y"]))
 
-    #await websocket.send_json(displayData)
+    # await websocket.send_json(displayData)
 
-    waveData = (waveData[0], ADSR_mod.ADSR(waveData[1], adsrData, 44100, sustainAmplitude=0.7, maxAmplitude=1))
+    waveData = (waveData[0], ADSR_mod.ADSR(
+        waveData[1], adsrData, 44100, sustainAmplitude=0.7, maxAmplitude=1))
     cb = soundGen.samplesToCB(waveData[1])
 
     data = cb.readChunk(chunkSize)
@@ -141,6 +150,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.close()
 
 if __name__ == "__main__":
-    config = uvicorn.Config("apiServer:app", port=5000, log_level="info", reload=True)
+    config = uvicorn.Config("apiServer:app", port=5000,
+                            log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()
