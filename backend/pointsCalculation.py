@@ -4,6 +4,7 @@ from typing import Union, List, Tuple
 import random
 import ADSR_mod
 import functools
+import soundGen
 
 def square(amplitude: float,  frequency: float, x: float) -> float:
     return 2 * amplitude * (2 * math.floor(frequency * x) - math.floor(2 * frequency * x) + 1 - 0.5)
@@ -33,6 +34,41 @@ conversionTable = {
     "triangle": WaveType.TRIANGLE,
 }
 
+notes = {"C": 0,
+         "C#": 1,
+         "Db": 1,
+         "D": 2,
+         "D#": 3,
+         "Eb": 3,
+         "E": 4,
+         "E#": 5,
+         "F": 5,
+         "F#": 6,
+         "Gb": 6,
+         "G": 7,
+         "G#": 8,
+         "Ab": 8,
+         "A": 9,
+         "A#": 10,
+         "Bb": 10,
+         "B": 11}
+
+def noteToFreq(note : str) -> float:
+    noteName = ""
+    pitch = ""
+    for c in note:
+        if c.isdecimal():
+            pitch += c
+        else:
+            noteName += c
+
+    stepsAway = notes[noteName] + (int(pitch) - 4) * 12
+
+    cPitch = 440.0*math.pow((math.pow(2.0, 1.0/12.0)), -9)
+
+    return cPitch*math.pow((math.pow(2.0, 1.0/12.0)), stepsAway)
+
+#Deprecated, use parse
 class PeriodicFunc:
     shape: str
     amplitude: float
@@ -43,6 +79,7 @@ class PeriodicFunc:
         self.amplitude = amplitude
         self.frequency = frequency
   
+#Deprecated, use parse
 def parseDict(d):
     shape = d["shape"]
     amplitude = d["amplitude"]
@@ -50,6 +87,7 @@ def parseDict(d):
     adsr = d["adsr"]
     return PeriodicFunc(shape, amplitude, frequency, adsr)
 
+#Deprecated, use parse
 def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, seconds : float = 1.0, adsr = None) -> Tuple[List[float], List[float]]:
     xpoints: List[float] = []
     ypoints: List[float] = []
@@ -80,14 +118,15 @@ def getPoints(funcs : List[PeriodicFunc], sampleRate: int, debug: bool = False, 
     #points is sampleRate long
     return (xpoints, ypoints)
 
-
-samples = 100
-seconds = 4
-
 def genSamples(sampleCount : int, seconds : float):
     return [i / sampleCount for i in range(int(seconds * sampleCount))]
 
-def parseSine(data : dict, samples, seconds) -> List[float]:
+
+#dataTypes: num, points
+#functions: +[], noise(points), envelope(points, list[int]), wave
+
+#parse AST given by data generating point samples
+def parse(data : dict, samples, seconds) -> List[float]:
     for k in data.keys():
         v = data[k]
 
@@ -101,18 +140,25 @@ def parseSine(data : dict, samples, seconds) -> List[float]:
             return ypoints
 
         if k == "envelope": #points, A,D,S,R -> points
-            points = parseSine(v["points"], samples, seconds)
-            adsr = parseSine(v["numbers"], samples, seconds)
+            points = parse(v["points"], samples, seconds)
+            adsr = parse(v["numbers"], samples, seconds)
+            adsrSum = sum(adsr)
+            adsr = list(map(lambda x : (x/adsrSum)*seconds, adsr))
             return ADSR_mod.ADSR(points, adsr, int(samples*seconds))
+
+        if k == "noise":
+            coloredNoise = lambda x : x
+            params = parse(v["numbers"], samples, seconds)
+            return coloredNoise(v)
 
         if k == "num": # -> num
             return v
         
         if k == "list":
-            return [parseSine(num, samples, seconds) for num in v]
+            return [parse(num, samples, seconds) for num in v]
 
         if k == "+": # points, points, ... -> points
-            l = ([parseSine(f, samples, seconds) for f in data[k]] )
+            l = ([parse(f, samples, seconds) for f in data[k]] )
 
             ypoints = list(functools.reduce(lambda xs, ys: map(lambda x, y: x+y, xs, ys), l))
             yMax = max(ypoints)
@@ -120,33 +166,58 @@ def parseSine(data : dict, samples, seconds) -> List[float]:
             return ypoints
 
 
-if __name__ == "__main__":
-    l = parseSine({
-        "envelope" : {
-            "points" : {
-                "wave": {"shape": "sin", "frequency": 4, "amplitude": 5},
-            },
-            "numbers": {
-                "list": [
-                    {
-                        "num": 1
-                    },
-                    {
-                        "num": 1
-                    },
-                    {
-                        "num": 1
-                    },
-                    {
-                        "num": 1
-                    }
-                ]
-            }
+l = {"+": [
+        {"noise" : { 
+            "points": {"wave": {"shape": "sin", "frequency": 1, "amplitude": 5}},
+            "numbers": {"list": [{"num": 2}]}
+        }},
+        {"wave": {"shape": "sin", "frequency": 2, "amplitude": 1}}
+    ]
+}
+
+#generate samples for imperial march from star wars
+def starWars():
+    l = lambda note : {'+': [
+        {'envelope': 
+            {'points': {'wave': {'shape': 'sin', 'frequency': noteToFreq(note), 'amplitude': 15}}, 'numbers': {'list': [{'num': 1}, {'num': 1}, {'num': 5}, {'num': 1}]}}
+        },
+        {'envelope': 
+            {'points': {'wave': {'shape': 'sin', 'frequency': 2*noteToFreq(note), 'amplitude': 3}}, 
+            'numbers': {'list': [{'num': 1}, {'num': 1}, {'num': 5}, {'num': 1}]}}
+        },
+        {'envelope': 
+            {'points': {'wave': {'shape': 'sin', 'frequency': 3*noteToFreq(note), 'amplitude': 1}}, 'numbers': {'list': [{'num': 1}, {'num': 1}, {'num': 5}, {'num': 1}]}}
         }
-    }, samples, seconds)
+    ]}
+    noteToSound = lambda p : parse(l(p[0]), 44100, p[1])
 
-    l = parseSine({'+': [{'envelope': {'points': {'wave': {'shape': 'sin', 'frequency': 5.0, 'amplitude': 1.0}},
-                         'numbers': {'list': [{'num': 0.25}, {'num': 0.25}, {'num': 0.25}, {'num': 0.25}]}}}]}, samples, seconds)
+    completeSounds = []
+    s = """
+            G4,1 G4,1 G4,1 Eb4,0.75 Bb4,0.25
+            G4,1 Eb4,0.75 A#4,0.25 G4,2 
+            D5,1 D5,1 D5,1 Eb5,0.75 Bb4,0.25 
+            F#4,1 Eb4,0.75 Bb4,0.25 G4,2
+            G5,1 G4,0.75 G4,0.25 G5,1 F#5,0.75 F5,0.25
+            E5,0.25 E5b,0.25 E5,0.5 D0,0.5 Ab4,0.5 Db5,1 C5,0.75 B4,0.25
+            Bb4,0.25 A4,0.25 Bb4,0.5 D0,0.5 Eb4,0.5 F#4,1 Eb4,0.75 F#4,0.25
+            Bb4,1 G4,0.75 Bb4,0.25 D5,2
+            G5,1 G4,0.75 G4,0.25 G5,1 F#5,0.75 F5,0.25 
+            E5,0.25 E5b,0.25 E5,0.5 D0,0.5 Ab4,0.5 Db5,1 C5,0.75 B4,0.25
+            Bb4,0.25 Ab4,0.25 Bb4,0.5 D0,0.5 Eb4,0.5 F#4,1 Eb4,0.75 Bb4,0.25
+            G4,1 Eb4,0.75 Bb4,0.25 G4,2
+        """
 
-    for i in range(samples*seconds):
-        print(str(i/samples) + ", " + str(l[i]))
+    a = []
+    for n in s.split(" "):
+        if not (n == '\n' or n == ''):
+            print(n)
+            q = n.split(",")
+            a.append((q[0], 0.66*float(q[1])))
+
+    for p in a:
+        completeSounds += noteToSound(p)
+
+    return completeSounds
+
+if __name__ == "__main__":
+    soundGen.play(starWars())
