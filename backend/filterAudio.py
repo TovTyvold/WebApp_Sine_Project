@@ -75,12 +75,16 @@ def Low_frequency_Oscillator_saw(freq_infrasonic, t_vec, amp):
 def reverb_filter(y, mode, amp):
 
     n = len(y)
-    sig = amp + 1/(np.linspace(0.1,1,n)**2)
+    sig = np.zeros(n)
+    descend = 1 / 30 * (np.linspace(0.1, 1, n)*2)
+    for i in range(n):
+        sig = np.repeat([0,0,descend[i]], int(n/3))
     #sig = np.repeat([0., , 0.], int(n/3))
 
-    win = signal.windows.hann(n)
+    #win = signal.windows.hann(n)
 
-    filtered = signal.convolve(sig, y, mode) / sum(win)
+    filtered = signal.convolve(sig, y, mode) / sum(sig)
+    #
     return filtered
 
 
