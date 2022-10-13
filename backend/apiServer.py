@@ -1,17 +1,22 @@
+from asyncio.windows_events import INFINITE
+from re import A
 import uvicorn
 
 from typing import List, Optional, Dict, Union
 from fastapi import FastAPI, Response, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
- 
+
 import pointsCalculation
 import soundGen
+import ADSR_mod
 
 app = FastAPI()
 
 origins = ["http://localhost", "http://localhost:3000"]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=origins,
+                   allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
 
 class PointsAnswer(BaseModel):
     points: List[Dict[str, float]]
@@ -66,57 +71,107 @@ class PointsAnswer(BaseModel):
 
 
 class FreqQuery(BaseModel):
-    funcs: List[Dict[str, Union[float, int, str]]]
+    funcs: List[Dict[str, Union[float, str, List[float]]]]
     seconds: Optional[float] = 1.0
     samples: Optional[int] = 400
 
     class Config:
         schema_extra = {
             "example": {
-                "funcs": [{"shape": "sin", "frequency": 2, "amplitude": 1}],
+                "funcs": [{"shape": "sin", "frequency": 2, "amplitude": 1, "adsr": [0.25,0.25,0.25,0.25]}],
                 "seconds": 1.0,
                 "samples": 400
             }
         }
 
-def FreqQueryToPoints(query: Dict, debug=False):
-    funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
-    samples = 44100 if "samples" not in query else query["samples"]
-    seconds = 1 if "seconds" not in query else query["seconds"]
-    l = pointsCalculation.getPoints(funcs, samples, debug=debug, seconds=seconds)
 
-    return l
+
+def FreqQueryToPoints(query: Dict, debug = False, doEnvelope = True):
+    #funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
+
+    query["samples"] = 44100 if "samples" not in query else query["samples"]
+    query["seconds"] = 1 if "seconds" not in query else query["seconds"]
+
+
+    l = []
+    if doEnvelope:
+        for func in query["funcs"]:
+            d = {"envelope": {
+                "points": {
+                    "wave": {
+                        "shape": func["shape"], "frequency": func["frequency"], "amplitude": func["amplitude"]
+                    },
+                },
+                "numbers": {
+                    "list": [{"num": val*query["seconds"]} for val in ([p*query["samples"] for p in [0.25, 0.25, 0.25, 0.25]] if "adsl" not in func else func["adsl"])]
+                }
+            }}
+
+            l.append(d)
+    else:
+        for func in query["funcs"]:
+            l.append({"wave": {
+                    "shape": func["shape"], "frequency": func["frequency"], "amplitude": func["amplitude"]
+                }})
+
+    d = {"+": l}
+
+    if debug:
+        print(d)
+
+    # l = pointsCalculation.getPoints(
+    #     funcs, query["samples"], debug=debug, seconds=query["seconds"], adsr=query["adsr"])
+    ypoints = pointsCalculation.parseSine(d, query["samples"], query["seconds"])
+    xpoints = pointsCalculation.genSamples(query["samples"], query["seconds"])
+
+    if (debug):
+        for (x,y) in zip(xpoints, ypoints):
+            print(str(x) + ", " + str(y))
+
+    return (xpoints, ypoints)
 
 
 @app.post("/points", response_model=PointsAnswer)
 async def getPoints(query: FreqQuery):
-    l = FreqQueryToPoints(query.dict(), debug=True)
+    l = FreqQueryToPoints(query.dict(), debug=True, doEnvelope=False)
 
     return {"points": [{"x": x, "y": y} for (x, y) in zip(*l)]}
 
 chunkSize = 1024
 samplesCount = 44100
+
+
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     json = await websocket.receive_json()
-    waveData = FreqQueryToPoints(json, debug=False)[1]
+    waveData = FreqQueryToPoints(json, debug=False,doEnvelope=False)
 
-    print(waveData)
+    freqWindow = 200
+    amount = int(samplesCount / freqWindow)
+    displayData = {"points": [{"x": freqWindow*x, "y": y} for (x,y) in list(zip(*waveData))[:amount]]}
 
-    cb = soundGen.samplesToCB(waveData)
+    await websocket.send_json(displayData)
+
+    waveData = FreqQueryToPoints(json, debug=False)
+
+    # for d in displayData["points"]:
+    #     print(str(d["x"]) + ", " + str(d["y"]))
+
+    #await websocket.send_json(displayData)
+
+    cb = soundGen.samplesToCB(waveData[1])
 
     data = cb.readChunk(chunkSize)
     while data:
         await websocket.send_bytes(data)
         data = cb.readChunk(chunkSize)
 
-    await websocket.send_text("SIGNAL STREAM END")
-
     await websocket.close()
 
 if __name__ == "__main__":
-    config = uvicorn.Config("apiServer:app", port=5000, log_level="info", reload=True)
+    config = uvicorn.Config("apiServer:app", port=5000,
+                            log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()

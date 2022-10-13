@@ -1,51 +1,82 @@
 //App.tsx
 import "./App.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Graph from "./components/Graph";
 import sendData from "./sendData";
+import AddADSR from "./components/AddADSR";
+
 
 type Wave = {
   frequency: number | undefined;
   amplitude: number | undefined;
   shape: string;
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
 };
 
 const defaultInput: Wave = {
   frequency: undefined,
   amplitude: undefined,
   shape: "",
+  attack: 1,
+  decay: 1,
+  sustain: 3,
+  release: 1,
 };
 
 const API_POINTS = "http://localhost:5000/points";
 const API_WS = "ws://localhost:5000/sound";
+
+let ws = new WebSocket(API_WS);
+ws.binaryType = "arraybuffer";
+const context = new AudioContext();
 
 function App() {
   // Hooks
   const [dataPoints, setDataPoints] = useState([]);
   const [inputValues, setInputValues] = useState<Wave[]>([defaultInput]);
 
-  const context = new AudioContext();
-  const ws = new WebSocket(API_WS);
-  ws.binaryType = "arraybuffer";
-
   let channels = 1;
-  const frameCount = 44100;
   let bytesRead = 0;
+  const frameCount = 44100;
+
+  if (ws.readyState == 3) {
+    ws = new WebSocket(API_WS);
+    ws.binaryType = "arraybuffer";
+  }
+
+  useEffect(() => {
+    ws.onmessage = (message: any) => {
+      console.log(message.type);
+      if (message.data instanceof ArrayBuffer) {
+        composeAudio(message.data);
+      } else {
+        console.log(JSON.parse(message.data).points);
+        setDataPoints(JSON.parse(message.data).points);
+      }
+    };
+  });
+
   const buffer = new AudioBuffer({
     numberOfChannels: channels,
     length: frameCount,
     sampleRate: 44100,
   });
 
-  ws.onmessage = (message) => {
-    const chunk = new Float32Array(message.data);
-    if (message.data instanceof ArrayBuffer) {
-      for (let i = 0; i < bytesRead; i++) {
+  function composeAudio(data: any) {
+    const chunk = new Float32Array(data);
+
+    if (data instanceof ArrayBuffer) {
+      for (let i = 0; i < chunk.length; i++) {
         buffer.getChannelData(0)[i + bytesRead] = chunk[i];
       }
       bytesRead += chunk.length;
+    } else {
+      console.log(data);
     }
-  };
+  }
 
   function playAudio() {
     const source = context.createBufferSource();
@@ -55,11 +86,9 @@ function App() {
     source.onended = () => {
       console.log("Sound is done playing!");
     };
-  }
 
-  // useEffect(() => {
-  //   testAudioStream();
-  // }, []);
+    bytesRead = 0;
+  }
 
   const handleInputChange = (
     index: number,
@@ -67,7 +96,7 @@ function App() {
   ) => {
     const { name, value } = e.currentTarget;
     let val: any = value;
-    if (!(name === "shape")) {
+    if (name != "shape") {
       val = parseInt(value);
     }
     const list: any[] = [...inputValues];
@@ -81,6 +110,10 @@ function App() {
       frequency: undefined,
       amplitude: undefined,
       shape: "",
+      attack: 1,
+      decay: 1,
+      sustain: 3,
+      release: 1,
     };
     setInputValues([...inputValues, newInput]);
   };
@@ -95,18 +128,14 @@ function App() {
     setInputValues(list);
   };
 
-  // Get values from inputs
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    //setDataPoints(await sendData(API_POINTS, inputValues));
-    //console.log("Datapoints: ", dataPoints);
-
-    const payload = {
+    const payload: any = {
       funcs: inputValues,
     };
-    //console.log(JSON.stringify(payload));
     ws.send(JSON.stringify(payload));
   };
+
 
   return (
     <div className='App'>
@@ -115,6 +144,15 @@ function App() {
         <section className='graph'>
           <Graph data={dataPoints} />
         </section>
+        <div>
+          <p style={{float:"left", width:"13.5%"}}><b>Frequency:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Amplitude:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Shape:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Attack:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Decay:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Sustain:</b></p>
+          <p style={{float:"left", width:"13.5%"}}><b>Release:</b></p>
+        </div>
         <form onSubmit={submit}>
           {inputValues.map((element, index) => {
             return (
@@ -140,6 +178,34 @@ function App() {
                   value={element.shape}
                   onChange={(event) => handleInputChange(index, event)}
                 />
+                <input
+                  type='number'
+                  name='attack'
+                  placeholder='Attack'
+                  value={element.attack}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
+                  <input
+                  type='number'
+                  name='decay'
+                  placeholder='Decay'
+                  value={element.decay}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
+                  <input
+                  type='text'
+                  name='sustain'
+                  placeholder='Sustain'
+                  value={element.sustain}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
+                  <input
+                  type='text'
+                  name='release'
+                  placeholder='Release'
+                  value={element.release}
+                  onChange={(event) => handleInputChange(index, event)}
+                  />
                 {index ? (
                   <button
                     onClick={(event) => {

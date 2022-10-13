@@ -1,7 +1,8 @@
 
 import numpy as np
 
-def ADSR(list_ADSR, N, t):
+def ADSR(y, list_ADSR, N, sustainAmplitude = 0.7, maxAmplitude = 1):
+    t = sum(list_ADSR)
     Amp_array = np.zeros(N)
     A_time = int((N*list_ADSR[0])/t)
     D_time = int((N*list_ADSR[1])/t)
@@ -12,12 +13,13 @@ def ADSR(list_ADSR, N, t):
     S = np.zeros(S_time)
     R = np.zeros(R_time)
 
-    A_lin = np.linspace(0,4,A_time)
-    D_lin = np.linspace(4,0.5,D_time)
-    R_lin = np.linspace(0.5,0,R_time)
+    A_lin = np.linspace(0, maxAmplitude, A_time)
+    D_lin = np.linspace(maxAmplitude, sustainAmplitude, D_time)
+    R_lin = np.linspace(sustainAmplitude, 0, R_time)
+
     Attack = A + A_lin
     Decay = D + D_lin
-    Sustain = S + 0.5
+    Sustain = S + sustainAmplitude
     Release = R + R_lin
 
     Prog_1 = A_time + D_time
@@ -28,4 +30,5 @@ def ADSR(list_ADSR, N, t):
     Amp_array[A_time:Prog_1] = Decay
     Amp_array[Prog_1:Prog_2] = Sustain
     Amp_array[Prog_2:Prog_2 + R_time] = Release
-    return Amp_array
+
+    return  y * Amp_array
