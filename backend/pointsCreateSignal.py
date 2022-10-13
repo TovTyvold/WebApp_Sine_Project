@@ -58,7 +58,7 @@ def Create_Sine(amplitudes, frequencies,Fs, list_ADSR = 0):
 
     
     else:
-        t = 5
+        t = 0.1
         Amp_array = 1
         N = Fs*t
         omega = 2*np.pi*frequencies 
@@ -129,10 +129,14 @@ def Create_Sine(amplitudes, frequencies,Fs, list_ADSR = 0):
     #(y, t_vec, title, xlabel, ylabel, label_graph, color_graph, ls_graph):
 
     # amp is amp of impulse response
-    reverb_y = reverb_filter(y_sum, mode = 'same', amp = 30)
-    play(reverb_y + y_sum)
-    plt.figure
-    plot_array(t_vec, reverb_y,  "Reverb", "t[s]", "A[m]", "y with reverb", "r", "--")
+    reverb_y = reverb_filter(y_sum, mode = 'same', amp = amplitudes[0])
+    #play(reverb_y + y_sum)
+    plt.figure()
+    plot_array(t_vec, reverb_y,  "Reverb", "t[s]", "A[m]", "reverb", "r", "-")
+    plt.figure()
+    plot_array(t_vec, y_sum,  "y_sum", "t[s]", "A[m]", "y", "r", "-")
+    plt.figure()
+    plot_array(t_vec, y_sum * reverb_y,  "y with Reverb", "t[s]", "A[m]", "y with reverb", "r", "-")
     plt.show()
 
 
@@ -161,11 +165,6 @@ print("Timing outside func started....")
 t_vec, Fs, freqs = Create_Sine(np.array([10,10,10,10,10,10,10]), np.array([200, 400, 450, 500, 550, 600, 800]), 44100, list_ADSR = 0)
 
 
-""" print("PLAYING SOUNDS")
-#play(Array_of_various_signals[5][0])
-for i in Array_of_various_signals:
-    play(i[0])
-    time.sleep(0.5) """
 
 t1_func = time.time()
 total = t1_func-t0_func
