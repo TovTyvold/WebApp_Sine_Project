@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt 
 
-def signal_to_hertz(normalized_signal, Fs, freqs):
+def signal_to_hertz(normalized_signal, Fs, freqs, label):
     """  
         Function that outputs frequencies after taking in a signal
          with/without noise using fft. 
@@ -18,22 +18,21 @@ def signal_to_hertz(normalized_signal, Fs, freqs):
 
     """
     length = len(normalized_signal)
-    print("length= ",length) #4410
     Y_k = np.fft.fft(normalized_signal)[0:int(length/2)]/length # FFT function from numpy
-    print(len(Y_k))
     Y_k[1:] = 2*Y_k[1:] # need to take the single-sided spectrum only
     Pxx = np.abs(Y_k) # be sure to get rid of imaginary part
 
     
 
-    f = 4 * np.max(freqs) * np.arange((length/2))/length; # frequency vector
+    f = Fs*np.arange((length/2))/length; # frequency vector
+
 
     plt.plot(f, Pxx, color = 'b', marker= '*', ms = 5)
     plt.xlabel("frequency [Hz]")
     plt.ylabel("Power [V]")
-    plt.title("Periodogram of Filtered and Normalized Signal")
-    plt.savefig(f"backend/figures/demo/Periodogram.png")
-    plt.show()
+    plt.xlim([0,freqs[-1]+100 ])
+    plt.title(f"Periodogram of {label} cutoff")
+    #plt.savefig(f"backend/figures/demo/Periodogram.png")
     """ freq_list = []
 
     for k in range(1,len(Pxx)-1):
