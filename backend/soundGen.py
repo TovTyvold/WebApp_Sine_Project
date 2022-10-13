@@ -40,14 +40,3 @@ def play(samples):
 
 def samplesToCB(samples : List[float]) -> ChunkedBytes:
     return ChunkedBytes(struct.pack("%sf" % len(samples), *samples))
-
-if __name__ == "__main__":
-    harmonicCount = 2
-
-    ampls = [harmonicCount - i for i in range(harmonicCount)]
-    freqs = [440*i for i in range(harmonicCount)]
-
-    samples = [b for (_, b) in pointsCalculation.getPoints(freqs, ampls, [
-        "sin" for _ in range(harmonicCount)], samplesCount, debug=False, seconds=1)]
-    
-    play(samples)
