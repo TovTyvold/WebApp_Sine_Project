@@ -46,3 +46,6 @@ def fade_out_func(y_sum, duration, sustain_val):
     enveloped_y[-div:] = fade_out
     return enveloped_y
 
+
+if __name__ == "__main__":
+    a = 1

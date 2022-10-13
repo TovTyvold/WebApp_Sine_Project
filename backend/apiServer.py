@@ -127,6 +127,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     config = uvicorn.Config("apiServer:app", port=5000,
+                           
                             log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()
+

@@ -1,7 +1,8 @@
 import numpy as np
+import sys
+import matplotlib.pyplot as plt 
 
-
-def signal_to_hertz(normalized_signal, Fs):
+def signal_to_hertz(normalized_signal, Fs, freqs, label):
     """  
         Function that outputs frequencies after taking in a signal
          with/without noise using fft. 
@@ -17,14 +18,22 @@ def signal_to_hertz(normalized_signal, Fs):
 
     """
     length = len(normalized_signal)
-    
     Y_k = np.fft.fft(normalized_signal)[0:int(length/2)]/length # FFT function from numpy
     Y_k[1:] = 2*Y_k[1:] # need to take the single-sided spectrum only
     Pxx = np.abs(Y_k) # be sure to get rid of imaginary part
 
+    
+
     f = Fs*np.arange((length/2))/length; # frequency vector
 
-    freq_list = []
+
+    plt.plot(f, Pxx, color = 'b', marker= '*', ms = 5)
+    plt.xlabel("frequency [Hz]")
+    plt.ylabel("Power [V]")
+    plt.xlim([0,freqs[-1]+100 ])
+    plt.title(f"Periodogram of {label} cutoff")
+    #plt.savefig(f"backend/figures/demo/Periodogram.png")
+    """ freq_list = []
 
     for k in range(1,len(Pxx)-1):
         if Pxx[k-1] < Pxx[k] and Pxx[k] > Pxx[k+1]:
@@ -32,11 +41,10 @@ def signal_to_hertz(normalized_signal, Fs):
 
     
     print("Checking frequencies...")
-    sorted_rand_freq = np.sort(list_rand_freq)
-    f, Pxx, freq_list, amp_list = chaos_to_hertz(norm_max)
+    sorted_rand_freq = np.sort(freqs)
     #np. set_printoptions(threshold=np. inf)
     tol = 1
-    for k in range(n_signals):
+    for k in range(len(freqs)):
         if tol < abs(sorted_rand_freq[0][k] - freq_list[k]):
             print(sorted_rand_freq[0][k])
             print(freq_list[k])
@@ -63,12 +71,10 @@ def signal_to_hertz(normalized_signal, Fs):
     np.set_printoptions(threshold=sys.maxsize)
     print(f"Number of elements in freq_list: {np.shape(freq_list)[0]:.3f}")
     print(freq_list)
-    print(f"Number of elements in list_rand_freq: {np.shape(list_rand_freq)[1]:.3f}")
-    print(np.sort(list_rand_freq))
+    print(f"Number of elements in list_rand_freq: {np.shape(freqs)[1]:.3f}")
+    print(np.sort(freqs)) """
 
-    """ print(f"All the frequencies are, in ascending order, {freq_list}")
-    print(f"All the amplitudes are, in ascending order, {amp_list}")
-     """
+    return f, Pxx#, freq_list
 
-    return freq_list
-
+if __name__ == "__main__":
+    a = 2

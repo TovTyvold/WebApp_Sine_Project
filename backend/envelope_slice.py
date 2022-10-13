@@ -62,3 +62,6 @@ def envelope_slice_func(y_sum, duration, boolean_env):
             y_sum = fade_out_func(y_sum, fade_out_duration, sustain_val)
         y_env = y_sum
         return y_env, boolean_env
+
+if __name__ == "__main__":
+    a = 1

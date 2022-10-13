@@ -30,18 +30,27 @@ header {
 
 .inputs {
   display: flex;
-  justify-content: center;
-  gap: calc(3vh + 3px) calc(3vw + 3px);
+  justify-content: left;
+  margin: 1rem;
+  gap: calc(2vh + 2px) calc(2vw + 2px);
 }
 
-.inputs button {
+.play-button {
+ float: right;
+ width: 10rem;
+ background-color: #1f939e;
+}
+
+
+
+/* .inputs button {
   background-color: #1f939e;
   border: hidden;
   border-radius: 40px;
   width: 10rem;
   font-family: 'Times New Roman', Times, serif;
   font-size: 20pt;
-}
+} */
 
 .input-wrapper label {
   display: block;

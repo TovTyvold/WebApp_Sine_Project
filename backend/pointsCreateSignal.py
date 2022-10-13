@@ -1,15 +1,18 @@
 import time
 import numpy as np 
 import matplotlib.pyplot as plt
-from filterAudio import low_pass_Filter, high_pass_Filter, Low_frequency_Oscillator
-#from soundGen import play
+from filterAudio import low_pass_Filter, high_pass_Filter, Low_frequency_Oscillator_sine, Low_frequency_Oscillator_saw, reverb_filter
+from soundGen import play
+from pointsFrequency import signal_to_hertz
 from ADSR_mod import ADSR
+from pointsNoise import coloredNoise
+from plotting import plot_array
+
 plt.style.use('ggplot')
 
 
-def Create_Sine(amplitudes, frequencies,Fs, list_ADSR = False):
+def Create_Sine(amplitudes, frequencies,Fs, list_ADSR = 0):
     t0 = time.time()
-    print("Timing started....")
 
     if not amplitudes[0]:
         """ print("-------------------------------")
@@ -36,123 +39,133 @@ def Create_Sine(amplitudes, frequencies,Fs, list_ADSR = False):
 
     # Set variables
     T = 1/(Fs) 
-    t_org = 1
-    t = np.sum(list_ADSR)
-    N = (Fs) 
-    omega = 2*np.pi*frequencies 
-    t_vec = np.arange(N)*T 
-    y = np.zeros((n_signals,len(t_vec)))
-
-    Amp_array = ADSR(list_ADSR, N, t)
-
-    """ if t != 1 and isinstance(list_ADSR, list):
-        Amp_array = np.zeros(N)
-        A_time = int((len(t_vec)*list_ADSR[0])/t)
-        D_time = int((len(t_vec)*list_ADSR[1])/t)
-        S_time = int((len(t_vec)*(t_org + list_ADSR[2]))/t)
-        R_time = int((len(t_vec)*list_ADSR[3])/t)
-        A = np.zeros(A_time)
-        D = np.zeros(D_time)
-        S = np.zeros(S_time)
-        R = np.zeros(R_time)
-
-        A_lin = np.linspace(0,4,A_time)
-        D_lin = np.linspace(4,0.5,D_time)
-        R_lin = np.linspace(0.5,0,R_time)
-        Attack = A + A_lin
-        Decay = D + D_lin
-        Sustain = S + 0.5
-        Release = R + R_lin
-
-        Prog_1 = A_time + D_time
-        Prog_2 = A_time + D_time + S_time
+    N = Fs
     
+    if isinstance(list_ADSR, list):
+        print("APPLY ADSR")
+        for i in range(4):
+            list_ADSR[i] = np.random.randint(1,7)
 
-        Amp_array[:A_time] = Attack
-        Amp_array[A_time:Prog_1] = Decay
-        Amp_array[Prog_1:Prog_2] = Sustain
-        Amp_array[Prog_2:Prog_2 + R_time] = Release
+        print(list_ADSR)
+        t = np.sum(list_ADSR)
 
+        Amp_array = ADSR(list_ADSR, N, t)
+
+
+        omega = 2*np.pi*frequencies 
+        t_vec = np.arange(N)*T 
+        y = np.zeros((n_signals,len(t_vec)))
+
+    
     else:
+        t = 5
         Amp_array = 1
-        t = 1
         N = Fs*t
         omega = 2*np.pi*frequencies 
         t_vec = np.arange(N)*T 
         y = np.zeros((n_signals,len(t_vec)))
- """
+
     k = 0
     y_sum = 0
-
     for i in omega:
         y[k] = (Amp_array * amplitudes[k]) * np.sin(i*t_vec)
         y_sum += y[k] 
+        """ plt.figure(k+1)
+        plt.plot(t_vec,y[k])
+        plt.title(f"Plot of Wave nr:{k+1}")
+        plt.xlabel("t [s]")
+        plt.ylabel("A [m]") 
+        plt.savefig(f"backend/figures/demo/wave_nr_{k+1}.png")
+        #plt.show() """
         k += 1 
-
     #Apply low-pass filter
-    y_filtered_low = low_pass_Filter(y_sum, Fs, 0.7*frequencies[0], 5)
 
-    y_filtered_high = high_pass_Filter(y_sum, Fs, 0.3*frequencies[0], 10)
+
+    normalzed_y = y_sum/np.max(y_sum) 
+    """ plt.plot(t_vec, normalzed_y)
+    plt.title("Normalized")
+    plt.xlabel("t [s]")
+    plt.ylabel("A [m]")
+    plt.savefig(f"backend/figures/demo/Normalized.png")
+    #plt.show() """
+
+
+    cutoff_low = np.max(frequencies)+10
+    cutoff_high = np.min(frequencies)
+
+    """ #plt.figure()
+    y_filtered_low = low_pass_Filter(normalzed_y, Fs, cutoff_low, 5)
+    signal_to_hertz(y_filtered_low, Fs, frequencies, label = "Low")
     
-    y_filtered = y_filtered_high + y_filtered_low
 
-    #Apply low_frequency_oscillator
-    LFO = Low_frequency_Oscillator(20, t_vec, amplitudes[0])
-    y_sum_LFO = y_sum + LFO
+    #plt.figure()
+    y_filtered_high = high_pass_Filter(normalzed_y, Fs, cutoff_high, 5)
+    signal_to_hertz(y_filtered_high, Fs, frequencies, label = "High")
+    #plt.show()
+
+    y_filtered =  y_filtered_low + y_filtered_high
 
 
 
+    # FFT FETCH
+    #plt.figure()
+    signal_to_hertz(y_filtered, Fs, frequencies, label = "")
+
+    #plt.figure()
+    signal_to_hertz(normalzed_y, Fs, frequencies, label = "Before Filter")
+    #plt.show()
+
+    #Apply low_frequency_oscillator sine/saw
+    LFO = Low_frequency_Oscillator_sine(20, t_vec, np.max(y_filtered)/10)
+    y_filtered_LFO = y_filtered + LFO
+
+    saw = Low_frequency_Oscillator_saw(np.min(frequencies[0]), t_vec, 1)
+    y_filtered_saw = y_filtered + saw
+ """
+
+    #Apply color
+    #y_filtered_noise = coloredNoise(exponent = 2, y = normalzed_y, fmin = 0.1, noise_intensity=0.1)
+
+    #(y, t_vec, title, xlabel, ylabel, label_graph, color_graph, ls_graph):
+
+    # amp is amp of impulse response
+    reverb_y = reverb_filter(y_sum, mode = 'same', amp = 30)
+    play(reverb_y + y_sum)
+    plt.figure
+    plot_array(t_vec, reverb_y,  "Reverb", "t[s]", "A[m]", "y with reverb", "r", "--")
+    plt.show()
+
+
+    """ plt.figure
+    plot_array(t_vec, y_filtered_noise,  "Noise", "t[s]", "A[m]", "y filtered noise", "r", "--")
+
+    plt.figure()
+    plot_array(t_vec, normalzed_y, "Filtered", "t[s]", "A[m]", "y filtered", "r", "--")
+    plt.show() """
 
 
     t1 = time.time()
     total = t1-t0
     print(f"Timing stopped, END OF FUNCTION! It took {total:0.7f}s")
 
-    plt.figure(1)
-    plt.plot(t_vec, y_sum)
+    """ Array_of_various_signals = [[y_sum],[normalzed_y], [y_filtered_low],\
+         [y_filtered_high] , [y_filtered], [LFO], [y_filtered_LFO], [y_filtered_noise], [saw], [y_filtered_saw]] """
+    return t_vec, Fs, frequencies#, Array_of_various_signals#, norm_max
 
 
-    plt.figure(2)
-    plt.plot(t_vec, y_sum_LFO)
-    plt.show() 
-
-    return t_vec, y_filtered, Fs#, norm_max
 
 t0_func = time.time()
 print("Timing outside func started....")
 
-t_vec, y_sum1, Fs = Create_Sine(np.array([40]), np.array([440]), 44100, list_ADSR = [0,0,1,1])
-""" t_vec, y_sum2, Fs = Create_Sine(np.array([40]), np.array([392]), 44100, list_ADSR = [10,10,-1,0])
-t_vec, y_sum3, Fs = Create_Sine(np.array([40]), np.array([349]), 44100, list_ADSR = [10,10,-1,0])
-t_vec, y_sum4, Fs = Create_Sine(np.array([40]), np.array([329.63]), 44100, list_ADSR = [10,10,-1,0])
-y_sum_again = y_sum1 + y_sum2 + y_sum3 + y_sum4 """
-plt.plot(t_vec, y_sum1)
-plt.savefig("lyd1.png")
-plt.show()
+#t_vec, Fs, freqs, Array_of_various_signals = Create_Sine(np.array([10,10,10,10,10,10,10]), np.array([200, 400, 450, 500, 550, 600, 800]), 44100, list_ADSR = 0)
+t_vec, Fs, freqs = Create_Sine(np.array([10,10,10,10,10,10,10]), np.array([200, 400, 450, 500, 550, 600, 800]), 44100, list_ADSR = 0)
 
-# Making a long signal that is continuous
-""" m = 7
-len_y = len(y_sum_again)
-ext_y = np.zeros(len_y*m)
-beta = 1         # the exponent: 0=white noite; 1=pink noise;  2=red noise (also "brownian noise")
-samples = len_y*m  # number of samples to generate (time series extension)
 
-Color_noise = cn.powerlaw_psd_gaussian(beta, samples, fmin = 0.5)
-Color_noise1 = cn.powerlaw_psd_gaussian(2, samples, fmin = 0.5)
-Color_noise2 = cn.powerlaw_psd_gaussian(0, samples, fmin = 0.5)
-
-ext_y[:len_y] = y_sum1
-ext_y[len_y:2*len_y] = y_sum1 
-ext_y[2*len_y:3*len_y] = y_sum1
-ext_y[3*len_y:4*len_y] = y_sum4
-ext_y[4*len_y:int(4.5*len_y)] = y_sum3[:22050]
-ext_y[int(4.5*len_y):5*len_y] = y_sum3[:22050]
-ext_y[5*len_y:6*len_y] = y_sum4
-ext_y[6*len_y:int(6.5*len_y)] = y_sum3[:22050]
-ext_y[int(6.5*len_y):7*len_y] = y_sum3[:22050]
-
-ext_y = ext_y + Color_noise/20 + Color_noise1/20 + Color_noise2/20
- """
+""" print("PLAYING SOUNDS")
+#play(Array_of_various_signals[5][0])
+for i in Array_of_various_signals:
+    play(i[0])
+    time.sleep(0.5) """
 
 t1_func = time.time()
 total = t1_func-t0_func
