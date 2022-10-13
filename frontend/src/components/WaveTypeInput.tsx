@@ -1,8 +1,18 @@
-export default function WaveTypeInput(): JSX.Element {
+import React, { useState } from "react";
+
+export default function WaveTypeInput() {
+  const options: any = ["sin", "square", "saw", "triangle"];
+  const [type, setType] = useState("");
+  const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setType(e.target.value);
+  };
   return (
-    <label>
-      Wave Type
-      <input type='string' />
-    </label>
+    <>
+      <select value={type} onChange={handleSelect}>
+        {options.map((option: string) => {
+          <option value={option}>{option}</option>;
+        })}
+      </select>
+    </>
   );
 }

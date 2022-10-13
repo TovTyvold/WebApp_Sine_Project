@@ -6,7 +6,7 @@ from typing import List, Optional, Dict, Union
 from fastapi import FastAPI, Response, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
- 
+
 import pointsCalculation
 import soundGen
 import ADSR_mod
@@ -14,7 +14,9 @@ import ADSR_mod
 app = FastAPI()
 
 origins = ["http://localhost", "http://localhost:3000"]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=origins,
+                   allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
 
 class PointsAnswer(BaseModel):
     points: List[Dict[str, float]]
@@ -83,11 +85,13 @@ class FreqQuery(BaseModel):
         }
 
 
+
 def FreqQueryToPoints(query: Dict, debug = False, doEnvelope = True):
     #funcs = [pointsCalculation.parseDict(func) for func in query["funcs"]]
 
     query["samples"] = 44100 if "samples" not in query else query["samples"]
     query["seconds"] = 1 if "seconds" not in query else query["seconds"]
+
 
     l = []
     if doEnvelope:
@@ -135,6 +139,8 @@ async def getPoints(query: FreqQuery):
 
 chunkSize = 1024
 samplesCount = 44100
+
+
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -165,6 +171,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.close()
 
 if __name__ == "__main__":
-    config = uvicorn.Config("apiServer:app", port=5000, log_level="info", reload=True)
+    config = uvicorn.Config("apiServer:app", port=5000,
+                            log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()
