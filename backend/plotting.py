@@ -1,8 +1,7 @@
-from pointsCreateSignal import Create_Sine
 import numpy as np 
 import matplotlib.pyplot as plt
 
-t_vec, Array_of_various_signals, Fs, freqs = Create_Sine(np.array([10,10,10,10,10,10,10]), np.array([200, 400, 450, 500, 550, 600, 800]), 44100, list_ADSR = 0)
+""" t_vec, Array_of_various_signals, Fs, freqs = Create_Sine(np.array([10,10,10,10,10,10,10]), np.array([200, 400, 450, 500, 550, 600, 800]), 44100, list_ADSR = 0)
 y_sum = Array_of_various_signals[0] 
 normalzed_y = Array_of_various_signals[1]
 y_filtered_low = Array_of_various_signals[2]
@@ -15,7 +14,17 @@ saw = Array_of_various_signals[8]
 y_filtered_saw = Array_of_various_signals[9]
 
 
-fig, (ax1, ax2) = plt.subplots(2)
+ """
+
+def plot_array(t_vec, y, title, xlabel, ylabel, label_graph, color_graph, ls_graph):
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.plot(t_vec, y, label= label_graph, color =color_graph, ls=ls_graph)
+    plt.legend()
+
+
+""" fig, (ax1, ax2) = plt.subplots(2)
 fig.suptitle("Frequency cutoff")
 ax1.set_title("Filtered Low")
 ax1.set_xlabel("t [s]")
@@ -105,4 +114,4 @@ plt.figure(9)
 plt.plot(t_vec, y_filtered_noise)
 plt.figure(10)
 plt.plot(t_vec, y_filtered)
-plt.show()
+plt.show() """

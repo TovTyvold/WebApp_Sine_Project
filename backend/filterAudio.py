@@ -70,5 +70,19 @@ def Low_frequency_Oscillator_saw(freq_infrasonic, t_vec, amp):
         ((-1)**i) * np.sin(2 * np.pi * freq_infrasonic * i * t_vec[i])/i
     return 1 + amp *(0.5 - x)
 
+
+# Add type of impulse response as "type" variable
+def reverb_filter(y, mode, amp):
+
+    n = len(y)
+    sig = amp + 1/(np.linspace(0.1,1,n)**2)
+    #sig = np.repeat([0., , 0.], int(n/3))
+
+    win = signal.windows.hann(n)
+
+    filtered = signal.convolve(sig, y, mode) / sum(win)
+    return filtered
+
+
 if __name__ == "__main__":
     a = 1
