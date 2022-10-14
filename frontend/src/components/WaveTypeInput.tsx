@@ -4,7 +4,7 @@ export default function WaveTypeInput({
   handleInputChange,
 }: any): JSX.Element {
   return (
-    <label>
+    <label className='osc-input-dd'>
       Wave Type
       <select
         name='shape'
