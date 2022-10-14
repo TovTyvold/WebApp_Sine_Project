@@ -6,7 +6,7 @@ export default function NumberInput({
   handleInputChange,
 }: any): JSX.Element {
   return (
-    <label>
+    <label className='osc-input'>
       {label}
       <input
         type='number'

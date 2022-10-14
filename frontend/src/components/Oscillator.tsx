@@ -29,6 +29,7 @@ export default function Oscillator({
       />
 
       <button
+        className='remove-button'
         style={{ visibility: index ? 'visible' : 'hidden' }}
         onClick={(event) => {
           removeInput(index, event);
