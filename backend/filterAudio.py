@@ -1,7 +1,6 @@
 from tkinter import N
 from scipy import signal
 import numpy as np
-import matplotlib.pyplot as plt
 
 #LOW PASS
 def butter_lowpass_filter(data, cutoff, Fs, order):
@@ -11,17 +10,8 @@ def butter_lowpass_filter(data, cutoff, Fs, order):
     b, a = signal.butter(order, cutoff, btype='low', analog=False, fs = Fs)
     y = signal.filtfilt(b, a, data)
 
-
     w, h = signal.freqz(b, a, fs=Fs, worN=8000)
 
-    plt.plot(w, np.abs(h), 'r--')
-    plt.plot(cutoff, 0.5*np.sqrt(2), 'bo', label="LowPass")
-    plt.axvline(cutoff, color='r', ls="--", lw=0.5)
-    plt.xlim([0,800])
-    plt.title("Lowpass Filter Frequency Response")
-    plt.xlabel('Frequency [Hz]')
-    plt.grid()
-    plt.legend()
     return y
 
 def low_pass_Filter(y_sum, Fs, cutoff, order):
@@ -40,16 +30,6 @@ def butter_highpass_filter(data, cutoff, Fs, order):
     y = signal.filtfilt(b, a, data)
 
     w, h = signal.freqz(b, a, fs=Fs, worN=8000)
-    plt.plot(w, np.abs(h), 'r--')
-    plt.plot(cutoff, 0.5*(np.sqrt(2)), 'ro', label="HighPass")
-    plt.axvline(cutoff, color='r', ls="--", lw=0.5)
-    plt.xlim(0, 800)
-    plt.title("Lowpass Filter Frequency Response")
-    plt.xlabel('Frequency [Hz]')
-    plt.grid()
-    plt.legend()
-    plt.tight_layout()
-
     return y
 
 def high_pass_Filter(y_sum, Fs, cutoff, order):

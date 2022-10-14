@@ -1,6 +1,7 @@
+from typing import List
 import colorednoise as cn
 
-def coloredNoise(exponent, y, fmin, noise_intensity):
+def coloredNoise(y: List[float], noise_intensity: float, exponent: int, fmin: int) -> List[float]:
     """  
     Function that outputs signal with noise added 
     --------

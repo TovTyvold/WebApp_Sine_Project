@@ -1,10 +1,14 @@
 import math
+import time
+import multiprocessing
 from enum import Enum
 from typing import Union, List, Tuple
 import random
 import ADSR_mod
 import functools
 import soundGen
+import pointsNoise
+import filterAudio
 
 def square(amplitude: float,  frequency: float, x: float) -> float:
     return 2 * amplitude * (2 * math.floor(frequency * x) - math.floor(2 * frequency * x) + 1 - 0.5)
@@ -124,13 +128,12 @@ def genSamples(sampleCount : int, seconds : float):
 
 #dataTypes: num, points
 #functions: +[], noise(points), envelope(points, list[int]), wave
-
 #parse AST given by data generating point samples
 def parse(data : dict, samples, seconds) -> List[float]:
     for k in data.keys():
         v = data[k]
 
-        if k == "wave": #-> points
+        if k == "wave":
             func = conversionTable[v["shape"]]
             ampl = v["amplitude"]
             freq = v["frequency"]
@@ -139,7 +142,21 @@ def parse(data : dict, samples, seconds) -> List[float]:
             ypoints = list(map(lambda x : func(ampl, freq, x), xpoints))
             return ypoints
 
-        if k == "envelope": #points, A,D,S,R -> points
+        if k == "vibrato":
+            w = v["wave"]
+            func = conversionTable[w["shape"]]
+            ampl = w["amplitude"]
+            freq = w["frequency"]
+
+            params = parse(v["args"], samples, seconds)
+
+            xpoints = genSamples(samples, seconds)
+            ypoints = list(
+                map(lambda x: func(ampl, sin(params[0], params[1], x) + freq, x), xpoints)
+            )
+            return ypoints
+
+        if k == "envelope":
             points = parse(v["points"], samples, seconds)
             adsr = parse(v["numbers"], samples, seconds)
             adsrSum = sum(adsr)
@@ -147,36 +164,36 @@ def parse(data : dict, samples, seconds) -> List[float]:
             return ADSR_mod.ADSR(points, adsr, int(samples*seconds))
 
         if k == "noise":
-            coloredNoise = lambda x : x
             params = parse(v["numbers"], samples, seconds)
-            return coloredNoise(v)
+            return pointsNoise.coloredNoise(parse(v["points"], samples, seconds), params[0], params[1], params[2])
 
-        if k == "num": # -> num
+        if k == "num":
             return v
+
+        if k == "reverb":
+            params = parse(v["numbers"], samples, seconds)
+            return filterAudio.reverb_filter(parse(v["points"], samples, seconds), params[0], params[1])
         
         if k == "list":
             return [parse(num, samples, seconds) for num in v]
 
-        if k == "+": # points, points, ... -> points
+        if k == "+":
             l = ([parse(f, samples, seconds) for f in data[k]] )
 
             ypoints = list(functools.reduce(lambda xs, ys: map(lambda x, y: x+y, xs, ys), l))
             yMax = max(ypoints)
             ypoints = [y / yMax for y in list(ypoints)]
+
             return ypoints
 
 
 l = {"+": [
-        {"noise" : { 
-            "points": {"wave": {"shape": "sin", "frequency": 1, "amplitude": 5}},
-            "numbers": {"list": [{"num": 2}]}
-        }},
-        {"wave": {"shape": "sin", "frequency": 2, "amplitude": 1}}
-    ]
+    {"vibrato": {"wave": {"shape": "sin", "frequency": 5, "amplitude": 1},
+                 "args": {"list": [{"num": 1}, {"num": 10}]}}}
+]
 }
 
-#generate samples for imperial march from star wars
-def starWars():
+def freqToSamples(freq):
     l = lambda note : {'+': [
         {'envelope': 
             {'points': {'wave': {'shape': 'sin', 'frequency': noteToFreq(note), 'amplitude': 15}}, 'numbers': {'list': [{'num': 1}, {'num': 1}, {'num': 5}, {'num': 1}]}}
@@ -189,7 +206,13 @@ def starWars():
             {'points': {'wave': {'shape': 'sin', 'frequency': 3*noteToFreq(note), 'amplitude': 1}}, 'numbers': {'list': [{'num': 1}, {'num': 1}, {'num': 5}, {'num': 1}]}}
         }
     ]}
-    noteToSound = lambda p : parse(l(p[0]), 44100, p[1])
+    
+    return l(freq)
+
+
+#generate samples for imperial march from star wars
+def starWars():
+    noteToSound = lambda p : parse(freqToSamples(p[0]), 44100, p[1])
 
     completeSounds = []
     s = """
@@ -220,4 +243,13 @@ def starWars():
     return completeSounds
 
 if __name__ == "__main__":
-    soundGen.play(starWars())
+    #soundGen.play(starWars())
+    #soundGen.play(parse(l, 44100, 4))
+    start = time.time()
+    out = parse(l, 400, 1)
+    #out *= 4
+    stop = time.time()
+    print("time " + str(stop - start))
+
+    for (x,y) in zip(genSamples(100, 1), out):
+        print(str(x) + ", " + str(y))
