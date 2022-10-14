@@ -56,7 +56,7 @@ def BuildAST(query: Dict, samples: int, seconds: float, debug=False, doEnvelope=
                     },
                 },
                 "numbers": {
-                    "list": [{"num": v} for v in ([1, 3, 1, 1] if "adsl" not in func or func["adsl"] == None else func["adsl"])]
+                    "list": [{"num": v} for v in ([1, 3, 1, 1] if "adsr" not in func or func["adsr"] == None else func["adsr"])]
                 }
             }})
     else:
