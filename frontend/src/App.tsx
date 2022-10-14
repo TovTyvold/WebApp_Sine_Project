@@ -1,36 +1,32 @@
 //App.tsx
-import "./App.css";
-import React, { useState, useEffect, useRef } from "react";
-import Graph from "./components/Graph";
-import sendData from "./sendData";
-import AddADSR from "./components/AddADSR";
-
+import './App.css';
+import React, { useState, useEffect } from 'react';
+import Graph from './components/Graph';
+import Oscillator from './components/Oscillator';
+import EnvelopeADSR from './components/EnvelopeADSR';
 
 type Wave = {
   frequency: number | undefined;
   amplitude: number | undefined;
   shape: string;
-  attack: number;
-  decay: number;
-  sustain: number;
-  release: number;
+  adsr?: number[];
 };
 
 const defaultInput: Wave = {
-  frequency: undefined,
-  amplitude: undefined,
-  shape: "",
-  attack: 1,
-  decay: 1,
-  sustain: 3,
-  release: 1,
+  frequency: 440,
+  amplitude: 1,
+  shape: 'sin',
+  adsr: [1, 1, 3, 1],
 };
 
-const API_POINTS = "http://localhost:5000/points";
-const API_WS = "ws://localhost:5000/sound";
+let channels = 1;
+let bytesRead = 0;
+const frameCount = 44100;
+
+const API_WS = 'ws://localhost:5000/sound';
 
 let ws = new WebSocket(API_WS);
-ws.binaryType = "arraybuffer";
+ws.binaryType = 'arraybuffer';
 const context = new AudioContext();
 
 function App() {
@@ -38,24 +34,18 @@ function App() {
   const [dataPoints, setDataPoints] = useState([]);
   const [inputValues, setInputValues] = useState<Wave[]>([defaultInput]);
 
-  let channels = 1;
-  let bytesRead = 0;
-  const frameCount = 44100;
-
-  if (ws.readyState == 3) {
-    ws = new WebSocket(API_WS);
-    ws.binaryType = "arraybuffer";
-  }
-
   useEffect(() => {
+    // Reopen socket if closed
+    if (ws.readyState === 3) {
+      ws = new WebSocket(API_WS);
+      ws.binaryType = 'arraybuffer';
+    }
+
     ws.onmessage = (message: any) => {
-      console.log(message.type);
-      if (message.data instanceof ArrayBuffer) {
-        composeAudio(message.data);
-      } else {
-        console.log(JSON.parse(message.data).points);
-        setDataPoints(JSON.parse(message.data).points);
-      }
+      const data = message.data;
+      data instanceof ArrayBuffer
+        ? composeAudio(data)
+        : setDataPoints(JSON.parse(data).points);
     };
   });
 
@@ -84,7 +74,7 @@ function App() {
     source.connect(context.destination);
     source.start();
     source.onended = () => {
-      console.log("Sound is done playing!");
+      console.log('Sound is done playing!');
     };
 
     bytesRead = 0;
@@ -95,12 +85,37 @@ function App() {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.currentTarget;
-    let val: any = value;
-    if (name != "shape") {
-      val = parseInt(value);
+    let val: number | string = value;
+    if (name !== 'shape') {
+      val = parseFloat(value);
     }
-    const list: any[] = [...inputValues];
-    list[index][name] = val;
+    const list: any = [...inputValues];
+    if (
+      name === 'attack' ||
+      name === 'decay' ||
+      name === 'sustain' ||
+      name === 'release'
+    ) {
+      const adsr = 'adsr';
+      switch (name) {
+        case 'attack':
+          list[index][adsr][0] = val;
+          break;
+        case 'decay':
+          list[index][adsr][1] = val;
+          break;
+        case 'sustain':
+          list[index][adsr][2] = val;
+          break;
+        case 'release':
+          list[index][adsr][3] = val;
+          break;
+        default:
+          console.log('Error: name is incorrect');
+      }
+    } else {
+      list[index][name] = val;
+    }
     setInputValues(list);
   };
 
@@ -109,11 +124,8 @@ function App() {
     const newInput: Wave = {
       frequency: undefined,
       amplitude: undefined,
-      shape: "",
-      attack: 1,
-      decay: 1,
-      sustain: 3,
-      release: 1,
+      shape: '',
+      adsr: [1, 1, 3, 1],
     };
     setInputValues([...inputValues, newInput]);
   };
@@ -130,94 +142,44 @@ function App() {
 
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log(inputValues);
     const payload: any = {
       funcs: inputValues,
     };
     ws.send(JSON.stringify(payload));
   };
 
-
   return (
     <div className='App'>
       <div className='container'>
-        <header>Wave Generator</header>
+        <header>
+          <h1>Wave Generator</h1>
+        </header>
         <section className='graph'>
           <Graph data={dataPoints} />
         </section>
-        <div>
-          <p style={{float:"left", width:"13.5%"}}><b>Frequency:</b></p>
-          <p style={{float:"left", width:"13.5%"}}><b>Amplitude:</b></p>
-          <p style={{float:"left", width:"13.5%"}}><b>Shape:</b></p>
-          <p style={{float:"left", width:"13.5%"}}><b>Attack:</b></p>
-          <p style={{float:"left", width:"13.5%"}}><b>Decay:</b></p>
-          <p style={{float:"left", width:"13.5%"}}><b>Sustain:</b></p>
-          <p style={{float:"left", width:"13.5%"}}><b>Release:</b></p>
-        </div>
+
         <form onSubmit={submit}>
           {inputValues.map((element, index) => {
             return (
-              <div key={index}>
-                <input
-                  type='number'
-                  name='frequency'
-                  placeholder='Hz'
-                  value={element.frequency}
-                  onChange={(event) => handleInputChange(index, event)}
+              <>
+                <Oscillator
+                  element={element}
+                  index={index}
+                  handleInputChange={handleInputChange}
+                  removeInput={removeInput}
                 />
-                <input
-                  type='number'
-                  name='amplitude'
-                  placeholder='Amplitude'
-                  value={element.amplitude}
-                  onChange={(event) => handleInputChange(index, event)}
+                <EnvelopeADSR
+                  element={element}
+                  index={index}
+                  handleInputChange={handleInputChange}
                 />
-                <input
-                  type='text'
-                  name='shape'
-                  placeholder='Shape'
-                  value={element.shape}
-                  onChange={(event) => handleInputChange(index, event)}
-                />
-                <input
-                  type='number'
-                  name='attack'
-                  placeholder='Attack'
-                  value={element.attack}
-                  onChange={(event) => handleInputChange(index, event)}
-                  />
-                  <input
-                  type='number'
-                  name='decay'
-                  placeholder='Decay'
-                  value={element.decay}
-                  onChange={(event) => handleInputChange(index, event)}
-                  />
-                  <input
-                  type='text'
-                  name='sustain'
-                  placeholder='Sustain'
-                  value={element.sustain}
-                  onChange={(event) => handleInputChange(index, event)}
-                  />
-                  <input
-                  type='text'
-                  name='release'
-                  placeholder='Release'
-                  value={element.release}
-                  onChange={(event) => handleInputChange(index, event)}
-                  />
-                {index ? (
-                  <button
-                    onClick={(event) => {
-                      removeInput(index, event);
-                    }}>
-                    Remove
-                  </button>
-                ) : null}
-              </div>
+                <br />
+              </>
             );
           })}
           <button onClick={(e) => addInput(e)}>Add</button>
+          <br />
           <button type='submit'>Generate</button>
         </form>
 
@@ -230,3 +192,5 @@ function App() {
 export default App;
 
 //TODO
+// Add sound length, couple to framecount
+// Figure out alternative to 'Generate' button
