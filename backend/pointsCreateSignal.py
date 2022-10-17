@@ -3,7 +3,7 @@ import time
 import numpy as np 
 import matplotlib.pyplot as plt
 from filterAudio import low_pass_Filter, high_pass_Filter, Low_frequency_Oscillator_sine,\
-     Low_frequency_Oscillator_saw, reverb_filter, reverb_filter2, delay, Delay_Comb
+     Low_frequency_Oscillator_saw, reverb_filter, delay, Delay_Comb
 from soundGen import play
 from pointsFrequency import signal_to_hertz
 from ADSR_mod import ADSR
@@ -82,31 +82,24 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
 
 
     normalized_y = y_sum/np.max(y_sum) 
-    play(3* list(normalized_y))
+
+    #plot_array(t_vec, normalized_y,  "Normalized", "t[s]", "A[m]", "y", "r", "-", True, "normalized.pdf")
+
     #Apply low-pass filter
-    cutoff_low = np.max(frequencies)
+    cutoff_low = np.max(frequencies)-20
     cutoff_high = np.min(frequencies)
     order = int(cutoff_low/2)
 
-    y_low = low_pass_Filter(normalized_y, Fs, cutoff_low, order)
 
+    y_low = low_pass_Filter(normalized_y, Fs, cutoff_low, order)
+    """
     y_highlow = high_pass_Filter(y_low, Fs, cutoff_high, order)
 
-    signal_to_hertz(normalized_y, Fs, freqs = frequencies, label = "no")
+    """
 
-    plt.figure()
-    plot_array(t_vec, y_low,  "LPF", "t[s]", "A[m]", "Low", "r", "-", "True", "LPF.pdf")
-    plt.figure()
-    plot_array(t_vec, y_highlow,  "HPF", "t[s]", "A[m]", "High", "r", "-", "True", "HPF.pdf")
 
-    plt.figure()
 
-    plot_array(t_vec, normalized_y,  "Normalized", "t[s]", "A[m]", "y", "b", "--", "True", "normalized.pdf")
-    plot_array(t_vec, y_highlow,  "Filered", "t[s]", "A[m]", "y-filtered", "r", "-", "True", "filtered.pdf")
 
-    play(3 * list(y_highlow))
-
-    signal_to_hertz(y_highlow, Fs, freqs = frequencies, label = (cutoff_high, cutoff_low))
     """ 
    
 
@@ -118,18 +111,6 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
     #plt.show()
     #Variables for different function calls
 
-
-    #Various called functions below
-
-    """
-    #Call low_frequency_oscillator sine/saw
-    LFO = Low_frequency_Oscillator_sine(20, t_vec, np.max(y_filtered)/10)
-    saw = Low_frequency_Oscillator_saw(np.min(frequencies[0]), t_vec, 1)
-
-    y_filtered_LFO = y_filtered + LFO
-    y_filtered_saw = y_filtered + saw
-    """
-
     #Apply color
     #y_filtered_noise = coloredNoise(exponent = 2, y = normalzed_y, fmin = 0.1, noise_intensity=0.1)
 
@@ -138,13 +119,14 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
     # plot_array(t_vec, y_sum,  "Y + Saw", "t[s]", "A[m]", "Saw", "r", "-", "False", "Saw.pdf")
 
     #Reverb signal
+    
     """ 
-    reverbed_signal = reverb_filter2(y = normalized_y, delay = float(20), decayFactor = 1, sampleRate = Fs, mixPercent = 1)
-    reverbed_signal1 = reverb_filter2(y = normalized_y, delay = float(20), decayFactor = 2, sampleRate = Fs, mixPercent = 0.75)
-    reverbed_signal2 = reverb_filter2(y = normalized_y, delay = float(20), decayFactor = 1.5, sampleRate = Fs, mixPercent = 0.5)
-    reverbed_signal3 = reverb_filter2(y = normalized_y, delay = float(20), decayFactor = 1.25, sampleRate = Fs, mixPercent = 0.25)
-     """
-
+    reverbed_signal = reverb_filter(y = normalized_y,  sampleRate = Fs, mixPercent = 50)
+    reverbed_signal1_1 = reverb_filter(y = normalized_y,  sampleRate = Fs, mixPercent = 50)
+    reverbed_signal1 = reverb_filter(y = y_low, sampleRate = Fs, mixPercent = 50)
+    reverbed_signal2 = reverb_filter(y = normalized_y, sampleRate = Fs, mixPercent = 1)
+    reverbed_signal3 = reverb_filter(y = normalized_y, sampleRate = Fs, mixPercent = 1) 
+    """
  
 
     t1 = time.time()
