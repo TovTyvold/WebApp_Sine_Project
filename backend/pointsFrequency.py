@@ -1,6 +1,8 @@
 import numpy as np
 import sys
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+from plotting import plot_array 
+
 
 def signal_to_hertz(normalized_signal, Fs, freqs, label):
     """  
@@ -23,17 +25,17 @@ def signal_to_hertz(normalized_signal, Fs, freqs, label):
     Pxx = np.abs(Y_k) # be sure to get rid of imaginary part
 
     
-
     f = Fs*np.arange((length/2))/length; # frequency vector
 
 
-    plt.plot(f, Pxx, color = 'b', marker= '*', ms = 5)
-    plt.xlabel("frequency [Hz]")
-    plt.ylabel("Power [V]")
+    plt.figure()
+    plot_array(f, Pxx,  "FFT plot", "frequency [Hz]", "Power [V]", f"Periodogram of {label} cutoff", "r", "-", "True", "FFT.pdf")
     plt.xlim([0,freqs[-1]+100 ])
-    plt.title(f"Periodogram of {label} cutoff")
     #plt.savefig(f"backend/figures/demo/Periodogram.png")
-    """ freq_list = []
+
+    # Test Frequencies
+    """ 
+    freq_list = []
 
     for k in range(1,len(Pxx)-1):
         if Pxx[k-1] < Pxx[k] and Pxx[k] > Pxx[k+1]:
@@ -72,7 +74,8 @@ def signal_to_hertz(normalized_signal, Fs, freqs, label):
     print(f"Number of elements in freq_list: {np.shape(freq_list)[0]:.3f}")
     print(freq_list)
     print(f"Number of elements in list_rand_freq: {np.shape(freqs)[1]:.3f}")
-    print(np.sort(freqs)) """
+    print(np.sort(freqs)) 
+    """
 
     return f, Pxx#, freq_list
 
