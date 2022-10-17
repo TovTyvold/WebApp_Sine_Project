@@ -58,57 +58,58 @@ def Low_frequency_Oscillator_sine(freq_infrasonic, t_vec, amp):
 #LFO
 def Low_frequency_Oscillator_saw(freq_infrasonic, t_vec, amp):
     return 2 * amp * freq_infrasonic * (t_vec % (1 / freq_infrasonic)) - 1
-    
-
-
-# Add type of impulse response as "type" variable
-def reverb_filter(y, mode, amp):
-
-    n = int(len(y))
-    #descend = 1 / step**2
-    #sig = np.repeat([0, -5, 0, -5, 0], n/5)
-    #sig = np.repeat([0., , 0.], int(n/3))
-
-    win = signal.windows.hann(n, sym=True)
-
-    filtered = signal.convolve(y, win,  mode, method='direct')
-    #
-    return filtered, n, win
 
 
 
-def reverb_filter2(y, delay, decayFactor, sampleRate, mixPercent):
+
+def reverb_filter(y, sampleRate, mixPercent):
+    """
+    Reverb filter with layers of combs, i.e., layers that increase the delay or attack of wet/dry effect. 
+
+    Needs functions comb_for_reverb and all_pass_reverb to function. 
+
+    Inputs:
+    -----------------------------
+    y - dtype ndarray: Signal
+    delay - dtype float/int: Delay in milliseconds. Determines the length of the delay effect.  --STANDARD FOR NOW
+    decayfactor - dtype float: Float that determines the amplification of the delay effect.  --STANDARD FOR NOW
+    sapmleRate - dtype int: Number of samples
+    mixPercent - dtype float: Percentage of the wet/dry effect. Determines how much of the total should be enhanced. 
+
+    Returns:
+    ----------------------------
+    allPassFilterSamples2 - dtype ndarray: Filtered signal
+
+
+    Example input:
+    ----------------------------
+    reverb_filter(y = normalized_y, sampleRate = Fs, mixPercent = 50)
+    """
+
+    decayFactor = -0.5
+    delay = float(20)
     bufferSize = len(y)
     combFilterSamples1 = comb_for_reverb(y, bufferSize, delay, decayFactor, sampleRate)
-    combFilterSamples2 = comb_for_reverb(y, bufferSize, (delay - 11.73), (decayFactor - 0.1313), sampleRate)
-    combFilterSamples3 = comb_for_reverb(y, bufferSize, (delay + 19.31), (decayFactor - 0.2743), sampleRate)
-    combFilterSamples4 = comb_for_reverb(y, bufferSize, (delay - 7.97), (decayFactor - 0.31), sampleRate)
+    combFilterSamples2 = comb_for_reverb(y, bufferSize, (delay - 11), (decayFactor + 0.1313), sampleRate)
+    combFilterSamples3 = comb_for_reverb(y, bufferSize, (delay + 19), (decayFactor - 0.2743), sampleRate)
+    combFilterSamples4 = comb_for_reverb(y, bufferSize, (delay - 8), (decayFactor - 0.31), sampleRate)
 
     outputComb = np.zeros(bufferSize)
-
     for i in range(bufferSize):
         outputComb[i] = combFilterSamples1[i] + combFilterSamples2[i] + combFilterSamples3[i] + combFilterSamples4[i]
 
-
     mixAudio = np.zeros(bufferSize)
-
     for i in range(bufferSize):
         mixAudio[i] = ((100- mixPercent) * y[i]) + (mixPercent * outputComb[i])
 
-
-    allPassFilterSamples1 = all_pass_reverb(y, bufferSize, sampleRate)
-
-    # Final array
+    allPassFilterSamples1 = all_pass_reverb(mixAudio, bufferSize, sampleRate)
     allPassFilterSamples2 = all_pass_reverb(allPassFilterSamples1, bufferSize, sampleRate)
 
     return allPassFilterSamples2
 
 def comb_for_reverb(samples, sampleLength, delay_in_mm, defacyFactor, sampleRate):
-
     delaySamples = int(delay_in_mm * (sampleRate/1000))
-
     combFilterSamples = samples
-
     for i in range(0, sampleLength-delaySamples):
         combFilterSamples[i+delaySamples] += combFilterSamples[i] * defacyFactor
 
