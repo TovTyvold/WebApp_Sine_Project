@@ -148,20 +148,6 @@ def all_pass_reverb(samples, sampleLength, sampleRate):
 
 
 
-
-def comb_for_flanger(samples, delay_in_ms, decayFactor, sampleRate):
-    sampleLength = len(samples)
-    delaySamples = int(delay_in_ms * (sampleRate/1000))
-    print(delaySamples)
-
-
-    combFilterSamples = samples
-    for i in range(0, sampleLength-delaySamples):
-        combFilterSamples[i+delaySamples] += combFilterSamples[i] * decayFactor
-    return combFilterSamples
-
-
-
 def dirac_comb_discrete(y, N_, K):
     """
     Dirac Delta Comb filter that adds a flanger effect to signal.  
@@ -191,36 +177,6 @@ def dirac_comb_discrete(y, N_, K):
         part = (1/N_) *np.exp(2j * np.pi * n * i / K)
         sigSum = sigSum + part
     return sigSum.real * y
-
-
-def delay(y, delay_len, sampleRate):
-    N = len(y)
-    k = int(delay_len*sampleRate)
-    #Delay gain
-    b = 0.5 
-
-    x = np.zeros(N + k)
-
-    
-    for n in range(0, N + k):
-        if n > k and n - k < N:
-            xd =  b * y[n-k]
-        else:
-            xd = [0]
-
-        if n < N:
-            xn = y[n]
-
-        else:
-            xn = [0]
-
-        x[n] = xn + xd 
-    return x, len(x)
-
-
-def Delay_Comb(y, delay_gain, delay_amount, sampleRate):
-    return np.sqrt(1 + 2 * delay_gain * np.cos(2 * np.pi * y * delay_amount / sampleRate) + delay_gain **2)
-
 
 
 if __name__ == "__main__":
