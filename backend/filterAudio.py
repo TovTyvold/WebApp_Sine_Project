@@ -1,8 +1,10 @@
 
+import wave
 from scipy import signal
 import numpy as np
 import matplotlib.pyplot as plt
 from plotting import plot_array 
+import time
 
 #LOW PASS
 
@@ -107,11 +109,11 @@ def reverb_filter(y, sampleRate, mixPercent):
 
     return allPassFilterSamples2
 
-def comb_for_reverb(samples, sampleLength, delay_in_mm, defacyFactor, sampleRate):
+def comb_for_reverb(samples, sampleLength, delay_in_mm, decayfactor, sampleRate):
     delaySamples = int(delay_in_mm * (sampleRate/1000))
     combFilterSamples = samples
     for i in range(0, sampleLength-delaySamples):
-        combFilterSamples[i+delaySamples] += combFilterSamples[i] * defacyFactor
+        combFilterSamples[i+delaySamples] += combFilterSamples[i] * decayfactor
 
     return combFilterSamples
 
@@ -142,6 +144,53 @@ def all_pass_reverb(samples, sampleLength, sampleRate):
         allPassFilterSamples[i] = value 
     
     return allPassFilterSamples
+
+
+
+
+
+def comb_for_flanger(samples, delay_in_ms, decayFactor, sampleRate):
+    sampleLength = len(samples)
+    delaySamples = int(delay_in_ms * (sampleRate/1000))
+    print(delaySamples)
+
+
+    combFilterSamples = samples
+    for i in range(0, sampleLength-delaySamples):
+        combFilterSamples[i+delaySamples] += combFilterSamples[i] * decayFactor
+    return combFilterSamples
+
+
+
+def dirac_comb_discrete(y, N_, K):
+    """
+    Dirac Delta Comb filter that adds a flanger effect to signal.  
+
+    Inputs:
+    -----------------------------
+    y - dtype ndarray: Signal
+    N_ - dtype int: Determines how well-defined the spikes in the comb should be. A low N_ = 3 gives a more depth to the sound
+    and a high N_3 = 15 gives a more abrupt sound.
+    K - dtype int: How often the spikes should appear in the sample length, i.e., a peak every K sample.  
+
+    Returns:
+    ----------------------------
+    sigSum.real * y - dtype ndarray: Filtered signal with only the real part of sigSum
+
+
+    Example input:
+    ----------------------------
+    dirac_comb_filt = dirac_comb_discrete(y_sum, N_ = 2, K = len(y[0])/5)
+    """
+
+
+
+    n = np.arange(len(y))
+    sigSum = 0
+    for i in range(N_):
+        part = (1/N_) *np.exp(2j * np.pi * n * i / K)
+        sigSum = sigSum + part
+    return sigSum.real * y
 
 
 def delay(y, delay_len, sampleRate):
