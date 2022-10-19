@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Graph from './components/Graph';
 import Oscillator from './components/Oscillator';
 import EnvelopeADSR from './components/EnvelopeADSR';
+import Spectrum from './components/AudioSpectrum';
 
 type Wave = {
   frequency: number | undefined;
@@ -190,6 +191,7 @@ function App() {
         <button className='play-button' onClick={playAudio}>
           Play
         </button>
+        <Spectrum></Spectrum>
       </div>
     </div>
   );
