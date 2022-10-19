@@ -155,14 +155,14 @@ function App() {
         <header>
           <h1>Wave Generator</h1>
         </header>
-        <section className='graph'>
+        <section className='graph-section'>
           <Graph data={dataPoints} />
         </section>
 
-        <form onSubmit={submit}>
+        <form className='inputs-section' onSubmit={submit}>
           {inputValues.map((element, index) => {
             return (
-              <>
+              <div key={index} className='oscillator'>
                 <Oscillator
                   element={element}
                   index={index}
@@ -175,15 +175,21 @@ function App() {
                   handleInputChange={handleInputChange}
                 />
                 <br />
-              </>
+              </div>
             );
           })}
-          <button onClick={(e) => addInput(e)}>Add</button>
+          <button className='add-input-button' onClick={(e) => addInput(e)}>
+            Add
+          </button>
           <br />
-          <button type='submit'>Generate</button>
+          <button className='submit-button' type='submit'>
+            Generate
+          </button>
         </form>
 
-        <button onClick={playAudio}>Play</button>
+        <button className='play-button' onClick={playAudio}>
+          Play
+        </button>
       </div>
     </div>
   );
@@ -194,3 +200,5 @@ export default App;
 //TODO
 // Add sound length, couple to framecount
 // Figure out alternative to 'Generate' button
+// Quadratic bezier visual input for envelope
+// FFT frequency visualizer?
