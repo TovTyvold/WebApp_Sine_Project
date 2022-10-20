@@ -85,10 +85,15 @@ const Flow = ({ submit }: any) => {
           position: { x: 5, y: newNodeYPos.current },
           type: nodeType,
           data: data,
+          remove: removeNode,
         },
       ];
     });
   }, []);
+
+  const removeNode = (id: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== id));
+  };
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((edges) => addEdge(params, edges)),

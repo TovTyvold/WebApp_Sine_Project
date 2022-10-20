@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 
-function EnvelopeNode({ data }: any) {
+function EnvelopeNode({ data, id, remove }: any) {
   const onChange = useCallback((event: any) => {
     const value = event.target.value;
     switch (event.target.name) {
@@ -26,6 +26,12 @@ function EnvelopeNode({ data }: any) {
   return (
     <div className='env-node'>
       <Handle type='target' position={Position.Left} />
+      <b>{id}</b>
+      <label
+        onClick={() => remove(id)}
+        style={{ float: 'right', paddingRight: '3px' }}>
+        <b>X</b>
+      </label>
       <NumberInput label='Attack' name='attack' onChange={onChange} />
       <NumberInput label='Decay' name='decay' onChange={onChange} />
       <NumberInput label='Sustain' name='sustain' onChange={onChange} />
