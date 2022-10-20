@@ -1,9 +1,12 @@
 //App.tsx
 import './App.css';
 import React, { useState, useEffect } from 'react';
+import Flow from './Flow';
 import Graph from './components/Graph';
 import Oscillator from './components/Oscillator';
 import EnvelopeADSR from './components/EnvelopeADSR';
+import Button from '@mui/material/Button';
+import AddIcon from '@mui/icons-material/Add';
 
 type Wave = {
   frequency: number | undefined;
@@ -18,6 +21,8 @@ const defaultInput: Wave = {
   shape: 'sin',
   adsr: [1, 1, 3, 1],
 };
+
+const desiredFields = ['id', 'type', 'data', 'children'];
 
 let channels = 1;
 let bytesRead = 0;
@@ -80,65 +85,65 @@ function App() {
     bytesRead = 0;
   }
 
-  const handleInputChange = (
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const { name, value } = e.currentTarget;
-    let val: number | string = value;
-    if (name !== 'shape') {
-      val = parseFloat(value);
-    }
-    const list: any = [...inputValues];
-    if (
-      name === 'attack' ||
-      name === 'decay' ||
-      name === 'sustain' ||
-      name === 'release'
-    ) {
-      const adsr = 'adsr';
-      switch (name) {
-        case 'attack':
-          list[index][adsr][0] = val;
-          break;
-        case 'decay':
-          list[index][adsr][1] = val;
-          break;
-        case 'sustain':
-          list[index][adsr][2] = val;
-          break;
-        case 'release':
-          list[index][adsr][3] = val;
-          break;
-        default:
-          console.log('Error: name is incorrect');
-      }
-    } else {
-      list[index][name] = val;
-    }
-    setInputValues(list);
-  };
+  // const handleInputChange = (
+  //   index: number,
+  //   e: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   const { name, value } = e.currentTarget;
+  //   let val: number | string = value;
+  //   if (name !== 'shape') {
+  //     val = parseFloat(value);
+  //   }
+  //   const list: any = [...inputValues];
+  //   if (
+  //     name === 'attack' ||
+  //     name === 'decay' ||
+  //     name === 'sustain' ||
+  //     name === 'release'
+  //   ) {
+  //     const adsr = 'adsr';
+  //     switch (name) {
+  //       case 'attack':
+  //         list[index][adsr][0] = val;
+  //         break;
+  //       case 'decay':
+  //         list[index][adsr][1] = val;
+  //         break;
+  //       case 'sustain':
+  //         list[index][adsr][2] = val;
+  //         break;
+  //       case 'release':
+  //         list[index][adsr][3] = val;
+  //         break;
+  //       default:
+  //         console.log('Error: name is incorrect');
+  //     }
+  //   } else {
+  //     list[index][name] = val;
+  //   }
+  //   setInputValues(list);
+  // };
 
-  const addInput = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const newInput: Wave = {
-      frequency: undefined,
-      amplitude: undefined,
-      shape: '',
-      adsr: [1, 1, 3, 1],
-    };
-    setInputValues([...inputValues, newInput]);
-  };
+  // const addInput = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   e.preventDefault();
+  //   const newInput: Wave = {
+  //     frequency: undefined,
+  //     amplitude: undefined,
+  //     shape: '',
+  //     adsr: [1, 1, 3, 1],
+  //   };
+  //   setInputValues([...inputValues, newInput]);
+  // };
 
-  const removeInput = (
-    index: number,
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-    let list = [...inputValues];
-    list.splice(index, 1);
-    setInputValues(list);
-  };
+  // const removeInput = (
+  //   index: number,
+  //   e: React.MouseEvent<HTMLButtonElement>
+  // ) => {
+  //   e.preventDefault();
+  //   let list = [...inputValues];
+  //   list.splice(index, 1);
+  //   setInputValues(list);
+  // };
 
   const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -146,6 +151,29 @@ function App() {
     const payload: any = {
       funcs: inputValues,
     };
+    ws.send(JSON.stringify(payload));
+  };
+
+  const sanitize = (tree: any) => {
+    Object.keys(tree).forEach((key) => {
+      let keep: boolean = desiredFields.includes(key);
+
+      if (!keep) {
+        delete tree[key];
+      }
+      if (tree['children']) {
+        tree['children'].forEach((child: any) => {
+          sanitize(child);
+        });
+      }
+    });
+
+    return tree;
+  };
+
+  const playSound = async (tree: any) => {
+    const payload = sanitize(tree);
+    console.log(JSON.stringify(payload, null, 2));
     ws.send(JSON.stringify(payload));
   };
 
@@ -159,37 +187,49 @@ function App() {
           <Graph data={dataPoints} />
         </section>
 
-        <form className='inputs-section' onSubmit={submit}>
+        {/* <form className='inputs-section' onSubmit={submit}>
+          <Button className='submit-button' variant='contained' type='submit'>
+            Generate
+          </Button>
           {inputValues.map((element, index) => {
             return (
               <div key={index} className='oscillator'>
                 <Oscillator
                   element={element}
                   index={index}
-                  handleInputChange={handleInputChange}
+                  onChange={handleInputChange}
                   removeInput={removeInput}
                 />
                 <EnvelopeADSR
                   element={element}
                   index={index}
-                  handleInputChange={handleInputChange}
+                  onChange={handleInputChange}
                 />
                 <br />
               </div>
             );
           })}
-          <button className='add-input-button' onClick={(e) => addInput(e)}>
-            Add
-          </button>
-          <br />
-          <button className='submit-button' type='submit'>
-            Generate
-          </button>
-        </form>
 
-        <button className='play-button' onClick={playAudio}>
+          <br />
+        </form>
+        <Button
+          className='add-input-button'
+          variant='outlined'
+          onClick={(e) => addInput(e)}>
+          <AddIcon />
+        </Button>
+
+        <Button variant='contained' className='play-button' onClick={playAudio}>
           Play
-        </button>
+        </Button> */}
+      </div>
+      <div
+        style={{
+          height: '880px',
+          border: '1px #1f939e solid',
+          marginBottom: '10rem',
+        }}>
+        <Flow submit={playSound} />
       </div>
     </div>
   );
@@ -197,8 +237,10 @@ function App() {
 
 export default App;
 
-//TODO
+// TODO
+// Get flowchart to work with backend
 // Add sound length, couple to framecount
 // Figure out alternative to 'Generate' button
 // Quadratic bezier visual input for envelope
 // FFT frequency visualizer?
+// Oscilliscope on oscillator node

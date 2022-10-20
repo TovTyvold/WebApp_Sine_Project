@@ -1,0 +1,23 @@
+parse(str) 
+    if str is envelope
+        return
+            {
+                "envelope": {
+                    "points": {
+                        parse(child)
+                    },
+                    "numbers": {
+                    "list": [
+                        { "num": str.a }, { "num": str.d }, { "num": str.s }, { "num": str.r }
+                    ]
+                    }
+                }
+            }
+    if str is sum
+        return
+            list = parse(child) for child in children
+            return { "+" : list}
+
+    if str is wave
+        return
+            {"wave" : {"freq" : str.freq, "ampli" : str.ampl, "shape" : str.shape}}
