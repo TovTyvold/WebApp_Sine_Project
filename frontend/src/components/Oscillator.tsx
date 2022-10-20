@@ -3,7 +3,7 @@ import WaveTypeInput from './WaveTypeInput';
 export default function Oscillator({
   element,
   index,
-  handleInputChange,
+  onChange,
   removeInput,
 }: any): JSX.Element {
   return (
@@ -13,20 +13,16 @@ export default function Oscillator({
         name='frequency'
         value={element.frequency}
         index={index}
-        handleInputChange={handleInputChange}
+        onChange={onChange}
       />
       <NumberInput
         label='Amplitude'
         name='amplitude'
         value={element.amplitude}
         index={index}
-        handleInputChange={handleInputChange}
+        onChange={onChange}
       />
-      <WaveTypeInput
-        value={element.shape}
-        index={index}
-        handleInputChange={handleInputChange}
-      />
+      <WaveTypeInput value={element.shape} index={index} onChange={onChange} />
 
       <button
         className='remove-button'

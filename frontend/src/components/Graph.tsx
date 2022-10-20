@@ -5,15 +5,15 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-} from "recharts";
+} from 'recharts';
 
-const Graph = (props: any) => {
+const Graph = ({ data }: any) => {
   return (
     <div>
       <LineChart
         width={1200}
         height={600}
-        data={props.data}
+        data={data}
         margin={{ top: 5, right: 20, bottom: 5, left: 20 }}>
         <Line
           type='monotone'

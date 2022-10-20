@@ -1,0 +1,65 @@
+.osc-node {
+  height: auto;
+  border: 1px solid #eee;
+  padding: 5px;
+  border-radius: 5px;
+  background: white;
+}
+
+.osc-input {
+  display: block;
+  color: #777;
+  font-size: 12px;
+  margin: 1rem;
+}
+
+.osc-input input {
+  display: block;
+  padding-left: 5px;
+}
+
+.osc-input-dd {
+  font-size: 12px;
+  padding-inline: 1rem;
+}
+
+.env-node,
+.eff-node {
+  height: auto;
+  border: 1px solid #eee;
+  padding: 5px;
+  border-radius: 5px;
+  background: white;
+}
+
+.op-node,
+.out-node {
+  height: auto;
+  border: 1px solid #eee !important;
+  border: 5px;
+  padding: 25px !important;
+  background: white;
+}
+
+.react-flow .react-flow__handle {
+  width: 14px;
+  height: 14px;
+  border-radius: 10px;
+  background-color: #1f939e;
+}
+
+/* .context-menu {
+  font-size: 14px;
+  background-color: #fff;
+  border-radius: 2px;
+  padding: 5px 0 5px 0;
+  width: 150px;
+  height: auto;
+  margin: 0;
+
+  position: absolute;
+  list-style: none;
+  box-shadow: 0 0 20px 0 #ccc;
+  opacity: 1;
+  transition: opacity 0.5s linear;
+} */
