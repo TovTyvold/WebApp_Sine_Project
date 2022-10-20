@@ -48,6 +48,7 @@ function App() {
 
     ws.onmessage = (message: any) => {
       const data = message.data;
+      console.log(data);
       data instanceof ArrayBuffer
         ? composeAudio(data)
         : setDataPoints(JSON.parse(data).points);
@@ -230,6 +231,7 @@ function App() {
           marginBottom: '10rem',
         }}>
         <Flow submit={playSound} />
+        <button onClick={playAudio}>play</button>
       </div>
     </div>
   );

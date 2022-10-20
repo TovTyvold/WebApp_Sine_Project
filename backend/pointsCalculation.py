@@ -1,8 +1,7 @@
 import math
 from enum import Enum
-from typing import List
+from typing import List, Dict, Union
 import random
-import ADSR_mod
 import functools
 import soundGen
 import pointsNoise
@@ -104,15 +103,13 @@ def advSine(amplFunction, freqFunction, samples, seconds):
     return ypoints
 
 def advSinePoints(ampls, freqs, samples, seconds, func=sin):
+    #changing frequencies yielsd differnet phases,
+    #this syncs them
     offsets = [0]*seconds*samples
     for i in range(1,samples*seconds):
         fp = freqs[i-1]
         fn = freqs[i]
-        offsets[i] = (i/samples)*(fp-fn)
-
-    #compute prefix sum
-    for i in range(1,samples*seconds):
-        offsets[i] += offsets[i-1]
+        offsets[i] = (i/samples)*(fp-fn) + offsets[i-1]
 
     ypoints = [0]*seconds*samples
     for i in range(samples*seconds):
@@ -124,11 +121,17 @@ def advSinePoints(ampls, freqs, samples, seconds, func=sin):
 
 def newparse(data: dict, samples, seconds) -> List[float]:
     #TODO generate the xpoints here, and let recParse use them rather than generating them
+    xpoints = genSamples(samples, seconds)
     strToOp = {
         "+" : operator.add,
         "*" : operator.mul,
     }
-    def recParse(data: dict) -> List[float]:
+
+    #turn a ("num", 1) into samples*seconds 1s, ie.. [1,1,1,1,1,1]
+    dimensionalise = lambda p : [p[1]]*samples*seconds if p[0] == "num" else p[1]
+
+    #recursively parse the ast
+    def recParse(data: dict) -> Dict[str, Union[List[float], Union[float, int]]]:
         for k in data.keys():
             v = data[k]
 
@@ -137,30 +140,43 @@ def newparse(data: dict, samples, seconds) -> List[float]:
                 (amplT, amplV) = recParse(v["amplitude"])
                 (freqT, freqV) = recParse(v["frequency"])
 
-                #xsamples = genSamples(samples, seconds)
-                #ampls = bezierCurve.compositeOn(envelope.getSymmEnv([1,1,1,1], 0.75, xsamples[0], xsamples[-1]), xsamples)
-
-                ampls = [amplV]*samples*seconds if amplT == "num" else amplV
-                freqs = [freqV]*samples*seconds if freqT == "num" else freqV
+                ampls = dimensionalise((amplT, amplV))
+                freqs = dimensionalise((freqT, freqV))
         
                 ypoints = advSinePoints(ampls, freqs, samples, seconds, func = func)
                 return ("points", ypoints)
 
             if k == "bezier":  # v = [(1,1),(2,1),(3,2)]
-                xsamples = genSamples(samples, seconds)
-                return ("points", bezierCurve.compositeOn(v, xsamples))
+                return ("points", bezierCurve.compositeOn(v, xpoints))
 
             if k == "num":
                 return ("num", v)
 
+            if k == "list":
+                return ("list", v)
+
+            if k == "envelope":
+                (_, wave) = recParse(v["points"])
+                (_, adsr) = recParse(v["adsr"])
+                print(adsr)
+                
+                #envelope.symmetricEnvelope(adsr, genSamples(samples, seconds), points, 0.75)
+                adsr = envelope.getSymmEnv(adsr, 0.75, 0, seconds)
+                print(adsr)
+
+                ypoints = list(map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))
+                return ("points", ypoints)
+
             if k == "+" or k == "*":
-                l = [recParse(f) for f in v] # [("num", 1), ("num", 2), ("points", [1,2,3])]
+                # [("num", 1), ("num", 2), ("points", [1,2,3])]
+                l = [recParse(f) for f in v]
                 
                 #if input is all one dim numbers then just sum
                 if all([t=="num" for t,_ in l]):
                     return ("num", functools.reduce(strToOp[k], ([v for _, v in l])))
 
-                l = [[v]*samples*seconds if t == "num" else v for (t, v) in l] #[[1,1,1], [2,2,2], [1,2,3]]
+                #[[1,1,1], [2,2,2], [1,2,3]]
+                l = [[v]*samples*seconds if t == "num" else v for (t, v) in l]
                 ypoints = list(functools.reduce(
                     lambda xs, ys: map(strToOp[k], xs, ys), l)
                 )
@@ -168,12 +184,10 @@ def newparse(data: dict, samples, seconds) -> List[float]:
                 return ("points", ypoints)
 
             if k == "mix":
-                (percentT, percentV) = recParse(v["percent"]) #function on x with values from 0 to 1 
-                (v1t, v1v) = recParse(v["v1"]) #v1 if percent 0
-                (v2t, v2v) = recParse(v["v2"]) #v2 if percent 1, interpolate inbetween
-                percents = [percentV]*samples*seconds if percentT == "num" else percentV
-                v1s = [v1v]*samples*seconds if v1t == "num" else v1v
-                v2s = [v2v]*samples*seconds if v2t == "num" else v2v
+                percents = dimensionalise(recParse(v["percent"]))
+                #TODO throw error / warning if percents has values not in (0,1)
+                v1s = dimensionalise(recParse(v["v1"]))
+                v2s = dimensionalise(recParse(v["v2"]))
 
                 ypoints = []
                 for i in range(len(percents)):
@@ -188,18 +202,6 @@ def newparse(data: dict, samples, seconds) -> List[float]:
             if k == "str":
                 return ("str", v)
                     
-            # note = {
-            #     "mix" : {
-            #         "percent" : {
-            #             "lerp": [(0, 0), (0.5, 0.5), (1, 1)],
-            #         },
-            #         "v1" : { "str" : "sin"},
-            #         "v2" : { "str" : "square"},
-            #     }
-            # }
-
-
-
         raise Exception("Unknown key: " + k)
 
     #normalize input
@@ -389,7 +391,7 @@ if __name__ == "__main__":
             }
         },
     }
-    soundGen.play(newparse(note1, 44100, 4))
+    # soundGen.play(newparse(note1, 44100, 4))
 
     note2 = {
         "wave": {
@@ -408,7 +410,7 @@ if __name__ == "__main__":
             }
         },
     }
-    soundGen.play(newparse(note2, 44100, 4))
+    # soundGen.play(newparse(note2, 44100, 4))
 
 
     w1 = {"wave": {"shape": "sin", "frequency": {"num": 440}, "amplitude": {"num": 1}}}
@@ -416,17 +418,17 @@ if __name__ == "__main__":
     mixT = {
         "mix" : {
             "percent" : {
-                # "+" : [
-                #     {"wave": {"shape": "sin", "frequency": {"num": 1}, "amplitude": {"num": 0.5}}},
-                #     {"num" : 0.5},
-                # ]
-                "bezier": [(1, 0), (2, 0.5), (3, 1)],
+                "+" : [
+                     {"wave": {"shape": "sin", "frequency": {"num": 1}, "amplitude": {"num": 0.5}}},
+                     {"num" : 0.5},
+                ]
+                # "bezier": [(1, 0), (2, 0.5), (3, 1)],
             },
             "v1": w1,
             "v2": w2,
         }
     }
-    soundGen.play(newparse(mixT, 44100, 4))
+    #soundGen.play(newparse(mixT, 44100, 4))
 
     mixT = {
         "mix" : {
@@ -441,4 +443,18 @@ if __name__ == "__main__":
             "v2": note2,
         }
     }
-    soundGen.play(newparse(mixT, 44100, 6))
+    # soundGen.play(newparse(mixT, 44100, 6))
+
+    #preferred way to apply envelope
+    note = { "*": [
+        w1, 
+        {"bezier": envelope.getSymmEnv([1, 1, 1, 1], 0.75, 0, 4)}
+    ]}
+
+        #alternative way to apply envelope
+    note = { "envelope": {
+        "points": w1, 
+        "adsr": {"list": [1,1,1,1]}
+    }}
+    soundGen.play(newparse(note, 44100, 4))
+
