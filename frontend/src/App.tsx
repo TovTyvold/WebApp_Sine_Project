@@ -178,15 +178,25 @@ function App() {
     ws.send(JSON.stringify(payload));
   };
 
+
   return (
     <div className='App'>
       <div className='container'>
-        <header>
+        {/* <header>
           <h1>Wave Generator</h1>
-        </header>
-        <section className='graph-section'>
-          <Graph data={dataPoints} />
-        </section>
+        </header> */}
+
+        <div
+          style={{
+            width: '50vw',
+            height: '50vh',
+            border: '1px #1f939e solid',
+            marginBottom: '10rem',
+          }}>
+          <Flow submit={playSound}/>
+          <button onClick={playAudio}>play</button>
+        </div>
+      </div>
 
         {/* <form className='inputs-section' onSubmit={submit}>
           <Button className='submit-button' variant='contained' type='submit'>
@@ -223,16 +233,7 @@ function App() {
         <Button variant='contained' className='play-button' onClick={playAudio}>
           Play
         </Button> */}
-      </div>
-      <div
-        style={{
-          height: '880px',
-          border: '1px #1f939e solid',
-          marginBottom: '10rem',
-        }}>
-        <Flow submit={playSound} />
-        <button onClick={playAudio}>play</button>
-      </div>
+
     </div>
   );
 }

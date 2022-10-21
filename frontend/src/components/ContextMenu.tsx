@@ -1,13 +1,13 @@
 import { memo } from 'react';
 
 export const ContextMenu = memo(
-  ({ show, position, options }: any): JSX.Element | null => {
+  ({ show, position, onClick }: any): JSX.Element | null => {
     return show ? (
       <div
         style={{
           position: 'absolute',
-          top: position.y - 350,
-          left: position.x - 375,
+          top: position.y,
+          left: position.x,
           zIndex: 100,
           border: 'solid 1px blue',
           backgroundColor: 'white',
@@ -17,11 +17,15 @@ export const ContextMenu = memo(
         }}>
         Menu
         <br />
-        {options.map((option: any) => {
-          <button key={option.label} onClick={option.effect}>
-            {option.label}
-          </button>;
-        })}
+
+        <ul style={{ display: "flex", flexDirection: "column" }}>
+          <label onClick={() => onClick("oscillator")}> Add Oscillator </label>
+          <label onClick={() => onClick("envelope")}> Add Envelope </label>
+          <label onClick={() => onClick("effect")}> Add Effect </label>
+          <label onClick={() => onClick("operation")}> Add Operation </label>
+        </ul>
+
+
       </div>
     ) : null;
   }

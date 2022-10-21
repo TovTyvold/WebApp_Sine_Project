@@ -10,15 +10,6 @@ const ControllButtons = ({ getFlow, addNode }: any) => {
       <div style={{ marginRight: '1rem' }}>
         <button onClick={getFlow}>Play</button>
       </div>
-      <select name='node-type' onChange={onChange}>
-        <option value='oscillator'>Oscillator</option>
-        <option value='envelope'>Envelope</option>
-        <option value='effect'>Effect</option>
-        <option value='operation'>Operation</option>
-      </select>
-      <div>
-        <button onClick={() => addNode(nodeSelect)}>Add Node</button>
-      </div>
     </div>
   );
 };
