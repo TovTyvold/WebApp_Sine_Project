@@ -8,7 +8,7 @@ const ControllButtons = ({ getFlow, addNode }: any) => {
   return (
     <div style={{ zIndex: 4, position: 'absolute', display: 'flex' }}>
       <div style={{ marginRight: '1rem' }}>
-        <button onClick={getFlow}>Play</button>
+        <button onClick={getFlow}>Submit</button>
       </div>
     </div>
   );

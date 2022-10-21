@@ -96,6 +96,10 @@ const Flow = ({ submit }: any) => {
     setShowContextMenu(false)
   }, []);
 
+  const removeNode = (id: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== id));
+  };
+
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((edges) => addEdge(params, edges)),
     [setEdges]

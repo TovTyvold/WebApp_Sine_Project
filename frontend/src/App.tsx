@@ -24,9 +24,9 @@ const defaultInput: Wave = {
 
 const desiredFields = ['id', 'type', 'data', 'children'];
 
-let channels = 1;
-let bytesRead = 0;
+const CHANNELS = 1;
 const frameCount = 44100;
+let bytesRead = 0;
 
 const API_WS = 'ws://localhost:5000/sound';
 
@@ -40,12 +40,6 @@ function App() {
   const [inputValues, setInputValues] = useState<Wave[]>([defaultInput]);
 
   useEffect(() => {
-    // Reopen socket if closed
-    if (ws.readyState === 3) {
-      ws = new WebSocket(API_WS);
-      ws.binaryType = 'arraybuffer';
-    }
-
     ws.onmessage = (message: any) => {
       const data = message.data;
       console.log(data);
@@ -56,7 +50,7 @@ function App() {
   });
 
   const buffer = new AudioBuffer({
-    numberOfChannels: channels,
+    numberOfChannels: CHANNELS,
     length: frameCount,
     sampleRate: 44100,
   });
@@ -146,14 +140,14 @@ function App() {
   //   setInputValues(list);
   // };
 
-  const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log(inputValues);
-    const payload: any = {
-      funcs: inputValues,
-    };
-    ws.send(JSON.stringify(payload));
-  };
+  // const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   console.log(inputValues);
+  //   const payload: any = {
+  //     funcs: inputValues,
+  //   };
+  //   ws.send(JSON.stringify(payload));
+  // };
 
   const sanitize = (tree: any) => {
     Object.keys(tree).forEach((key) => {
@@ -172,7 +166,7 @@ function App() {
     return tree;
   };
 
-  const playSound = async (tree: any) => {
+  const submit = async (tree: any) => {
     const payload = sanitize(tree);
     console.log(JSON.stringify(payload, null, 2));
     ws.send(JSON.stringify(payload));
@@ -193,7 +187,7 @@ function App() {
             border: '1px #1f939e solid',
             marginBottom: '10rem',
           }}>
-          <Flow submit={playSound}/>
+          <Flow submit={submit}/>
           <button onClick={playAudio}>play</button>
         </div>
       </div>
@@ -233,7 +227,6 @@ function App() {
         <Button variant='contained' className='play-button' onClick={playAudio}>
           Play
         </Button> */}
-
     </div>
   );
 }
