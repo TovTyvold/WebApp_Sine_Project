@@ -2,7 +2,7 @@
 import './App.css';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Flow from './Flow';
-import NumberInput from './components/NumberInput'
+import NumberInput from './components/NumberInput';
 import Graph from './components/Graph';
 import Oscillator from './components/Oscillator';
 import EnvelopeADSR from './components/EnvelopeADSR';
@@ -30,76 +30,85 @@ const CHANNELS = 1;
 const dBuffer = new AudioBuffer({
   numberOfChannels: CHANNELS,
   length: 44100 * 1,
-  sampleRate: 44100
-})
+  sampleRate: 44100,
+});
 
 const API_WS = 'ws://localhost:5000/sound';
-const webSocket = new WebSocket(API_WS)
+const webSocket = new WebSocket(API_WS);
 const context = new AudioContext();
 
 function App() {
   // Hooks
-  const [buffer, setBuffer] = useState<AudioBuffer>(dBuffer)
-  const [ws, setWs] = useState<WebSocket>(webSocket)
-  const [tree, setTree] = useState<Object>()
-  const bytesRead = useRef<number>(0)
-  const seconds = useRef<number>(1)
-  const [isReady, setIsReady] = useState<boolean>(false)
+  const [buffer, setBuffer] = useState<AudioBuffer>(dBuffer);
+  const [ws, setWs] = useState<WebSocket>(webSocket);
+  const [tree, setTree] = useState<Object>();
+  const bytesRead = useRef<number>(0);
+  const seconds = useRef<number>(1);
+  const [isReady, setIsReady] = useState<boolean>(false);
 
-  const composeAudio = useCallback((data: any) => {
-    setIsReady(true)
-    if (data instanceof ArrayBuffer) {
-      const chunk = new Float32Array(data);
-      buffer.copyToChannel(chunk, 0, bytesRead.current)
-      bytesRead.current += chunk.length
-    } 
-  }, [buffer])
+  const composeAudio = useCallback(
+    (data: any) => {
+      setIsReady(true);
+      if (data instanceof ArrayBuffer) {
+        const chunk = new Float32Array(data);
+        buffer.copyToChannel(chunk, 0, bytesRead.current);
+        bytesRead.current += chunk.length;
+      }
+    },
+    [buffer]
+  );
 
   //fix ws
   useEffect(() => {
-      const onClose = () => {
-          setTimeout(() => {
-              setWs(new WebSocket(API_WS));
-              console.log(ws)
-          }, 1000);
-      }
+    const onClose = () => {
+      setTimeout(() => {
+        setWs(new WebSocket(API_WS));
+        console.log(ws);
+      }, 1000);
+    };
 
-      ws.binaryType = 'arraybuffer';
-      ws.onmessage = (event: MessageEvent) => {
-        composeAudio(event.data) 
-      }
-      ws.addEventListener("close", onClose)
-      //ws.onopen = () => (console.log(ws))
+    ws.binaryType = 'arraybuffer';
+    ws.onmessage = (event: MessageEvent) => {
+      composeAudio(event.data);
+    };
+    ws.addEventListener('close', onClose);
+    //ws.onopen = () => (console.log(ws))
 
-      // return () => {
-      //     ws.removeEventListener("close", onClose)
-      // }
+    // return () => {
+    //     ws.removeEventListener("close", onClose)
+    // }
   }, [ws, setWs, composeAudio]);
 
   //when a tree is ready send it
   useEffect(() => {
     if (ws.readyState === webSocket.OPEN) {
-      const payload = { "NodeTree": sanitize(tree), "Seconds": seconds.current };
-      ws.send(JSON.stringify(payload))
+      const payload = { NodeTree: sanitize(tree), Seconds: seconds.current };
+      console.log(JSON.stringify(payload, null, 2));
+      ws.send(JSON.stringify(payload));
     }
-  }, [ws, tree])
+  }, [ws, tree]);
 
   useEffect(() => {
     if (isReady) {
-      playAudio()
+      playAudio();
     }
-  }, [isReady])
+  }, [isReady]);
 
-  const onSecondsChange = useCallback((event: any) => {
-    event.preventDefault()
+  const onSecondsChange = useCallback(
+    (event: any) => {
+      event.preventDefault();
 
-    seconds.current = event.target.value;
-    setBuffer(new AudioBuffer({
-      numberOfChannels: CHANNELS,
-      length: 44100*seconds.current,
-      sampleRate: 44100,
-    }))
-  }, [setBuffer]);
+      seconds.current = event.target.value;
+      setBuffer(
+        new AudioBuffer({
+          numberOfChannels: CHANNELS,
+          length: 44100 * seconds.current,
+          sampleRate: 44100,
+        })
+      );
+    },
+    [setBuffer]
+  );
 
   const playAudio = useCallback(() => {
     if (buffer) {
@@ -109,12 +118,12 @@ function App() {
       source.start();
       source.onended = () => {
         console.log('Sound is done playing!');
-        setIsReady(false)
+        setIsReady(false);
       };
 
-      bytesRead.current = 0
+      bytesRead.current = 0;
     }
-  }, [buffer])
+  }, [buffer]);
 
   const sanitize = (tree: any) => {
     Object.keys(tree).forEach((key) => {
@@ -134,7 +143,7 @@ function App() {
   };
 
   let submit = (tree: any) => {
-    setTree(tree)
+    setTree(tree);
   };
 
   return (
@@ -146,18 +155,22 @@ function App() {
 
         <div
           style={{
-            width: '50vw',
-            height: '50vh',
-            border: '1px #1f939e solid',
-            marginBottom: '10rem',
+            width: '80vw',
+            height: '70vh',
+            border: '2px #1f939e solid',
+            borderRadius: '10px',
           }}>
-          <Flow submit={submit}/>
-          <NumberInput label={"seconds"} name={"seconds"} onChange={onSecondsChange}/>
+          <Flow submit={submit} />
+          <NumberInput
+            label={'seconds'}
+            name={'seconds'}
+            onChange={onSecondsChange}
+          />
           <button onClick={playAudio}>play</button>
         </div>
       </div>
 
-        {/* <form className='inputs-section' onSubmit={submit}>
+      {/* <form className='inputs-section' onSubmit={submit}>
           <Button className='submit-button' variant='contained' type='submit'>
             Generate
           </Button>
