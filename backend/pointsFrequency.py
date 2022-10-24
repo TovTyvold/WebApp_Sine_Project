@@ -29,8 +29,9 @@ def signal_to_hertz(normalized_signal, Fs, freqs, label):
 
 
     plt.figure()
-    plot_array(f, Pxx,  "FFT plot", "frequency [Hz]", "Power [V]", f"Periodogram of {label} cutoff", "r", "-", "True", "FFT.pdf")
-    plt.xlim([0,freqs[-1]+100 ])
+    plt.xlim([0, np.max(freqs)+100])
+    plot_array(f, Pxx,  "FFT plot", "frequency [Hz]", "Power [V]", f"Periodogram of {label}", "r", "-", True, "FFT.pdf")
+    
     #plt.savefig(f"backend/figures/demo/Periodogram.png")
 
     # Test Frequencies
@@ -77,7 +78,7 @@ def signal_to_hertz(normalized_signal, Fs, freqs, label):
     print(np.sort(freqs)) 
     """
 
-    return f, Pxx#, freq_list
+    return f, Pxx
 
 if __name__ == "__main__":
     a = 2
