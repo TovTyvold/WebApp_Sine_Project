@@ -68,6 +68,8 @@ const Flow = ({ submit }: any) => {
     if (instance) {
       const nodesList = instance.getNodes();
       const edgesList = instance.getEdges();
+      console.table(nodesList);
+      console.table(edgesList);
 
       submit(createTree(nodesList, edgesList));
     }
