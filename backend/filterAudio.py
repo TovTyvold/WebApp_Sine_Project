@@ -5,10 +5,10 @@ from scipy import signal
 import numpy as np
 import matplotlib.pyplot as plt
 from plotting import plot_array 
-import time
+
+
 
 #LOW PASS
-
 def low_pass_Filter(y_sum, cutoff):
     """
     LPF that attentuates all frequencies above the cutoff.
@@ -29,11 +29,10 @@ def low_pass_Filter(y_sum, cutoff):
     data = y_sum 
     sos = signal.butter(order, cutoff, btype='low', analog=False, output = 'sos', fs = Fs)
     filtered = signal.sosfilt(sos, data)
-
     return filtered
 
-# HIGH PASS
 
+# HIGH PASS
 def high_pass_Filter(y_sum, cutoff):
     """
     HPF that attentuates all frequencies below the cutoff.
@@ -58,15 +57,15 @@ def high_pass_Filter(y_sum, cutoff):
 
 
 #LFO
-def Low_frequency_Oscillator_sine(t_vec):
+def Low_frequency_Oscillator_sine(signal, t):
+    t_vec = np.linspace(0, t, len(signal))
     return (1 + np.sin(2 * np.pi * 20 * t_vec)) / 2
     
 
 #LFO
-def Low_frequency_Oscillator_saw(t_vec):
+def Low_frequency_Oscillator_saw(signal, t):
+    t_vec = np.linspace(0, t, len(signal))
     return 2 * 20 * (t_vec % (1 / 20)) - 1
-
-
 
 
 def reverb_filter(y, t_vec, sampleRate, mixPercent, decayFactor, delay, Decay_factors, delay_factors, decayFactor_AP):
@@ -153,19 +152,12 @@ def all_pass_reverb(samples, sampleLength, sampleRate, decayFactor_AP = 0.131):
 
 def Impulse_Rev(y):
     signal_clean = y # Already normalized, if not -> y / np.max(np.abs(y))
-
-
     IR = signal.unit_impulse(len(y), 'mid')
     IR = IR / np.abs(np.max(IR))
     p_max = np.argmax(np.abs(IR))
     signal_rev = signal.fftconvolve(y, IR, mode="same")
-
     signal_rev = signal_rev / np.max(np.abs(signal_rev))
-
     signal_rev = IR_shift(signal_clean, -p_max)
-
-    
-
     signal_rev = signal_rev[0 : signal_clean.shape[0]]
 
     return signal_rev
@@ -179,6 +171,7 @@ def IR_shift(xs, n):
         e[n:] = 0.0
         e[:n] = xs[-n:]
     return e
+
 
 def dirac_comb_discrete(y, N_, K):
     """
@@ -201,8 +194,6 @@ def dirac_comb_discrete(y, N_, K):
     dirac_comb_filt = dirac_comb_discrete(y_sum, N_ = 2, K = len(y[0])/5)
     """
 
-
-
     n = np.arange(len(y))
     sigSum = 0
     for i in range(N_):
@@ -217,44 +208,31 @@ def hilbert(y):
 
 
 
-""" def hilbert2(y, t_vec, shift):
-    t_vec[t_vec == 0] = t_vec[1]/100
-    y_a = y + signal.fftconvolve(1j * 2 / (np.pi * t_vec), y, mode="same")
-    return np.imag(y_a), shift
 
-
-def hilbert3(y, t_vec, shift):
-    delta = signal.unit_impulse(len(t_vec))
-    t_vec[t_vec == 0] = t_vec[1]/100
-    y_a = signal.fftconvolve(y, 1j / (np.pi * t_vec) + delta, mode="same")
-    return np.imag(y_a), shift
- """
-
-
-
-
-
-def Rev_Conv_Filter(signal, Duration_inp):
+def Rev_Conv_Filter(signal, Duration_inp, DryWet_ = 1):
     Fs = 44100
     N = Fs 
     T = 1/Fs 
-    t = 1 
+    t = Duration_inp
     length = len(signal)
-    Duration_inp = 3
-    Duration = t + Duration_inp
+    DryWet_ = 100
+    Duration_inp = 5
+    if Duration_inp == 1:
+        Duration_inp = 2
+    t = Duration_inp
+    Duration = Duration_inp
     total_len = int(Duration * length)
-    t_vec_r = np.arange(N * Duration) * T * t
+    t_vec_r = np.arange(int(N * Duration)) * T * t
     x = float(length/(total_len))
+    DryWet = abs((DryWet_/100))
     #First output original sample
 
     length1 = int(total_len * (x)) 
-    length2 = int(total_len * (Duration_inp * x/3)) + length1
-    length3 = int(total_len * (Duration_inp * x/4)) + length2
-    length4 = int(total_len * (Duration_inp * x/6)) + length3
-    length5 = int(total_len * (Duration_inp * x/6)) + length4
-    length6 = int(total_len * (Duration_inp * x/12)) + length5
-
-
+    length2 = int(total_len * ((Duration_inp-1) * x/3)) + length1
+    length3 = int(total_len * ((Duration_inp-1) * x/4)) + length2
+    length4 = int(total_len * ((Duration_inp-1) * x/6)) + length3
+    length5 = int(total_len * ((Duration_inp-1) * x/6)) + length4
+    length6 = int(total_len * ((Duration_inp-1) * x/12)) + length5
 
     releasek = np.ones_like(t_vec_r)
     releasej = np.ones_like(t_vec_r)
@@ -266,22 +244,21 @@ def Rev_Conv_Filter(signal, Duration_inp):
         releasej = np.linspace(1,0.5, length5 - length4)
         releasel = np.linspace(1,0.5, length6 - length5)
 
-    # Wetness cycles
     cych = 2205
     cyc3h = 3 * cych
     cyc5h = 5 * cych
     cyc7h = 7 * cych
     cyc9h = 9 * cych
-    #Release constants
-    g = 0; h = 0; k = 0; j = 0; l = 0
-
     norm_y_a = signal.copy()
     norm_y = list(norm_y_a) * int((Duration))
+
     conv_y = np.zeros_like(t_vec_r)
+    #Release constants
+    g = 0; h = 0; k = 0; j = 0; l = 0
     for n in range(len(t_vec_r)):
     
         if n >= length1 and n < length2:
-            conv_y[n] = releaseg[g] * (norm_y[n]*0.4 - norm_y[n-length1+cych]*0.6)
+            conv_y[n] = releaseg[g] * (norm_y[n]*0.4 - norm_y[n-length1+cych]*0.6 * DryWet)
             g += 1
 
         elif n >= length2 and n <= length3:
