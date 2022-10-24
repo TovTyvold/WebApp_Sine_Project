@@ -19,69 +19,8 @@ origins = ["http://localhost", "http://localhost:3000"]
 app.add_middleware(CORSMiddleware, allow_origins=origins,
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-
-#define response model for post
-class PointsAnswer(BaseModel):
-    points: List[Dict[str, float]]
-
-
-#define input model for waves
-class FreqQuery(BaseModel):
-    funcs: List[Dict[str, Union[float, str, List[float]]]]
-    seconds: Optional[float] = 1.0
-    samples: Optional[int] = 400
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "funcs": [{"shape": "sin", "frequency": 2, "amplitude": 1, "adsr": [1, 1, 1, 1]}],
-                "seconds": 1.0,
-                "samples": 400
-            }
-        }
-
-
-#query contains information about signal length, desired samples, and functions with envelopes
-#convert this to AST data to be parsed in pointsCalculation
-def BuildAST(query: Dict, samples: int, seconds: float, debug=False, doEnvelope=True):
-    l = []
-    print(query)
-    if doEnvelope:
-        for func in query["funcs"]:
-            l.append({"envelope": {
-                "points": {
-                    "wave": {
-                        "shape": func["shape"],
-                        "frequency": func["frequency"],
-                        "amplitude": func["amplitude"]
-                    },
-                },
-                "numbers": {
-                    "list": [{"num": v} for v in ([1, 1, 1, 1] if "adsr" not in func or func["adsr"] == None else func["adsr"])]
-                }
-            }})
-    else:
-        for func in query["funcs"]:
-            l.append({"wave": {
-                "shape": func["shape"], "frequency": func["frequency"], "amplitude": func["amplitude"]
-            }})
-
-    d = {"+": l}
-
-    if debug:
-        print(d)
-
-    return pointsCalculation.parse(d, samples, seconds)
-
-#samples and seconds are optional, fill the data points if they are missing
-def handleMissing(query: Dict):
-    query["samples"] = 44100 if "samples" not in query else query["samples"]
-    query["seconds"] = 1 if "seconds" not in query else query["seconds"]
-
-    return query
-
-
 def handleInput(query):
+    #convert the recurisve node format from the frontend into an AST 
     def recClean(json):
         dData = json["data"]
         dType = json["type"]
@@ -90,6 +29,17 @@ def handleInput(query):
 
         if dType == "output":
             return recClean(json["children"][0])
+
+        if dType == "envelope":
+            child = recClean(dChildren[0])
+            adsr = [float(f) for f in dData.values()]
+
+            return {
+                "envelope" : {
+                    "points" : child, 
+                    "adsr" : {"list" : adsr}
+                }
+            }
 
         if dType == "oscillator": #currently a leaf
             for dk in dData.keys():
@@ -105,39 +55,55 @@ def handleInput(query):
             return {"+" : [recClean(child) for child in dChildren]}
 
     query = recClean(query)
-    print(query)
 
+    #find how long the signal should be
+    #based on the longest envelope
+    def findDur(query):
+        if type(query) is not dict:
+            return 0
+
+        if type(query) is list:
+            return max([findDur(q) for q in query])
+
+        v = [0]
+        for k in query.keys():
+            if k == "envelope":
+                v.append(sum(query[k]["adsr"]["list"]))
+            else:
+                v.append(findDur(query[k]))
+
+        return max(v)
+
+    dur = findDur(query)
+
+    #if there are no envelopes default to 1 second
     return query
 
 
-@app.post("/points", response_model=PointsAnswer)
-async def getPoints(query: FreqQuery):
-    query = handleMissing(query)
-    ypoints = BuildAST(
-        query.dict(),  query["samples"], query["seconds"], debug=True, doEnvelope=False)
-    xpoints = pointsCalculation.genSamples(query["samples"], query["seconds"])
-
-    return {"points": [{"x": x, "y": y} for (x, y) in zip(xpoints, ypoints)]}
-
-chunkSize = 1024
+CHUNKSIZE = 1024
+SAMPLES = 44100
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+
     while (True):
         #recieve wave information
         query = await websocket.receive_json()
-        query = handleMissing(query)
+        seconds = float(query["Seconds"])
+        query = handleInput(query["NodeTree"])
 
-        soundData = pointsCalculation.newparse(handleInput(query), 44100, 1)
+        print(query)
+        print(seconds)
+
+        soundData = pointsCalculation.newparse(query, SAMPLES, seconds)
 
         #send chunkSize chunks of the sounddata until all is sent
         cb = soundGen.samplesToCB(soundData)
-        data = cb.readChunk(chunkSize)
+        data = cb.readChunk(CHUNKSIZE)
         while data:
             await websocket.send_bytes(data)
-            data = cb.readChunk(chunkSize)
+            data = cb.readChunk(CHUNKSIZE)
 
-    await websocket.close()
 
 if __name__ == "__main__":
     config = uvicorn.Config("apiServer:app", port=5000,
