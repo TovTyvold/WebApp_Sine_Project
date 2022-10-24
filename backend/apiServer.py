@@ -27,8 +27,58 @@ def handleInput(query):
         dId = json["id"]
         dChildren = json["children"]
 
-        if dType == "output":
+        if dType == "out":
             return recClean(json["children"][0])
+
+        if dType == "effect":
+            child = recClean(dChildren[0])
+
+            if dData["effectName"] == "reverb":
+                duration = float(dData["params"]["duration"])
+                wetdry = float(dData["params"]["mixPercent"])
+
+                return {
+                    "reverb" : {
+                        "points" : child,
+                        "duration" : {"num":  duration},
+                        "wetdry" : {"num": wetdry},
+                    }
+                }
+        
+            if dData["effectName"] in ["lpf", "hpf"]:
+                cutoff = float(dData["params"]["cutoff"])
+
+                return {
+                    dData["effectName"] : {
+                        "points" : child,
+                        "cutoff" : {"num": cutoff},
+                    }
+                }
+
+            if dData["effectName"] in ["lfo-sin", "lfo-saw"]:
+                rate = float(dData["params"]["rate"])
+
+                return {
+                    dData["effectName"] : {
+                        "points" : child,
+                        "rate" : {"num": rate},
+                    }
+                }
+
+            if dData["effectName"] == "dirac":
+                precision = float(dData["params"]["precision"])
+                rate = float(dData["params"]["rate"])
+        
+                return {
+                    "dirac" : {
+                        "points" : child,
+                        "rate" : {"num": rate},
+                        "precision" : {"num": precision},
+                    }
+                }
+
+
+
 
         if dType == "envelope":
             child = recClean(dChildren[0])
