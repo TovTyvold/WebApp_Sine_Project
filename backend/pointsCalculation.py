@@ -85,18 +85,18 @@ def genSamples(samples: int, seconds: float):
     return [i / samples for i in range(int(seconds * samples))]
 
 def advSine(amplFunction, freqFunction, samples, seconds):
-    offsets = [0]*seconds*samples
-    for i in range(1,samples*seconds):
+    offsets = [0]*int(seconds*samples)
+    for i in range(1,int(samples*seconds)):
         fp = freqFunction((i-1)/samples)
         fn = freqFunction(i/samples)
         offsets[i] = 2*math.pi*(i/samples)*(fp-fn)
 
     #compute prefix sum
-    for i in range(1,samples*seconds):
+    for i in range(1,int(samples*seconds)):
         offsets[i] += offsets[i-1]
 
-    ypoints = [0]*seconds*samples
-    for i in range(samples*seconds):
+    ypoints = [0]*int(seconds*samples)
+    for i in range(int(samples*seconds)):
         x = i/samples
         ypoints[i] = amplFunction(x)*math.sin(2*math.pi*freqFunction(x)*x + offsets[i])
 
@@ -105,14 +105,14 @@ def advSine(amplFunction, freqFunction, samples, seconds):
 def advSinePoints(ampls, freqs, samples, seconds, func=sin):
     #changing frequencies yielsd differnet phases,
     #this syncs them
-    offsets = [0]*seconds*samples
-    for i in range(1,samples*seconds):
+    offsets = [0]*int(samples*seconds)
+    for i in range(1,int(samples*seconds)):
         fp = freqs[i-1]
         fn = freqs[i]
         offsets[i] = (i/samples)*(fp-fn) + offsets[i-1]
 
-    ypoints = [0]*seconds*samples
-    for i in range(samples*seconds):
+    ypoints = [0]*int(samples*seconds)
+    for i in range(int(samples*seconds)):
         x = i/samples
 
         ypoints[i] = ampls[i]*func(freqs[i]*x + offsets[i])
@@ -128,7 +128,7 @@ def newparse(data: dict, samples, seconds) -> List[float]:
     }
 
     #turn a ("num", 1) into samples*seconds 1s, ie.. [1,1,1,1,1,1]
-    dimensionalise = lambda p : [p[1]]*samples*seconds if p[0] == "num" else p[1]
+    dimensionalise = lambda p : [p[1]]*int(samples*seconds) if p[0] == "num" else p[1]
 
     #recursively parse the ast
     def recParse(data: dict) -> Dict[str, Union[List[float], Union[float, int]]]:
@@ -158,11 +158,9 @@ def newparse(data: dict, samples, seconds) -> List[float]:
             if k == "envelope":
                 (_, wave) = recParse(v["points"])
                 (_, adsr) = recParse(v["adsr"])
-                print(adsr)
                 
                 #envelope.symmetricEnvelope(adsr, genSamples(samples, seconds), points, 0.75)
                 adsr = envelope.getSymmEnv(adsr, 0.75, 0, seconds)
-                print(adsr)
 
                 ypoints = list(map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))
                 return ("points", ypoints)
@@ -176,7 +174,7 @@ def newparse(data: dict, samples, seconds) -> List[float]:
                     return ("num", functools.reduce(strToOp[k], ([v for _, v in l])))
 
                 #[[1,1,1], [2,2,2], [1,2,3]]
-                l = [[v]*samples*seconds if t == "num" else v for (t, v) in l]
+                l = [[v]*int(samples*seconds) if t == "num" else v for (t, v) in l]
                 ypoints = list(functools.reduce(
                     lambda xs, ys: map(strToOp[k], xs, ys), l)
                 )
@@ -451,10 +449,18 @@ if __name__ == "__main__":
         {"bezier": envelope.getSymmEnv([1, 1, 1, 1], 0.75, 0, 4)}
     ]}
 
-        #alternative way to apply envelope
+    #alternative way to apply maxSeconds
     note = { "envelope": {
         "points": w1, 
         "adsr": {"list": [1,1,1,1]}
     }}
-    soundGen.play(newparse(note, 44100, 4))
 
+    note = {'envelope': 
+        {
+            'points': {
+                'wave': {'shape': 'sin', 'frequency': {'num': 440.0}, 'amplitude': {'num': 1.0}}
+            }, 
+            'adsr': {'list': [1.0, 1.0, 1.0, 1.0]}
+        }
+    }
+    soundGen.play(newparse(note, 44100, 4))

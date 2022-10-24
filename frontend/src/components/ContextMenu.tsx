@@ -9,23 +9,19 @@ export const ContextMenu = memo(
           top: position.y,
           left: position.x,
           zIndex: 100,
-          border: 'solid 1px blue',
+          border: 'solid 1px #1f939e',
+          borderRadius: '5px',
           backgroundColor: 'white',
           padding: '10px',
-          display: 'flex',
-          flexDirection: 'column',
         }}>
-        Menu
-        <br />
-
-        <ul style={{ display: "flex", flexDirection: "column" }}>
-          <label onClick={() => onClick("oscillator")}> Add Oscillator </label>
-          <label onClick={() => onClick("envelope")}> Add Envelope </label>
-          <label onClick={() => onClick("effect")}> Add Effect </label>
-          <label onClick={() => onClick("operation")}> Add Operation </label>
-        </ul>
-
-
+        <b> Add Node</b>
+        <hr />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <button onClick={() => onClick('oscillator')}>Oscillator </button>
+          <button onClick={() => onClick('envelope')}>Envelope </button>
+          <button onClick={() => onClick('effect')}>Effect </button>
+          <button onClick={() => onClick('operation')}>Operation </button>
+        </div>
       </div>
     ) : null;
   }

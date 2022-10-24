@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 import WaveTypeInput from './WaveTypeInput';
 
-function OscillatorNode({ data, id, remove }: any) {
+function OscillatorNode({ data }: any) {
   const onChange = useCallback(
     (event: any) => {
       const value = event.target.value;
@@ -27,10 +27,8 @@ function OscillatorNode({ data, id, remove }: any) {
   return (
     <div className='osc-node'>
       <Handle type='target' position={Position.Left} style={{ top: 65 }} />
-      <b>{id}</b>
-      <label onClick={remove} style={{ float: 'right', paddingRight: '3px' }}>
-        <b>X</b>
-      </label>
+      <b>Oscillator</b>
+
       <br />
       <NumberInput
         label='Frequency (Hz)'

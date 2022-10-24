@@ -1,9 +1,31 @@
-.osc-node {
+.osc-node,
+.env-node,
+.eff-node,
+.op-node,
+.out-node {
   height: auto;
-  border: 1px solid #eee;
-  padding: 5px;
-  border-radius: 5px;
+  padding: 16px;
+  border-radius: 10px;
   background: white;
+}
+.osc-node {
+  border: 2px solid #1f939e;
+}
+
+.env-node {
+  border: 2px solid #d5d51c;
+}
+
+.eff-node {
+  border: 2px solid #1f9e3d;
+}
+
+.op-node {
+  border: 2px solid #9e501f;
+}
+
+.out-node {
+  border: 2px solid #581f9e;
 }
 
 .osc-input {
@@ -23,43 +45,9 @@
   padding-inline: 1rem;
 }
 
-.env-node,
-.eff-node {
-  height: auto;
-  border: 1px solid #eee;
-  padding: 5px;
-  border-radius: 5px;
-  background: white;
-}
-
-.op-node,
-.out-node {
-  height: auto;
-  border: 1px solid #eee !important;
-  border: 5px;
-  padding: 25px !important;
-  background: white;
-}
-
 .react-flow .react-flow__handle {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 10px;
   background-color: #1f939e;
 }
-
-/* .context-menu {
-  font-size: 14px;
-  background-color: #fff;
-  border-radius: 2px;
-  padding: 5px 0 5px 0;
-  width: 150px;
-  height: auto;
-  margin: 0;
-
-  position: absolute;
-  list-style: none;
-  box-shadow: 0 0 20px 0 #ccc;
-  opacity: 1;
-  transition: opacity 0.5s linear;
-} */
