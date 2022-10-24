@@ -27,13 +27,13 @@ function OscillatorNode({ data, id }: any) {
   return (
     <div className='osc-node'>
       <Handle
-        id={'freq-' + id}
+        id={'frequency-' + id}
         type='target'
         position={Position.Left}
         style={{ top: 75 }}
       />
       <Handle
-        id={'amp-' + id}
+        id={'amplitude-' + id}
         type='target'
         position={Position.Left}
         style={{ top: 130 }}
@@ -48,7 +48,7 @@ function OscillatorNode({ data, id }: any) {
       />
       <NumberInput label='Amplitude' name='amplitude' onChange={onChange} />
       <WaveTypeInput onChange={onChange} />
-      <Handle type='source' position={Position.Right} />
+      <Handle id={'out-' + id} type='source' position={Position.Right} />
     </div>
   );
 }

@@ -28,7 +28,7 @@ function FilterEffect2(props: any) {
 
 const params: any = {};
 
-function EffectNode({ data }: any) {
+function EffectNode({ data, id }: any) {
   const [selection, setSelection] = useState('reverb');
 
   const onSelectionChange = useCallback((event: any) => {
@@ -48,19 +48,21 @@ function EffectNode({ data }: any) {
 
   return (
     <div className='eff-node'>
-      <Handle type='target' position={Position.Left} />
+      <Handle id={'in-' + id} type='target' position={Position.Left} />
 
       <b>Effect</b>
       <br />
-      <select name='effect-type' onChange={onSelectionChange}>
-        <option value='reverb'>Reverb</option>
-        <option value='lpf'>Low Pass Filter</option>
-        <option value='hpf'>High Pass Filter</option>
-        <option value='dirac'>Dirac Comb Filter</option>
-        <option value='lfo-sin'>LFO Sine</option>
-        <option value='lfo-saw'>LFO Saw</option>
-        <option value='phase'>Phase Shifter</option>
-      </select>
+      <div className='select'>
+        <select name='effect-type' onChange={onSelectionChange}>
+          <option value='reverb'>Reverb</option>
+          <option value='lpf'>Low Pass Filter</option>
+          <option value='hpf'>High Pass Filter</option>
+          <option value='dirac'>Dirac Comb Filter</option>
+          <option value='lfo-sin'>LFO Sine</option>
+          <option value='lfo-saw'>LFO Saw</option>
+          <option value='phase'>Phase Shifter</option>
+        </select>
+      </div>
       <hr />
       {
         {
@@ -108,7 +110,7 @@ function EffectNode({ data }: any) {
         }[selection]
       }
 
-      <Handle type='source' position={Position.Right} />
+      <Handle id={'out-' + id} type='source' position={Position.Right} />
     </div>
   );
 }
