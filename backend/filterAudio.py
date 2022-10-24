@@ -209,14 +209,12 @@ def hilbert(y):
 
 
 
-def Rev_Conv_Filter(signal, Duration_inp, DryWet_ = 1):
+def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     Fs = 44100
     N = Fs 
     T = 1/Fs 
     t = Duration_inp
     length = len(signal)
-    DryWet_ = 100
-    Duration_inp = 5
     if Duration_inp == 1:
         Duration_inp = 2
     t = Duration_inp
@@ -258,27 +256,28 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_ = 1):
     for n in range(len(t_vec_r)):
     
         if n >= length1 and n < length2:
-            conv_y[n] = releaseg[g] * (norm_y[n]*0.4 - norm_y[n-length1+cych]*0.6 * DryWet)
+            conv_y[n] = releaseg[g] * (norm_y[n]*0.4 - norm_y[n-length1+cych]*0.5 * DryWet)
             g += 1
 
         elif n >= length2 and n <= length3:
-            conv_y[n] = releaseh[h] * (norm_y[n- length2]*0.4 - norm_y[n-length2+cych]*0.4 - norm_y[n- length2+cyc3h]*0.2)
+            conv_y[n] = releaseh[h] * (norm_y[n- length2]*0.4 - norm_y[n-length2+cych]*0.3 * DryWet - norm_y[n- length2+cyc3h]*0.25 * DryWet\
+                - norm_y[n- length2+cyc5h]*0.2 * DryWet - norm_y[n- length2+cyc7h]*0.2 * DryWet)
             h += 1 
 
         elif n >= length3 and n <= length4:
-            conv_y[n] = releasek[k] * (norm_y[n-length3]*0.3 - norm_y[n-length3+cych]*0.2\
-                - norm_y[n- length3+cyc3h]*0.15 - norm_y[n- length3+cyc5h]*0.1)
+            conv_y[n] = releasek[k] * (norm_y[n-length3]*0.3 - norm_y[n-length3+cych]*0.2 * DryWet\
+                - norm_y[n- length3+cyc3h]*0.15 * DryWet - norm_y[n- length3+cyc5h]*0.15 * DryWet)
             k += 1
 
         elif n >= length4 and n <= length5:
-            conv_y[n] = releasej[j] * (norm_y[n-length4]*0.2 - norm_y[n-length4+cych]*0.2 - norm_y[n- length4+cyc3h]*0.1\
-                - norm_y[n- length4+cyc5h]*0.05 - norm_y[n- length4+cyc7h]*0.05)
+            conv_y[n] = releasej[j] * (norm_y[n-length4]*0.2 - norm_y[n-length4+cych]*0.2 * DryWet - norm_y[n- length4+cyc3h]*0.1 * DryWet\
+                - norm_y[n- length4+cyc5h]*0.15 * DryWet - norm_y[n- length4+cyc7h]*0.15 * DryWet)
             j += 1
             
         elif n >= length5 and n < length6:
             dist = n - length5
-            conv_y[n] =  releasel[l] * (norm_y[dist]*0.2 - norm_y[dist+cych]*0.01 - norm_y[dist+cyc3h]*0.01\
-                - norm_y[dist+cyc5h]*0.01 - norm_y[dist+cyc7h]*0.01 - norm_y[dist+cyc9h]*0.01)
+            conv_y[n] =  releasel[l] * (norm_y[dist]*0.2 - norm_y[dist+cych]*0.15 * DryWet - norm_y[dist+cyc3h]*0.15 * DryWet\
+                - norm_y[dist+cyc5h]*0.1 * DryWet - norm_y[dist+cyc7h]*0.01 * DryWet - norm_y[dist+cyc9h]*0.01 * DryWet)
             l += 1
 
         else:
