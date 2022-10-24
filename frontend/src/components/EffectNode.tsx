@@ -26,6 +26,8 @@ function FilterEffect2(props: any) {
   );
 }
 
+const params: any = {};
+
 function EffectNode({ data }: any) {
   const [selection, setSelection] = useState('reverb');
 
@@ -38,7 +40,6 @@ function EffectNode({ data }: any) {
     (event: any) => {
       event.preventDefault();
       data.effectName = selection;
-      const params: any = {};
       params[event.target.name] = event.target.value;
       data.params = params;
     },
@@ -65,8 +66,8 @@ function EffectNode({ data }: any) {
         {
           reverb: (
             <FilterEffect2
-              label1={'Delay'}
-              name1={'delay'}
+              label1={'Duration'}
+              name1={'duration'}
               label2={'Wet/Dry'}
               name2={'mixPercent'}
               onChange={onChange}

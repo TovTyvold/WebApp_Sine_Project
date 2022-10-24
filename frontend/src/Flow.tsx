@@ -27,7 +27,7 @@ const initialNodes: Node[] = [
     id: 'output-0',
     type: 'out',
     data: {},
-    position: { x: 350, y: 250 },
+    position: { x: 750, y: 250 },
   },
 ];
 
@@ -41,7 +41,7 @@ const Flow = ({ submit }: any) => {
   const edgeUpdateSuccessful = useRef(true);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
-  const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 0.5 });
+  const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 1 });
 
   const nodeTypes = useMemo(
     () => ({
