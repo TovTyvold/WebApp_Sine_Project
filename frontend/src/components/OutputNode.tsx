@@ -1,11 +1,6 @@
-import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
-function OutputNode({ data }: any) {
-  const onChange = useCallback((event: any) => {
-    console.log(event.target.value);
-  }, []);
-
+function OutputNode() {
   return (
     <div className='out-node'>
       <Handle type='target' position={Position.Left} />
