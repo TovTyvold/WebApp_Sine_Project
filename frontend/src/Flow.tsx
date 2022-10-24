@@ -21,12 +21,11 @@ import OperationNode from './components/OperationNode';
 import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
-import { FlowArrayMutation } from 'typescript';
 
 const initialNodes: Node[] = [
   {
     id: 'output-0',
-    type: 'output',
+    type: 'out',
     data: {},
     position: { x: 350, y: 250 },
   },
@@ -42,8 +41,7 @@ const Flow = ({ submit }: any) => {
   const edgeUpdateSuccessful = useRef(true);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
-  const [currView, setCurrView] = useState({x:0, y:0, zoom:0.5});
-  const [tree, setTree] = useState();
+  const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 0.5 });
 
   const nodeTypes = useMemo(
     () => ({
@@ -51,7 +49,7 @@ const Flow = ({ submit }: any) => {
       envelope: EnvelopeNode,
       operation: OperationNode,
       effect: EffectNode,
-      output: OutputNode,
+      out: OutputNode,
     }),
     []
   );
@@ -71,34 +69,31 @@ const Flow = ({ submit }: any) => {
       const nodesList = instance.getNodes();
       const edgesList = instance.getEdges();
 
-      //console.log(JSON.stringify(createTree(nodesList, edgesList), null, 2));
       submit(createTree(nodesList, edgesList));
     }
   }, [instance]);
-
-
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
 
-    const x = (1/view.zoom)*(nodePos.x - view.x)
-    const y = (1/view.zoom)*(nodePos.y - view.y)
+    const x = (1 / view.zoom) * (nodePos.x - view.x);
+    const y = (1 / view.zoom) * (nodePos.y - view.y);
 
     const newNode = {
       id: `${nodeType}-${idCount.current++}`,
-      position: {x: x, y: y},
+      position: { x: x, y: y },
       type: nodeType,
       data: data,
-    }
+    };
 
-    setNodes((nds) => nds.concat(newNode))
-    setShowContextMenu(false)
+    setNodes((nds) => nds.concat(newNode));
+    setShowContextMenu(false);
   }, []);
 
-  const removeNode = (id: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== id));
-  };
+  const removeNode = useCallback((n: Node) => {
+    setNodes((nds) => nds.filter((node) => node.id !== n.id));
+  }, []);
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((edges) => addEdge(params, edges)),
@@ -124,23 +119,23 @@ const Flow = ({ submit }: any) => {
   }, []);
 
   const onPaneContextMenu = useCallback((event: any) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    setShowContextMenu(true)
+    setShowContextMenu(true);
     const boundingBox = event.target.getBoundingClientRect();
     const viewport_x = event.pageX - boundingBox.left;
     const viewport_y = event.pageY - boundingBox.top;
 
-    setContextPosition({ x: viewport_x, y: viewport_y })
+    setContextPosition({ x: viewport_x, y: viewport_y });
   }, []);
 
   const onPaneClick = useCallback((event: any) => {
-    setShowContextMenu(false)
-  }, [])
+    setShowContextMenu(false);
+  }, []);
 
   const onMoveEnd = useCallback((event: any, view: any) => {
-    setCurrView(view)
-  }, [])
+    setCurrView(view);
+  }, []);
 
   return (
     <ReactFlow
@@ -158,9 +153,16 @@ const Flow = ({ submit }: any) => {
       onInit={setInstance}
       onMoveEnd={onMoveEnd}
       defaultViewport={currView}
-      >
-      <ContextMenu show={showContextMenu} position={contextPosition} onClick={(e: any) => addNode(e, contextPosition, currView)}/>
-      <ControllButtons getFlow={getFlow} addNode={addNode} />
+      deleteKeyCode={['Backspace', 'Delete']}
+      onNodesDelete={(n: any) => {
+        removeNode(n);
+      }}>
+      <ContextMenu
+        show={showContextMenu}
+        position={contextPosition}
+        onClick={(e: any) => addNode(e, contextPosition, currView)}
+      />
+      <ControllButtons getFlow={getFlow} />
       <Background />
     </ReactFlow>
   );

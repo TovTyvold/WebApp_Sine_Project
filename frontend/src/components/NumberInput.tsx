@@ -27,6 +27,7 @@ export default function NumberInput({
         value={value}
         // onChange={(event) => onChange(index, event)}
         onChange={onChange}
+        required
       />
     </label>
   );
