@@ -21,6 +21,7 @@ export const ContextMenu = memo(
           <button onClick={() => onClick('envelope')}>Envelope </button>
           <button onClick={() => onClick('effect')}>Effect </button>
           <button onClick={() => onClick('operation')}>Operation </button>
+          <button onClick={() => onClick('value')}>Value </button>
         </div>
       </div>
     ) : null;

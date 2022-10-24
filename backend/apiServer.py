@@ -20,6 +20,43 @@ app.add_middleware(CORSMiddleware, allow_origins=origins,
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 def handleInput(query):
+    #query is a (V,E) pair
+    nodes = query["nodes"]
+    edges = query["edges"]
+
+    nodeKeep = ["id", "type", "data"]
+    edgeKeep = ["source", "sourceHandle", "target", "targetHandle"]
+    
+    def prune(dictlist, keep):
+        newList = []
+        for d in dictlist:
+            newD = {}
+            for k in d.keys():
+                if k in keep:
+                    newD[k] = d[k]
+
+            newList.append(newD)
+                
+        return newList
+                
+
+    nodes = prune(nodes, nodeKeep)
+    edges = prune(edges, edgeKeep)
+
+    adjList = list(map(lambda a : {a["id"] : {**a}}, nodes))
+    adjList = dict((key, d[key]) for d in adjList for key in d)
+
+    for e in edges:
+        spos, source = e["sourceHandle"].split("-")
+        tpos, target = e["targetHandle"].split("-")
+        print(spos, source)
+        print(tpos, target)
+
+        adjList[target]["children"].append(adjList[source])
+
+    print(adjList["output-0"])
+
+
     #convert the recurisve node format from the frontend into an AST 
     def recClean(json):
         dData = json["data"]
@@ -78,8 +115,6 @@ def handleInput(query):
                 }
 
 
-
-
         if dType == "envelope":
             child = recClean(dChildren[0])
             adsr = [float(f) for f in dData.values()]
@@ -104,30 +139,10 @@ def handleInput(query):
         if dType == "operation":
             return {"+" : [recClean(child) for child in dChildren]}
 
-    query = recClean(query)
-
-    #find how long the signal should be
-    #based on the longest envelope
-    def findDur(query):
-        if type(query) is not dict:
-            return 0
-
-        if type(query) is list:
-            return max([findDur(q) for q in query])
-
-        v = [0]
-        for k in query.keys():
-            if k == "envelope":
-                v.append(sum(query[k]["adsr"]["list"]))
-            else:
-                v.append(findDur(query[k]))
-
-        return max(v)
-
-    dur = findDur(query)
+    #query = recClean(query)
 
     #if there are no envelopes default to 1 second
-    return query
+    return nodes, edges
 
 
 CHUNKSIZE = 1024
@@ -145,14 +160,14 @@ async def websocket_endpoint(websocket: WebSocket):
         print(query)
         print(seconds)
 
-        soundData = pointsCalculation.newparse(query, SAMPLES, seconds)
+        # soundData = pointsCalculation.newparse(query, SAMPLES, seconds)
 
-        #send chunkSize chunks of the sounddata until all is sent
-        cb = soundGen.samplesToCB(soundData)
-        data = cb.readChunk(CHUNKSIZE)
-        while data:
-            await websocket.send_bytes(data)
-            data = cb.readChunk(CHUNKSIZE)
+        # #send chunkSize chunks of the sounddata until all is sent
+        # cb = soundGen.samplesToCB(soundData)
+        # data = cb.readChunk(CHUNKSIZE)
+        # while data:
+        #     await websocket.send_bytes(data)
+        #     data = cb.readChunk(CHUNKSIZE)
 
 
 if __name__ == "__main__":

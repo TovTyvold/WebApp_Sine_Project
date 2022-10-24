@@ -21,6 +21,7 @@ import OperationNode from './components/OperationNode';
 import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
+import ValueNode from './components/ValueNode';
 
 const initialNodes: Node[] = [
   {
@@ -49,6 +50,7 @@ const Flow = ({ submit }: any) => {
       envelope: EnvelopeNode,
       operation: OperationNode,
       effect: EffectNode,
+      value: ValueNode,
       out: OutputNode,
     }),
     []
@@ -71,7 +73,8 @@ const Flow = ({ submit }: any) => {
       console.table(nodesList);
       console.table(edgesList);
 
-      submit(createTree(nodesList, edgesList));
+      // submit(createTree(nodesList, edgesList));
+      submit({"nodes": nodesList, "edges": edgesList})
     }
   }, [instance]);
 
