@@ -37,11 +37,16 @@ const Flow = ({ submit }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [instance, setInstance] = useState<any>(null);
-  const idCount = useRef(1);
   const edgeUpdateSuccessful = useRef(true);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
   const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 1 });
+  const idRef = useRef<any>({
+    oscillator: 0,
+    envelope: 0,
+    operation: 0,
+    effect: 0,
+  });
 
   const nodeTypes = useMemo(
     () => ({
@@ -83,7 +88,7 @@ const Flow = ({ submit }: any) => {
     const y = (1 / view.zoom) * (nodePos.y - view.y);
 
     const newNode = {
-      id: `${nodeType}-${idCount.current++}`,
+      id: `${nodeType}-${idRef.current[nodeType]++}`,
       position: { x: x, y: y },
       type: nodeType,
       data: data,

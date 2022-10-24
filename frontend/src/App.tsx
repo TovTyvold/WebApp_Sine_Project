@@ -150,7 +150,7 @@ function App() {
     <div className='App'>
       <div className='container'>
         <header>
-          <h1>Wave Generator</h1>
+          <h1>Web Synth</h1>
         </header>
 
         <div
