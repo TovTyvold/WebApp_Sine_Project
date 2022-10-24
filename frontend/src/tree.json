@@ -1,0 +1,50 @@
+[
+  {
+    "envelope": {
+      "points": {
+        "+": [
+          { "wave": { "amplitude": 1, "frequency": 440, "shape": "sin" } },
+          { "wave": { "amplitude": 1, "frequency": 550, "shape": "sin" } }
+        ]
+      },
+      "numbers": {
+        "list": [{ "num": 10 }, { "num": 1 }, { "num": 3 }, { "num": 6 }]
+      }
+    }
+  },
+
+  {
+    "id": "output-0",
+    "type": "output",
+    "data": {},
+    "children": [
+      {
+        "id": "operation-3",
+        "type": "operation",
+        "data": {},
+        "children": [
+          {
+            "id": "oscillator-2",
+
+            "type": "oscillator",
+            "data": {
+              "frequency": "444",
+              "amplitude": "1",
+              "shape": "saw"
+            },
+            "children": []
+          },
+          {
+            "id": "oscillator-1",
+            "type": "oscillator",
+            "data": {
+              "frequency": "333",
+              "amplitude": "1"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]

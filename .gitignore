@@ -10,6 +10,8 @@ __pycache__
 *$py.class
 *.log
 backend/figures/
+backend/2danimation.py 
+backend/3dImaging.py
 
 # C extensions
 *.so

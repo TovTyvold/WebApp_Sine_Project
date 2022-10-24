@@ -10,8 +10,10 @@
 .container {
   margin-bottom: 15rem;
   display: grid;
-  /* justify-content: center;
-  align-content: center; */
+  width: 100vw;
+  height: 100vh;
+  justify-content: center;
+  /* align-content: center; */
 }
 
 header {
@@ -49,16 +51,15 @@ header {
 }
 
 .add-input-button {
-  width: 80%;
+  margin-bottom: 1rem;
 }
-
 
 
 .play-button {
  
  width: 10rem;
  background-color: #1f939e;
- border: none;
+
  border-radius: 12px;
  padding: 0.5rem;
 }

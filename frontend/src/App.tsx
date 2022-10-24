@@ -1,9 +1,12 @@
 //App.tsx
 import './App.css';
 import React, { useState, useEffect } from 'react';
+import Flow from './Flow';
 import Graph from './components/Graph';
 import Oscillator from './components/Oscillator';
 import EnvelopeADSR from './components/EnvelopeADSR';
+import Button from '@mui/material/Button';
+import AddIcon from '@mui/icons-material/Add';
 
 type Wave = {
   frequency: number | undefined;
@@ -19,9 +22,11 @@ const defaultInput: Wave = {
   adsr: [1, 1, 3, 1],
 };
 
-let channels = 1;
-let bytesRead = 0;
+const desiredFields = ['id', 'type', 'data', 'children'];
+
+const CHANNELS = 1;
 const frameCount = 44100;
+let bytesRead = 0;
 
 const API_WS = 'ws://localhost:5000/sound';
 
@@ -35,14 +40,9 @@ function App() {
   const [inputValues, setInputValues] = useState<Wave[]>([defaultInput]);
 
   useEffect(() => {
-    // Reopen socket if closed
-    if (ws.readyState === 3) {
-      ws = new WebSocket(API_WS);
-      ws.binaryType = 'arraybuffer';
-    }
-
     ws.onmessage = (message: any) => {
       const data = message.data;
+      console.log(data);
       data instanceof ArrayBuffer
         ? composeAudio(data)
         : setDataPoints(JSON.parse(data).points);
@@ -50,7 +50,7 @@ function App() {
   });
 
   const buffer = new AudioBuffer({
-    numberOfChannels: channels,
+    numberOfChannels: CHANNELS,
     length: frameCount,
     sampleRate: 44100,
   });
@@ -80,125 +80,163 @@ function App() {
     bytesRead = 0;
   }
 
-  const handleInputChange = (
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const { name, value } = e.currentTarget;
-    let val: number | string = value;
-    if (name !== 'shape') {
-      val = parseFloat(value);
-    }
-    const list: any = [...inputValues];
-    if (
-      name === 'attack' ||
-      name === 'decay' ||
-      name === 'sustain' ||
-      name === 'release'
-    ) {
-      const adsr = 'adsr';
-      switch (name) {
-        case 'attack':
-          list[index][adsr][0] = val;
-          break;
-        case 'decay':
-          list[index][adsr][1] = val;
-          break;
-        case 'sustain':
-          list[index][adsr][2] = val;
-          break;
-        case 'release':
-          list[index][adsr][3] = val;
-          break;
-        default:
-          console.log('Error: name is incorrect');
+  // const handleInputChange = (
+  //   index: number,
+  //   e: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   const { name, value } = e.currentTarget;
+  //   let val: number | string = value;
+  //   if (name !== 'shape') {
+  //     val = parseFloat(value);
+  //   }
+  //   const list: any = [...inputValues];
+  //   if (
+  //     name === 'attack' ||
+  //     name === 'decay' ||
+  //     name === 'sustain' ||
+  //     name === 'release'
+  //   ) {
+  //     const adsr = 'adsr';
+  //     switch (name) {
+  //       case 'attack':
+  //         list[index][adsr][0] = val;
+  //         break;
+  //       case 'decay':
+  //         list[index][adsr][1] = val;
+  //         break;
+  //       case 'sustain':
+  //         list[index][adsr][2] = val;
+  //         break;
+  //       case 'release':
+  //         list[index][adsr][3] = val;
+  //         break;
+  //       default:
+  //         console.log('Error: name is incorrect');
+  //     }
+  //   } else {
+  //     list[index][name] = val;
+  //   }
+  //   setInputValues(list);
+  // };
+
+  // const addInput = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   e.preventDefault();
+  //   const newInput: Wave = {
+  //     frequency: undefined,
+  //     amplitude: undefined,
+  //     shape: '',
+  //     adsr: [1, 1, 3, 1],
+  //   };
+  //   setInputValues([...inputValues, newInput]);
+  // };
+
+  // const removeInput = (
+  //   index: number,
+  //   e: React.MouseEvent<HTMLButtonElement>
+  // ) => {
+  //   e.preventDefault();
+  //   let list = [...inputValues];
+  //   list.splice(index, 1);
+  //   setInputValues(list);
+  // };
+
+  // const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   console.log(inputValues);
+  //   const payload: any = {
+  //     funcs: inputValues,
+  //   };
+  //   ws.send(JSON.stringify(payload));
+  // };
+
+  const sanitize = (tree: any) => {
+    Object.keys(tree).forEach((key) => {
+      let keep: boolean = desiredFields.includes(key);
+
+      if (!keep) {
+        delete tree[key];
       }
-    } else {
-      list[index][name] = val;
-    }
-    setInputValues(list);
+      if (tree['children']) {
+        tree['children'].forEach((child: any) => {
+          sanitize(child);
+        });
+      }
+    });
+
+    return tree;
   };
 
-  const addInput = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const newInput: Wave = {
-      frequency: undefined,
-      amplitude: undefined,
-      shape: '',
-      adsr: [1, 1, 3, 1],
-    };
-    setInputValues([...inputValues, newInput]);
-  };
-
-  const removeInput = (
-    index: number,
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-    let list = [...inputValues];
-    list.splice(index, 1);
-    setInputValues(list);
-  };
-
-  const submit = async (e: React.ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log(inputValues);
-    const payload: any = {
-      funcs: inputValues,
-    };
+  const submit = async (tree: any) => {
+    const payload = sanitize(tree);
+    console.log(JSON.stringify(payload, null, 2));
     ws.send(JSON.stringify(payload));
   };
+
 
   return (
     <div className='App'>
       <div className='container'>
-        <header>
+        {/* <header>
           <h1>Wave Generator</h1>
-        </header>
-        <section className='graph-section'>
-          <Graph data={dataPoints} />
-        </section>
+        </header> */}
 
-        <form className='inputs-section' onSubmit={submit}>
+        <div
+          style={{
+            width: '50vw',
+            height: '50vh',
+            border: '1px #1f939e solid',
+            marginBottom: '10rem',
+          }}>
+          <Flow submit={submit}/>
+          <button onClick={playAudio}>play</button>
+        </div>
+      </div>
+
+        {/* <form className='inputs-section' onSubmit={submit}>
+          <Button className='submit-button' variant='contained' type='submit'>
+            Generate
+          </Button>
           {inputValues.map((element, index) => {
             return (
               <div key={index} className='oscillator'>
                 <Oscillator
                   element={element}
                   index={index}
-                  handleInputChange={handleInputChange}
+                  onChange={handleInputChange}
                   removeInput={removeInput}
                 />
                 <EnvelopeADSR
                   element={element}
                   index={index}
-                  handleInputChange={handleInputChange}
+                  onChange={handleInputChange}
                 />
                 <br />
               </div>
             );
           })}
-          <button className='add-input-button' onClick={(e) => addInput(e)}>
-            Add
-          </button>
-          <br />
-          <button className='submit-button' type='submit'>
-            Generate
-          </button>
-        </form>
 
-        <button className='play-button' onClick={playAudio}>
+          <br />
+        </form>
+        <Button
+          className='add-input-button'
+          variant='outlined'
+          onClick={(e) => addInput(e)}>
+          <AddIcon />
+        </Button>
+
+        <Button variant='contained' className='play-button' onClick={playAudio}>
           Play
-        </button>
-      </div>
+        </Button> */}
     </div>
   );
 }
 
 export default App;
 
-//TODO
+// TODO
+// Get flowchart to work with backend
 // Add sound length, couple to framecount
 // Figure out alternative to 'Generate' button
 // Quadratic bezier visual input for envelope
 // FFT frequency visualizer?
+// Oscilliscope on oscillator node

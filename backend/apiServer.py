@@ -45,6 +45,7 @@ class FreqQuery(BaseModel):
 #convert this to AST data to be parsed in pointsCalculation
 def BuildAST(query: Dict, samples: int, seconds: float, debug=False, doEnvelope=True):
     l = []
+    print(query)
     if doEnvelope:
         for func in query["funcs"]:
             l.append({"envelope": {
@@ -56,7 +57,7 @@ def BuildAST(query: Dict, samples: int, seconds: float, debug=False, doEnvelope=
                     },
                 },
                 "numbers": {
-                    "list": [{"num": v} for v in ([1, 3, 1, 1] if "adsr" not in func or func["adsr"] == None else func["adsr"])]
+                    "list": [{"num": v} for v in ([1, 1, 1, 1] if "adsr" not in func or func["adsr"] == None else func["adsr"])]
                 }
             }})
     else:
@@ -80,6 +81,35 @@ def handleMissing(query: Dict):
     return query
 
 
+def handleInput(query):
+    def recClean(json):
+        dData = json["data"]
+        dType = json["type"]
+        dId = json["id"]
+        dChildren = json["children"]
+
+        if dType == "output":
+            return recClean(json["children"][0])
+
+        if dType == "oscillator": #currently a leaf
+            for dk in dData.keys():
+                if dk in ["frequency", "amplitude"]:
+                    dData[dk] = {"num" : float(dData[dk])}
+
+            if "shape" not in dData:
+                dData["shape"] = "sin"
+
+            return {"wave" : dData}
+
+        if dType == "operation":
+            return {"+" : [recClean(child) for child in dChildren]}
+
+    query = recClean(query)
+    print(query)
+
+    return query
+
+
 @app.post("/points", response_model=PointsAnswer)
 async def getPoints(query: FreqQuery):
     query = handleMissing(query)
@@ -93,41 +123,24 @@ chunkSize = 1024
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    while (True):
+        #recieve wave information
+        query = await websocket.receive_json()
+        query = handleMissing(query)
 
-    #recieve wave information
-    query = await websocket.receive_json()
-    query = handleMissing(query)
+        soundData = pointsCalculation.newparse(handleInput(query), 44100, 1)
 
-    #generate points to be displayed,
-    #dividing the frequencies by freqWindow
-    freqWindow = 200
-    modQuery = copy.deepcopy(query)
-    for f in modQuery["funcs"]:
-        f["frequency"] /= freqWindow
-
-    xpoints = pointsCalculation.genSamples(400, 1)
-    ypoints = BuildAST(modQuery, 400, 1.0, debug=False, doEnvelope=False)
-
-    displayData = {"points": [{"x": x, "y": y}
-                              for (x, y) in list(zip(xpoints, ypoints))]}
-    await websocket.send_json(displayData)
-
-    #get soundData
-    soundData = BuildAST(
-        query, query["samples"], query["seconds"], debug=True)
-    cb = soundGen.samplesToCB(soundData)
-
-    #send chunkSize chunks of the sounddata until all is sent
-    data = cb.readChunk(chunkSize)
-    while data:
-        await websocket.send_bytes(data)
+        #send chunkSize chunks of the sounddata until all is sent
+        cb = soundGen.samplesToCB(soundData)
         data = cb.readChunk(chunkSize)
+        while data:
+            await websocket.send_bytes(data)
+            data = cb.readChunk(chunkSize)
 
     await websocket.close()
 
 if __name__ == "__main__":
     config = uvicorn.Config("apiServer:app", port=5000,
-                           
                             log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()

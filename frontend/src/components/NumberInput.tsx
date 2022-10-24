@@ -1,11 +1,21 @@
+//import TextField from '@mui/material/Textfield';
 export default function NumberInput({
   label,
   name,
   value,
-  index,
-  handleInputChange,
+  // index,
+  onChange,
 }: any): JSX.Element {
   return (
+    // <TextField
+    //   variant='outlined'
+    //   label={label}
+    //   type='number'
+    //   name={name}
+    //   placeholder={label}
+    //   value={value}
+    //   onChange={(event) => onChange(index, event)}
+    // />
     <label className='osc-input'>
       {label}
       <input
@@ -15,7 +25,8 @@ export default function NumberInput({
         name={name}
         placeholder={label}
         value={value}
-        onChange={(event) => handleInputChange(index, event)}
+        // onChange={(event) => onChange(index, event)}
+        onChange={onChange}
       />
     </label>
   );
