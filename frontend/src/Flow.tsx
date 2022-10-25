@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
@@ -11,6 +17,7 @@ import ReactFlow, {
   Connection,
   useNodesState,
   useEdgesState,
+  applyNodeChanges,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -21,6 +28,7 @@ import OperationNode from './components/OperationNode';
 import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
+
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
 
@@ -30,12 +38,13 @@ const initialNodes: Node[] = [
     type: 'out',
     data: {},
     position: { x: 750, y: 250 },
+    deletable: false,
   },
 ];
 
 const initialEdges: Edge[] = [];
 
-const Flow = ({ submit }: any) => {
+const Flow = ({ submit, onSecondsChange }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [instance, setInstance] = useState<any>(null);
@@ -64,6 +73,16 @@ const Flow = ({ submit }: any) => {
     }),
     []
   );
+  useEffect(() => {
+    setNodes((nds) => {
+      nds.forEach((n) => {
+        if (n.id === 'output-0') {
+          n.data.onchange = onSecondsChange;
+        }
+      });
+      return nds;
+    });
+  }, []);
 
   const createTree = useCallback((nodesList: Node[], edgesList: Edge[]) => {
     let map: any = new Map(
@@ -90,7 +109,6 @@ const Flow = ({ submit }: any) => {
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
-
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);
 
@@ -182,8 +200,8 @@ const Flow = ({ submit }: any) => {
   );
 };
 
-export default ({ submit }: any) => (
+export default (props: any) => (
   <ReactFlowProvider>
-    <Flow submit={submit} />
+    <Flow submit={props.submit} onSecondsChange={props.onSecondsChange} />
   </ReactFlowProvider>
 );
