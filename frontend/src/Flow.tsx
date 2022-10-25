@@ -79,7 +79,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
   useEffect(() => {
     setNodes((nds) => {
       nds.forEach((n) => {
-        if (n.id === 'output-0') {
+        if (n.id === 'output0') {
           n.data.onchange = onSecondsChange;
         }
       });
@@ -94,7 +94,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     for (let { source, target } of edgesList) {
       map.get(target).children.push(map.get(source));
     }
-    return map.get('output-0');
+    return map.get('output0');
   }, []);
 
   const getFlow = useCallback(() => {
@@ -105,14 +105,22 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       console.table(edgesList);
 
       // submit(createTree(nodesList, edgesList));
-      submit({"nodes": nodesList, "edges": edgesList})
+      submit({ nodes: nodesList, edges: edgesList });
     }
   }, [instance]);
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
-    if (nodeType === 'bezier') data = { points: [[0,0], [0.5,0.5], [1,1]]};
+    if (nodeType === 'operation') data = { opType: 'sum' };
+    if (nodeType === 'bezier')
+      data = {
+        points: [
+          [0, 0],
+          [0.5, 0.5],
+          [1, 1],
+        ],
+      };
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);
