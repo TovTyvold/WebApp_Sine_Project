@@ -95,7 +95,9 @@ def dirac_comb_discrete(y, N_, K_):
     for i in range(N_):
         part = (1/N_) *np.exp(2j * np.pi * n * i / K)
         sigSum = sigSum + part
-    return sigSum.real * y, K
+    signal = sigSum.real * y
+    print(np.shape(signal))
+    return signal, K
 
 
 def hilbert(y):

@@ -10,3 +10,19 @@ def plot_array(t_vec, y, title, xlabel, ylabel, label_graph, color_graph, ls_gra
     if save == True:
         plt.savefig(f"{filename}")
     return None
+
+""" 
+For plotting purposes:
+
+ 
+plt.figure()
+plt.plot()
+plt.ion()
+
+plt.figure()
+plt.plot()
+
+plt.show()
+plt.pause(2)
+plt.ioff() 
+"""

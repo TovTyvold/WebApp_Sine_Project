@@ -3,7 +3,7 @@ import time
 import numpy as np 
 import matplotlib.pyplot as plt
 from numpy.linalg import norm
-from filterAudio import reverb_filter, Impulse_Rev, low_pass_Filter, high_pass_Filter
+from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete
 from soundGen import play
 from pointsFrequency import signal_to_hertz
 from ADSR_mod import ADSR
@@ -74,32 +74,17 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
         y = np.zeros((n_signals,len(t_vec)))
         k = 0
         y_sum = 0
+        sine_add = np.sin(np.linspace(-16 * np.pi,16 * np.pi,len(t_vec)))/10
+        omega = 2 * np.pi* sine_add
         for i in range(n_signals):
-            omega = 2*np.pi #*frequencies[i]
-            y[k] = (Amp_array * amplitudes[k]) * np.sin(omega*t_vec)
+            y[k] = (Amp_array * amplitudes[k]) * np.sin(omega* frequencies[i] * t_vec)
             y_sum += y[k] 
             k += 1 
 
 
+
     normalized_y = y_sum/np.max(y_sum) 
-    plt.figure()
-    plot_array(t_vec, y_sum, "y", "t[s]", "A[m]", "y", "r", "-", True, "y.pdf")
-    plt.ion()
-    #play(normalized_y)
-    # PLot varibles
-    #plt.plot(y, t_vec, title, xlabel, ylabel, label_graph, color_graph, ls_graph, save, filename):
-    # plot_array(t_vec, y_sum,  "Y + Saw", "t[s]", "A[m]", "Saw", "r", "-", False, "Saw.pdf")
-    cutoff_low = np.max(frequencies)-1
-    cutoff_high = np.min(frequencies)+1
-    order = np.max(frequencies)/2
-    lowpass = low_pass_Filter(normalized_y.copy(), Fs, cutoff = cutoff_low, order = order)
-    highpass = high_pass_Filter(normalized_y.copy(), Fs, cutoff = cutoff_high, order = order)
-    plt.figure()
-    plt.plot(lowpass, t_vec)
-    plt.show()
-    plt.pause(2)
-    plt.ioff()
-    print("play sound...")
+
 
     t1 = time.time()
     total = t1-t0
