@@ -5,6 +5,8 @@ import NumberInput from './NumberInput';
 
 function BezierNode({ data, id }: any) {
   const point = useRef<[number,number,number,number]>([0.5,0.5,1,1])
+  const start = useRef<number>(0)
+  const end = useRef<number>(1)
 
   const bezierOnChange = useCallback((points: Array<number>) => {
     points[2] = 1
@@ -13,9 +15,16 @@ function BezierNode({ data, id }: any) {
     point.current[0] = points[0]
     point.current[1] = points[1]
 
-    data.x = point.current[0]
-    data.y = point.current[1]
-  }, [point])
+    data.points = [[start.current, 0], [point.current[0] + (end.current+start.current)/2, point.current[1]], [end.current, 1]]
+  }, [point, start.current, end.current])
+
+  const onChangeStart = useCallback((event: any) => {
+    start.current = parseFloat(event.target.value)
+  }, [])
+
+  const onChangeEnd = useCallback((event: any) => {
+    end.current = parseFloat(event.target.value)
+  }, [])
 
   return (
     <div className='bezier-node'>
@@ -36,6 +45,17 @@ function BezierNode({ data, id }: any) {
                 onChange={bezierOnChange}
                 rowColor={"#ffffff"}/>
         </div>
+
+        <NumberInput 
+            label='Start' 
+            name='start'
+            onChange={onChangeStart}
+        />
+        <NumberInput 
+            label='End' 
+            name='end' 
+            onChange={onChangeEnd}
+        />
     </div>
   );
 }

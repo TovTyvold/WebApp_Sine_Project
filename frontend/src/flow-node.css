@@ -1,3 +1,4 @@
+.mix-node,
 .bezier-node,
 .val-node,
 .osc-node,
@@ -11,6 +12,9 @@
   background: white;
 }
 
+.mix-node {
+  border: 2px solid #21f40c;
+}
 .val-node {
   border: 2px solid #ff31c1;
 }

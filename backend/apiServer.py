@@ -39,6 +39,13 @@ def handleInput(query):
                 
         return newList
                 
+    # seconds = 0
+    # for node in nodes:
+    #     if node["type"] == "out":
+    #         seconds = float(node["data"]["seconds"])
+
+    print(nodes)
+                
 
     # nodes = prune(nodes, nodeKeep)
     # edges = prune(edges, edgeKeep)
@@ -68,8 +75,7 @@ def handleInput(query):
             return recClean(json["in"][0])
 
         if dType == "bezier":
-            print(dData)
-            return {"bezier": [(0, 0), (dData["x"], dData["y"]), (1, 1)]}
+            return {"bezier": dData["points"]}
 
         if dType == "value":
             return {"num" : float(dData["value"])}
@@ -115,7 +121,7 @@ async def websocket_endpoint(websocket: WebSocket):
     while (True):
         #recieve wave information
         query = await websocket.receive_json()
-        seconds = float(query["Seconds"])
+        seconds = query["Seconds"]
         query = handleInput(query["NodeTree"])
 
         print(query)

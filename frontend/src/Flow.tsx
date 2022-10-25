@@ -23,6 +23,7 @@ import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
+import MixNode from './components/MixNode';
 
 const initialNodes: Node[] = [
   {
@@ -50,6 +51,7 @@ const Flow = ({ submit }: any) => {
     effect: 0,
     value: 0,
     bezier: 0,
+    mix: 0,
   });
 
   const nodeTypes = useMemo(
@@ -61,6 +63,7 @@ const Flow = ({ submit }: any) => {
       value: ValueNode,
       out: OutputNode,
       bezier: BezierNode,
+      mix: MixNode,
     }),
     []
   );
@@ -90,6 +93,7 @@ const Flow = ({ submit }: any) => {
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
+    if (nodeType === 'bezier') data = { points: [[0,0], [0.5,0.5], [1,1]]};
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);
