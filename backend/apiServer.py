@@ -105,7 +105,7 @@ def handleInput(query):
             return {"wave" : dData}
 
         if dType == "operation":
-            return {"+" : [recClean(child) for child in dChildren]}
+            return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
     adjList = recClean(adjList["output0"])
 
