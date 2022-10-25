@@ -112,6 +112,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
+    if (nodeType === 'operation') data = { opType: 'sum' };
     if (nodeType === 'bezier') data = { points: [[0,0], [0.5,0.5], [1,1]]};
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
