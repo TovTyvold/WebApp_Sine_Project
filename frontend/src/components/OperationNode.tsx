@@ -10,18 +10,11 @@ function OperationNode({ data, id }: any) {
       <Handle id={'in-' + id} type='target' position={Position.Left} />
       <b>Operation</b>
       <hr />
-
-      <div className='op-radio' onChange={onChange}>
-        <input type='radio' name='operation' value='sum' />
-        <label>
-          <b>+</b>
-        </label>
-        <br />
-        <input type='radio' name='operation' value='multi' />
-        <label>
-          <b>×</b>
-        </label>
-        <br></br>
+      <div className='select'>
+        <select name='op' onChange={onChange}>
+          <option value='sum'>Sum +</option>
+          <option value='multi'>Times ×</option>
+        </select>
       </div>
 
       <Handle id={'out-' + id} type='source' position={Position.Right} />
