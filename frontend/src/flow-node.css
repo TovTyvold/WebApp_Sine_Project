@@ -1,3 +1,5 @@
+.bezier-node,
+.val-node,
 .osc-node,
 .env-node,
 .eff-node,
@@ -8,6 +10,15 @@
   border-radius: 10px;
   background: white;
 }
+
+.val-node {
+  border: 2px solid #ff31c1;
+}
+
+.bezier-node {
+  border: 2px solid #c0f1cf;
+}
+
 .osc-node {
   border: 2px solid #1f939e;
 }

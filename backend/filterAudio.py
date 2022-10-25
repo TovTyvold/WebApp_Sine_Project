@@ -68,112 +68,8 @@ def Low_frequency_Oscillator_saw(signal, t):
     return 2 * 20 * (t_vec % (1 / 20)) - 1
 
 
-def reverb_filter(y, t_vec, sampleRate, mixPercent, decayFactor, delay, Decay_factors, delay_factors, decayFactor_AP):
-    """
-    Reverb filter with layers of combs, i.e., layers that increase the delay or attack of wet/dry effect. 
 
-    Needs functions comb_for_reverb and all_pass_reverb to function. 
-
-    Inputs:
-    -----------------------------
-    y - dtype ndarray: Signal
-    delay - dtype float/int: Delay in milliseconds. Determines the length of the delay effect.  --STANDARD FOR NOW
-    decayfactor - dtype float: Float that determines the amplification of the delay effect.  --STANDARD FOR NOW
-    sapmleRate - dtype int: Number of samples
-    mixPercent - dtype float: Percentage of the wet/dry effect. Determines how much of the total should be enhanced. 
-
-    Returns:
-    ----------------------------
-    allPassFilterSamples2 - dtype ndarray: Source of the signal with a reverbation after the source has 
-    stopped. 
-    !!!!!!!!!!Requires the time vector after call to be twice as large!!!!!!!!!!!
-
-
-    Example input:
-    ----------------------------
-    reverb_filter(y = normalized_y, sampleRate = Fs, mixPercent = 50)
-    """
-    t_reverb = np.linspace(t_vec[0], t_vec[-1], len(t_vec)*2)
-    y_return = np.zeros(len(t_reverb))
-    y_return[:int(len(t_reverb)/2)] = y.copy()
-    bufferSize = len(y)
-    combFilterSamples1 = comb_for_reverb(y, bufferSize, delay, decayFactor, sampleRate)
-    combFilterSamples2 = comb_for_reverb(y, bufferSize, (delay + delay_factors[0]), (decayFactor + Decay_factors[0]), sampleRate)
-    combFilterSamples3 = comb_for_reverb(y, bufferSize, (delay + delay_factors[1]), (decayFactor + Decay_factors[1]), sampleRate)
-    combFilterSamples4 = comb_for_reverb(y, bufferSize, (delay + delay_factors[2]), (decayFactor + Decay_factors[2]), sampleRate)
-
-    outputComb = np.zeros(bufferSize)
-    for i in range(bufferSize):
-        outputComb[i] = combFilterSamples1[i] + combFilterSamples2[i] + combFilterSamples3[i] + combFilterSamples4[i]
-
-    mixAudio = np.zeros(bufferSize)
-    for i in range(bufferSize):
-        mixAudio[i] = ((100 - mixPercent) * y[i]) + (mixPercent * outputComb[i])
-
-    allPassFilterSamples1 = all_pass_reverb(mixAudio, bufferSize, sampleRate, decayFactor_AP)
-    allPassFilterSamples2 = all_pass_reverb(allPassFilterSamples1, bufferSize, sampleRate, decayFactor_AP)
-    y_return[-int(len(t_reverb)/2):] = allPassFilterSamples2
-    return allPassFilterSamples2
-
-def comb_for_reverb(samples, sampleLength, delay_in_mm, decayfactor, sampleRate):
-    delaySamples = int(np.abs(delay_in_mm) * (sampleRate/1000))
-    combFilterSamples = samples 
-    for i in range(0, sampleLength-delaySamples):
-        combFilterSamples[i+delaySamples] += combFilterSamples[i] * decayfactor
-    return combFilterSamples
-
-
-def all_pass_reverb(samples, sampleLength, sampleRate, decayFactor_AP = 0.131):
-    delaySamples = int(89.27* (sampleRate/1000))
-    allPassFilterSamples = np.zeros(sampleLength)
-    for i in range(sampleLength):
-        allPassFilterSamples[i] = samples[i]
-        if i - delaySamples >= 0:
-            allPassFilterSamples[i] += -decayFactor_AP * allPassFilterSamples[i - delaySamples]
-        if i - delaySamples >= 1:
-            allPassFilterSamples[i] += decayFactor_AP * allPassFilterSamples[i + 20 - delaySamples]
-
-    value = allPassFilterSamples[0]
-    max = 0.0
-
-    for i in range(sampleLength):
-        if np.abs(allPassFilterSamples[i]) > max:
-            max = np.abs(allPassFilterSamples[i])
-        
-    for i in range(sampleLength):
-        currentValue = allPassFilterSamples[i]
-        value = ((value + (currentValue - value))/max)
-
-        allPassFilterSamples[i] = value 
-    
-    return allPassFilterSamples
-
-
-
-def Impulse_Rev(y):
-    signal_clean = y # Already normalized, if not -> y / np.max(np.abs(y))
-    IR = signal.unit_impulse(len(y), 'mid')
-    IR = IR / np.abs(np.max(IR))
-    p_max = np.argmax(np.abs(IR))
-    signal_rev = signal.fftconvolve(y, IR, mode="same")
-    signal_rev = signal_rev / np.max(np.abs(signal_rev))
-    signal_rev = IR_shift(signal_clean, -p_max)
-    signal_rev = signal_rev[0 : signal_clean.shape[0]]
-
-    return signal_rev
-
-def IR_shift(xs, n):
-    e = np.empty_like(xs)
-    if n >= 0:
-        e[:n] = 0.0
-        e[n:] = xs[:-n]
-    else:
-        e[n:] = 0.0
-        e[:n] = xs[-n:]
-    return e
-
-
-def dirac_comb_discrete(y, N_, K):
+def dirac_comb_discrete(y, N_, K_):
     """
     Dirac Delta Comb filter that adds a flanger effect to signal.  
 
@@ -193,13 +89,15 @@ def dirac_comb_discrete(y, N_, K):
     ----------------------------
     dirac_comb_filt = dirac_comb_discrete(y_sum, N_ = 2, K = len(y[0])/5)
     """
-
+    K = len(y)/K_
     n = np.arange(len(y))
     sigSum = 0
     for i in range(N_):
         part = (1/N_) *np.exp(2j * np.pi * n * i / K)
         sigSum = sigSum + part
-    return sigSum.real * y
+    signal = sigSum.real * y
+    print(np.shape(signal))
+    return signal, K
 
 
 def hilbert(y):

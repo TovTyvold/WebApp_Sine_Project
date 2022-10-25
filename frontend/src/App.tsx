@@ -82,7 +82,7 @@ function App() {
   //when a tree is ready send it
   useEffect(() => {
     if (ws.readyState === webSocket.OPEN && tree) {
-      const payload = { NodeTree: sanitize(tree), Seconds: seconds.current };
+      const payload = { NodeTree: tree, Seconds: seconds.current };
       console.log(JSON.stringify(payload, null, 2));
       ws.send(JSON.stringify(payload));
     }
@@ -165,6 +165,12 @@ function App() {
           <button onClick={playAudio}>play</button>
         </div>
       </div>
+
+      {/* <BezierEditor
+        onChange={() => (console.log("a"))}
+        xAxisLabel="Time Percentage"
+        yAxisLabel="Progress Percentage"
+      /> */}
 
       {/* <form className='inputs-section' onSubmit={submit}>
           <Button className='submit-button' variant='contained' type='submit'>

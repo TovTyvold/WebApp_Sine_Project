@@ -12,6 +12,7 @@ __pycache__
 backend/figures/
 backend/2danimation.py 
 backend/3dImaging.py
+jupyter_ascending.ipynb
 
 # C extensions
 *.so

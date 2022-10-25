@@ -28,11 +28,13 @@ import OperationNode from './components/OperationNode';
 import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
-import useEnhancedEffect from '@mui/material/utils/useEnhancedEffect';
+
+import ValueNode from './components/ValueNode';
+import BezierNode from './components/BezierNode';
 
 const initialNodes: Node[] = [
   {
-    id: 'output-0',
+    id: 'output0',
     type: 'out',
     data: {},
     position: { x: 750, y: 250 },
@@ -55,6 +57,8 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     envelope: 0,
     operation: 0,
     effect: 0,
+    value: 0,
+    bezier: 0,
   });
 
   const nodeTypes = useMemo(
@@ -63,7 +67,9 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       envelope: EnvelopeNode,
       operation: OperationNode,
       effect: EffectNode,
+      value: ValueNode,
       out: OutputNode,
+      bezier: BezierNode,
     }),
     []
   );
@@ -95,7 +101,8 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       console.table(nodesList);
       console.table(edgesList);
 
-      submit(createTree(nodesList, edgesList));
+      // submit(createTree(nodesList, edgesList));
+      submit({"nodes": nodesList, "edges": edgesList})
     }
   }, [instance]);
 
@@ -106,7 +113,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     const y = (1 / view.zoom) * (nodePos.y - view.y);
 
     const newNode = {
-      id: `${nodeType}-${idRef.current[nodeType]++}`,
+      id: `${nodeType}${idRef.current[nodeType]++}`,
       position: { x: x, y: y },
       type: nodeType,
       data: data,
