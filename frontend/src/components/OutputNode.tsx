@@ -18,6 +18,7 @@ function OutputNode({ data, id }: any) {
         min='1'
         max='20'
         name='seconds'
+        defaultValue={1}
         onChange={data.onchange}
         className='slider nodrag'
       />

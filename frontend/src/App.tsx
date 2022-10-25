@@ -98,7 +98,7 @@ function App() {
     (event: any) => {
       event.preventDefault();
 
-      seconds.current = event.target.value;
+      seconds.current = parseInt(event.target.value);
       setBuffer(
         new AudioBuffer({
           numberOfChannels: CHANNELS,
