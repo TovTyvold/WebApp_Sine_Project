@@ -45,6 +45,14 @@
   padding-inline: 1rem;
 }
 
+.op-radio {
+  font-size: 18pt;
+}
+
+.op-radio input {
+  accent-color: #1f939e;
+}
+
 .react-flow .react-flow__handle {
   width: 16px;
   height: 16px;
@@ -73,6 +81,31 @@ select {
   overflow: hidden;
   border-radius: 0.25em;
   padding-bottom: 10px;
+}
+
+.slidecontainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #1f939e;
+  height: 3px;
+  margin: 0.5rem;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+
+  background: #d5d51c;
+  cursor: pointer;
 }
 
 .btn {

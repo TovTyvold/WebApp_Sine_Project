@@ -150,7 +150,7 @@ function App() {
     <div className='App'>
       <div className='container'>
         <header>
-          <h1>Web Synth</h1>
+          <h1>W.O.K.</h1>
         </header>
 
         <div
@@ -160,12 +160,8 @@ function App() {
             border: '2px #1f939e solid',
             borderRadius: '10px',
           }}>
-          <Flow submit={submit} />
-          <NumberInput
-            label={'seconds'}
-            name={'seconds'}
-            onChange={onSecondsChange}
-          />
+          <Flow submit={submit} onSecondsChange={onSecondsChange} />
+
           <button onClick={playAudio}>play</button>
         </div>
       </div>
@@ -212,9 +208,6 @@ function App() {
 export default App;
 
 // TODO
-// Get flowchart to work with backend
-// Add sound length, couple to framecount
-// Figure out alternative to 'Generate' button
-// Quadratic bezier visual input for envelope
-// FFT frequency visualizer?
-// Oscilliscope on oscillator node
+// Move Replay button
+// Make slider component
+// Frequency visualizer?
