@@ -20,65 +20,59 @@ app.add_middleware(CORSMiddleware, allow_origins=origins,
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 def handleInput(query):
+    #query is a (V,E) pair
+    nodes = query["nodes"]
+    edges = query["edges"]
+
+    nodeKeep = ["id", "type", "data"]
+    edgeKeep = ["source", "sourceHandle", "target", "targetHandle"]
+    
+    def prune(dictlist, keep):
+        newList = []
+        for d in dictlist:
+            newD = {}
+            for k in d.keys():
+                if k in keep:
+                    newD[k] = d[k]
+
+            newList.append(newD)
+                
+        return newList
+                
+
+    # nodes = prune(nodes, nodeKeep)
+    # edges = prune(edges, edgeKeep)
+
+    adjList = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
+    adjList = dict((key, d[key]) for d in adjList for key in d)
+
+    for e in edges:
+        spos, source = e["sourceHandle"].split("-")
+        tpos, target = e["targetHandle"].split("-")
+        source = source
+        target = target
+
+        if tpos == "in":
+            adjList[target][tpos].append(adjList[source])
+        else:
+            adjList[target]["data"][tpos] = adjList[source]
+
     #convert the recurisve node format from the frontend into an AST 
     def recClean(json):
         dData = json["data"]
         dType = json["type"]
         dId = json["id"]
-        dChildren = json["children"]
+        dChildren = json["in"]
 
         if dType == "out":
-            return recClean(json["children"][0])
+            return recClean(json["in"][0])
 
-        if dType == "effect":
-            child = recClean(dChildren[0])
+        if dType == "bezier":
+            print(dData)
+            return {"bezier": [(0, 0), (dData["x"], dData["y"]), (1, 1)]}
 
-            if dData["effectName"] == "reverb":
-                duration = float(dData["params"]["duration"])
-                wetdry = float(dData["params"]["mixPercent"])
-
-                return {
-                    "reverb" : {
-                        "points" : child,
-                        "duration" : {"num":  duration},
-                        "wetdry" : {"num": wetdry},
-                    }
-                }
-        
-            if dData["effectName"] in ["lpf", "hpf"]:
-                cutoff = float(dData["params"]["cutoff"])
-
-                return {
-                    dData["effectName"] : {
-                        "points" : child,
-                        "cutoff" : {"num": cutoff},
-                    }
-                }
-
-            if dData["effectName"] in ["lfo-sin", "lfo-saw"]:
-                rate = float(dData["params"]["rate"])
-
-                return {
-                    dData["effectName"] : {
-                        "points" : child,
-                        "rate" : {"num": rate},
-                    }
-                }
-
-            if dData["effectName"] == "dirac":
-                precision = float(dData["params"]["precision"])
-                rate = float(dData["params"]["rate"])
-        
-                return {
-                    "dirac" : {
-                        "points" : child,
-                        "rate" : {"num": rate},
-                        "precision" : {"num": precision},
-                    }
-                }
-
-
-
+        if dType == "value":
+            return {"num" : float(dData["value"])}
 
         if dType == "envelope":
             child = recClean(dChildren[0])
@@ -94,7 +88,10 @@ def handleInput(query):
         if dType == "oscillator": #currently a leaf
             for dk in dData.keys():
                 if dk in ["frequency", "amplitude"]:
-                    dData[dk] = {"num" : float(dData[dk])}
+                    if type(dData[dk]) == str:
+                        dData[dk] = {"num" : float(dData[dk])}
+                    else:
+                        dData[dk] = recClean(dData[dk])
 
             if "shape" not in dData:
                 dData["shape"] = "sin"
@@ -104,30 +101,9 @@ def handleInput(query):
         if dType == "operation":
             return {"+" : [recClean(child) for child in dChildren]}
 
-    query = recClean(query)
+    adjList = recClean(adjList["output0"])
 
-    #find how long the signal should be
-    #based on the longest envelope
-    def findDur(query):
-        if type(query) is not dict:
-            return 0
-
-        if type(query) is list:
-            return max([findDur(q) for q in query])
-
-        v = [0]
-        for k in query.keys():
-            if k == "envelope":
-                v.append(sum(query[k]["adsr"]["list"]))
-            else:
-                v.append(findDur(query[k]))
-
-        return max(v)
-
-    dur = findDur(query)
-
-    #if there are no envelopes default to 1 second
-    return query
+    return adjList
 
 
 CHUNKSIZE = 1024

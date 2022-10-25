@@ -1,0 +1,34 @@
+{
+  "id": "output-0",
+  "type": "output",
+  "data": {},
+  "children": [
+    {
+      "id": "operation-3",
+      "type": "operation",
+      "data": {},
+      "children": [
+        {
+          "id": "oscillator-2",
+
+          "type": "oscillator",
+          "data": {
+            "frequency": "444",
+            "amplitude": "1",
+            "shape": "saw"
+          },
+          "children": []
+        },
+        {
+          "id": "oscillator-1",
+          "type": "oscillator",
+          "data": {
+            "frequency": "333",
+            "amplitude": "1"
+          },
+          "children": []
+        }
+      ]
+    }
+  ]
+}
