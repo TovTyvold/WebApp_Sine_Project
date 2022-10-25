@@ -22,6 +22,7 @@ import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
 import ValueNode from './components/ValueNode';
+import BezierNode from './components/BezierNode';
 
 const initialNodes: Node[] = [
   {
@@ -48,6 +49,7 @@ const Flow = ({ submit }: any) => {
     operation: 0,
     effect: 0,
     value: 0,
+    bezier: 0,
   });
 
   const nodeTypes = useMemo(
@@ -58,6 +60,7 @@ const Flow = ({ submit }: any) => {
       effect: EffectNode,
       value: ValueNode,
       out: OutputNode,
+      bezier: BezierNode,
     }),
     []
   );

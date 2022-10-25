@@ -1,3 +1,4 @@
+.bezier-node,
 .val-node,
 .osc-node,
 .env-node,
@@ -12,6 +13,10 @@
 
 .val-node {
   border: 2px solid #ff31c1;
+}
+
+.bezier-node {
+  border: 2px solid #c0f1cf;
 }
 
 .osc-node {

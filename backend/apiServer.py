@@ -67,6 +67,10 @@ def handleInput(query):
         if dType == "out":
             return recClean(json["in"][0])
 
+        if dType == "bezier":
+            print(dData)
+            return {"bezier": [(0, 0), (dData["x"], dData["y"]), (1, 1)]}
+
         if dType == "value":
             return {"num" : float(dData["value"])}
 

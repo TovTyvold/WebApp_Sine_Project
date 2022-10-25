@@ -170,6 +170,12 @@ function App() {
         </div>
       </div>
 
+      {/* <BezierEditor
+        onChange={() => (console.log("a"))}
+        xAxisLabel="Time Percentage"
+        yAxisLabel="Progress Percentage"
+      /> */}
+
       {/* <form className='inputs-section' onSubmit={submit}>
           <Button className='submit-button' variant='contained' type='submit'>
             Generate
