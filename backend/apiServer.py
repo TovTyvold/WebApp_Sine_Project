@@ -39,14 +39,7 @@ def handleInput(query):
                 
         return newList
                 
-    totalTime = 0 #largest envelope in ms
-    # "data": { "attack": "7", "decay": "6", "sustain": "9", "release": "7" },
-    for node in nodes:
-        if node["type"] == "envelope":
-            data = node["data"]
-            time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
-            if (time > totalTime):
-                totalTime = time
+
 
     print(nodes)
     # nodes = prune(nodes, nodeKeep)
@@ -66,8 +59,10 @@ def handleInput(query):
         else:
             adjList[target]["data"][tpos] = adjList[source]
 
+
     #convert the recurisve node format from the frontend into an AST 
     def recClean(json):
+        print(json)
         dData = json["data"]
         dType = json["type"]
         dId = json["id"]
@@ -169,10 +164,10 @@ def handleInput(query):
         if dType == "oscillator": #currently a leaf
             for dk in dData.keys():
                 if dk in ["frequency", "amplitude"]:
-                    if type(dData[dk]) == str:
-                        dData[dk] = {"num" : float(dData[dk])}
-                    else:
+                    if type(dData[dk]) == dict:
                         dData[dk] = recClean(dData[dk])
+                    else:
+                        dData[dk] = {"num" : float(dData[dk])}
 
             if "shape" not in dData:
                 dData["shape"] = "sin"
@@ -183,6 +178,27 @@ def handleInput(query):
             return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
     adjList = recClean(adjList["output0"])
+
+
+    # #{'envelope': {'points': {'wave': {'frequency': {'num': 200.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}, 'adsr': {'list': [1.0, 0.02, 1.0, 1.0]}}}
+    # def recFindEnc(tree:dict):
+    #     for key in tree.keys():
+    #         if key == "envelope":
+    #             time = sum(map(lambda a: float(a), [
+    #                        data["attack"], data["decay"], data["release"]]))
+    #             # tree[key]["adsr"]
+    #             return time
+    #     return tree
+
+
+    #find topmost envelope and output its combined length in ms
+    totalTime = 0 #largest envelope in ms
+    for node in nodes:
+        if node["type"] == "envelope":
+            data = node["data"]
+            time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
+            if (time > totalTime):
+                totalTime = time
 
     return adjList, totalTime
 
@@ -206,7 +222,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
         soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
 
-        await websocket.send_json(SAMPLES*(sustainTime + envelopeTime))
+        await websocket.send_json(len(soundData))
 
         #send chunkSize chunks of the sounddata until all is sent
         cb = soundGen.samplesToCB(soundData)
