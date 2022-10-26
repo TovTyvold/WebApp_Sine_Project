@@ -74,6 +74,63 @@ def handleInput(query):
         if dType == "out":
             return recClean(json["in"][0])
 
+        if dType == "effect":
+                child = recClean(dChildren[0])
+
+                if dData["effectName"] == "reverb":
+                    duration = float(dData["params"]["duration"])
+                    wetdry = float(dData["params"]["mixPercent"])
+
+                    return {
+                        "reverb" : {
+                            "points" : child,
+                            "duration" : {"num":  duration},
+                            "wetdry" : {"num": wetdry},
+                        }
+                    }
+
+                if dData["effectName"] in ["lpf", "hpf"]:
+                    cutoff = float(dData["params"]["cutoff"])
+
+                    return {
+                        dData["effectName"] : {
+                            "points" : child,
+                            "cutoff" : {"num": cutoff},
+                        }
+                    }
+
+                if dData["effectName"] in ["lfo-sin", "lfo-saw"]:
+                    rate = float(dData["params"]["rate"])
+
+                    return {
+                        dData["effectName"] : {
+                            "points" : child,
+                            "rate" : {"num": rate},
+                        }
+                    }
+
+                if dData["effectName"] == "dirac":
+                    precision = float(dData["params"]["precision"])
+                    rate = float(dData["params"]["rate"])
+
+                    return {
+                        "dirac" : {
+                            "points" : child,
+                            "rate" : {"num": rate},
+                            "precision" : {"num": precision},
+                        }
+                    }
+
+                if dData["effectName"] == "dirac":
+                    level = float(dData["params"]["level"])
+
+                    return {
+                        "dirac" : {
+                            "points" : child,
+                            "level" : {"num": level},
+                        }
+                    }
+
         if dType == "bezier":
             return {"bezier": dData["points"]}
 
@@ -121,7 +178,7 @@ async def websocket_endpoint(websocket: WebSocket):
     while (True):
         #recieve wave information
         query = await websocket.receive_json()
-        seconds = query["Seconds"]
+        seconds = float(query["Seconds"])
         query = handleInput(query["NodeTree"])
 
         print(query)

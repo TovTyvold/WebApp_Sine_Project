@@ -368,7 +368,7 @@ if __name__ == "__main__":
             "v2": w2,
         }
     }
-    soundGen.play(newparse(mixT, 44100, 4))
+    # soundGen.play(newparse(mixT, 44100, 4))
 
     mixT = {
         "mix": {
@@ -406,3 +406,8 @@ if __name__ == "__main__":
             }
             }
     # soundGen.play(newparse(note, 44100, 4))
+
+
+    note = {'wave': {'shape': 'sin', 'frequency': {
+        '+': [{'*': [{'bezier': [[0, 0], [1.5, 0], [1, 1]]}, {'num': 220.0}]}, {'num': 220.0}]}, 'amplitude': {'num': 1.0}}}
+    soundGen.play(newparse(note, 44100, 4))
