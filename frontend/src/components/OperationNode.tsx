@@ -1,16 +1,23 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
-function OperationNode({ data, id, remove }: any) {
+function OperationNode({ data, id }: any) {
+  const onChange = useCallback((event: any) => {
+    data.opType = event.target.value;
+  }, []);
   return (
     <div className='op-node'>
-      <Handle type='target' position={Position.Left} />
-      <b>{id}</b>
-      <label onClick={remove} style={{ float: 'right', paddingRight: '3px' }}>
-        <b>X</b>
-      </label>
-      <b>Sum</b>
-      <Handle type='source' position={Position.Right} />
+      <Handle id={'in-' + id} type='target' position={Position.Left} />
+      <b>Operation</b>
+      <hr />
+      <div className='select'>
+        <select name='op' onChange={onChange}>
+          <option value='sum'>Sum +</option>
+          <option value='multi'>Times ×</option>
+        </select>
+      </div>
+
+      <Handle id={'out-' + id} type='source' position={Position.Right} />
     </div>
   );
 }

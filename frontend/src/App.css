@@ -1,14 +1,13 @@
 .App {
   display: grid;
   justify-content: center;
-  
+
   height: 100%;
   background: whitesmoke;
-  font-family:'Courier New', Courier, monospace
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .container {
-  margin-bottom: 15rem;
   display: grid;
   width: 100vw;
   height: 100vh;
@@ -18,8 +17,6 @@
 
 header {
   text-align: center;
-  margin: 3rem;
-  
 }
 
 .graph-section {
@@ -40,7 +37,7 @@ header {
   border-radius: 15px;
   padding: 2rem;
   margin: 1rem;
-} 
+}
 .osc-input {
   margin-inline: 1rem;
 }
@@ -54,36 +51,23 @@ header {
   margin-bottom: 1rem;
 }
 
-
 .play-button {
- 
- width: 10rem;
- background-color: #1f939e;
+  width: 10rem;
+  background-color: #1f939e;
 
- border-radius: 12px;
- padding: 0.5rem;
+  border-radius: 12px;
+  padding: 0.5rem;
 }
-
-
-
-
-
 
 /* For Chrome and Safari  */
-  
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button 
-{
-    -webkit-appearance: none;
-    margin: 0;
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 /* For Firefox  */
-  
-input[type="number"] {
-    -moz-appearance: textfield;
+
+input[type='number'] {
+  -moz-appearance: textfield;
 }
-
-
-
-
-

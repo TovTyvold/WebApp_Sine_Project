@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
@@ -11,6 +17,7 @@ import ReactFlow, {
   Connection,
   useNodesState,
   useEdgesState,
+  applyNodeChanges,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -21,29 +28,40 @@ import OperationNode from './components/OperationNode';
 import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
-import { FlowArrayMutation } from 'typescript';
+
+import ValueNode from './components/ValueNode';
+import BezierNode from './components/BezierNode';
+import MixNode from './components/MixNode';
 
 const initialNodes: Node[] = [
   {
-    id: 'output-0',
-    type: 'output',
+    id: 'output0',
+    type: 'out',
     data: {},
-    position: { x: 350, y: 250 },
+    position: { x: 750, y: 250 },
+    deletable: false,
   },
 ];
 
 const initialEdges: Edge[] = [];
 
-const Flow = ({ submit }: any) => {
+const Flow = ({ submit, onSecondsChange }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [instance, setInstance] = useState<any>(null);
-  const idCount = useRef(1);
   const edgeUpdateSuccessful = useRef(true);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
-  const [currView, setCurrView] = useState({x:0, y:0, zoom:0.5});
-  const [tree, setTree] = useState();
+  const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 1 });
+  const idRef = useRef<any>({
+    oscillator: 0,
+    envelope: 0,
+    operation: 0,
+    effect: 0,
+    value: 0,
+    bezier: 0,
+    mix: 0,
+  });
 
   const nodeTypes = useMemo(
     () => ({
@@ -51,10 +69,23 @@ const Flow = ({ submit }: any) => {
       envelope: EnvelopeNode,
       operation: OperationNode,
       effect: EffectNode,
-      output: OutputNode,
+      value: ValueNode,
+      out: OutputNode,
+      bezier: BezierNode,
+      mix: MixNode,
     }),
     []
   );
+  useEffect(() => {
+    setNodes((nds) => {
+      nds.forEach((n) => {
+        if (n.id === 'output0') {
+          n.data.onchange = onSecondsChange;
+        }
+      });
+      return nds;
+    });
+  }, []);
 
   const createTree = useCallback((nodesList: Node[], edgesList: Edge[]) => {
     let map: any = new Map(
@@ -63,42 +94,51 @@ const Flow = ({ submit }: any) => {
     for (let { source, target } of edgesList) {
       map.get(target).children.push(map.get(source));
     }
-    return map.get('output-0');
+    return map.get('output0');
   }, []);
 
   const getFlow = useCallback(() => {
     if (instance) {
       const nodesList = instance.getNodes();
       const edgesList = instance.getEdges();
+      console.table(nodesList);
+      console.table(edgesList);
 
-      //console.log(JSON.stringify(createTree(nodesList, edgesList), null, 2));
-      submit(createTree(nodesList, edgesList));
+      // submit(createTree(nodesList, edgesList));
+      submit({ nodes: nodesList, edges: edgesList });
     }
   }, [instance]);
-
-
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
+    if (nodeType === 'operation') data = { opType: 'sum' };
+    if (nodeType === 'bezier')
+      data = {
+        points: [
+          [0, 0],
+          [0.5, 0.5],
+          [1, 1],
+        ],
+      };
 
-    const x = (1/view.zoom)*(nodePos.x - view.x)
-    const y = (1/view.zoom)*(nodePos.y - view.y)
+    const x = (1 / view.zoom) * (nodePos.x - view.x);
+    const y = (1 / view.zoom) * (nodePos.y - view.y);
 
     const newNode = {
-      id: `${nodeType}-${idCount.current++}`,
-      position: {x: x, y: y},
+      id: `${nodeType}${idRef.current[nodeType]++}`,
+      position: { x: x, y: y },
       type: nodeType,
       data: data,
-    }
+    };
 
-    setNodes((nds) => nds.concat(newNode))
-    setShowContextMenu(false)
+    setNodes((nds) => nds.concat(newNode));
+    setShowContextMenu(false);
   }, []);
 
-  const removeNode = (id: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== id));
-  };
+  const removeNode = useCallback((n: Node) => {
+    setNodes((nds) => nds.filter((node) => node.id !== n.id));
+  }, []);
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((edges) => addEdge(params, edges)),
@@ -124,23 +164,23 @@ const Flow = ({ submit }: any) => {
   }, []);
 
   const onPaneContextMenu = useCallback((event: any) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    setShowContextMenu(true)
+    setShowContextMenu(true);
     const boundingBox = event.target.getBoundingClientRect();
     const viewport_x = event.pageX - boundingBox.left;
     const viewport_y = event.pageY - boundingBox.top;
 
-    setContextPosition({ x: viewport_x, y: viewport_y })
+    setContextPosition({ x: viewport_x, y: viewport_y });
   }, []);
 
   const onPaneClick = useCallback((event: any) => {
-    setShowContextMenu(false)
-  }, [])
+    setShowContextMenu(false);
+  }, []);
 
   const onMoveEnd = useCallback((event: any, view: any) => {
-    setCurrView(view)
-  }, [])
+    setCurrView(view);
+  }, []);
 
   return (
     <ReactFlow
@@ -158,16 +198,23 @@ const Flow = ({ submit }: any) => {
       onInit={setInstance}
       onMoveEnd={onMoveEnd}
       defaultViewport={currView}
-      >
-      <ContextMenu show={showContextMenu} position={contextPosition} onClick={(e: any) => addNode(e, contextPosition, currView)}/>
-      <ControllButtons getFlow={getFlow} addNode={addNode} />
+      deleteKeyCode={['Backspace', 'Delete']}
+      onNodesDelete={(n: any) => {
+        removeNode(n);
+      }}>
+      <ContextMenu
+        show={showContextMenu}
+        position={contextPosition}
+        onClick={(e: any) => addNode(e, contextPosition, currView)}
+      />
+      <ControllButtons getFlow={getFlow} />
       <Background />
     </ReactFlow>
   );
 };
 
-export default ({ submit }: any) => (
+export default (props: any) => (
   <ReactFlowProvider>
-    <Flow submit={submit} />
+    <Flow submit={props.submit} onSecondsChange={props.onSecondsChange} />
   </ReactFlowProvider>
 );
