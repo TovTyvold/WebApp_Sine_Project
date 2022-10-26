@@ -1,26 +1,20 @@
-import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
+import SliderInput from './SliderInput';
 
 function OutputNode({ data, id }: any) {
-  // const onChange = useCallback((event: any) => {
-  //   data.seconds = event.target.value;
-  // }, []);
-
   return (
     <div className='out-node'>
       <Handle id={'in-' + id} type='target' position={Position.Left} />
       <b>Output</b>
       <hr />
-      <label htmlFor='seconds'>Seconds</label>
-      <input
-        type='range'
-        min='1'
-        max='20'
-        name='seconds'
-        defaultValue={1}
+      <SliderInput
+        name='Seconds'
+        defaultValue={2}
+        min={1}
+        max={20}
+        unit=''
+        step={0.1}
         onChange={data.onchange}
-        className='slider nodrag'
       />
     </div>
   );

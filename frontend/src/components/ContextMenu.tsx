@@ -17,13 +17,27 @@ export const ContextMenu = memo(
         <b> Add Node</b>
         <hr />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <button onClick={() => onClick('oscillator')}>Oscillator </button>
-          <button onClick={() => onClick('envelope')}>Envelope </button>
-          <button onClick={() => onClick('effect')}>Effect </button>
-          <button onClick={() => onClick('operation')}>Operation </button>
-          <button onClick={() => onClick('value')}>Value </button>
-          <button onClick={() => onClick('bezier')}>Bezier </button>
-          <button onClick={() => onClick('mix')}>Mix </button>
+          <button className='btn-small' onClick={() => onClick('oscillator')}>
+            Oscillator{' '}
+          </button>
+          <button className='btn-small' onClick={() => onClick('envelope')}>
+            Envelope{' '}
+          </button>
+          <button className='btn-small' onClick={() => onClick('effect')}>
+            Effect{' '}
+          </button>
+          <button className='btn-small' onClick={() => onClick('operation')}>
+            Operation{' '}
+          </button>
+          <button className='btn-small' onClick={() => onClick('value')}>
+            Value{' '}
+          </button>
+          <button className='btn-small' onClick={() => onClick('bezier')}>
+            Bezier{' '}
+          </button>
+          <button className='btn-small' onClick={() => onClick('mix')}>
+            Mix{' '}
+          </button>
         </div>
       </div>
     ) : null;
