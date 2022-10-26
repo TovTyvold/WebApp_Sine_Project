@@ -42,13 +42,11 @@ function OscillatorNode({ data, id }: any) {
 
       <hr />
       <NumberInput
-        label='Frequency (Hz)'
         name='frequency'
         defaultValue={data.frequency}
         onChange={onChange}
       />
       <NumberInput
-        label='Amplitude'
         name='amplitude'
         defaultValue={data.amplitude}
         onChange={onChange}
