@@ -74,6 +74,17 @@
   border-radius: 10px;
   background-color: #1f939e;
 }
+.react-flow .react-flow__edge-path,
+.react-flow__connection-path {
+  stroke-width: 5px;
+  stroke: #1d8892;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path,
+.react-flow__edge:focus-visible .react-flow__edge-path {
+  stroke: #2dc8d6;
+}
 
 select {
   appearance: none;

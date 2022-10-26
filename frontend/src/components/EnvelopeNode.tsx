@@ -36,7 +36,7 @@ function EnvelopeNode({ data, id }: any) {
           defaultValue={1}
           unit='ms'
           min={1}
-          max={50}
+          max={1000}
           onChange={onChange}
         />
         <SliderInput
@@ -44,7 +44,7 @@ function EnvelopeNode({ data, id }: any) {
           defaultValue={1}
           unit='ms'
           min={1}
-          max={50}
+          max={1000}
           onChange={onChange}
         />
         <SliderInput
@@ -52,7 +52,7 @@ function EnvelopeNode({ data, id }: any) {
           defaultValue={1}
           unit='%'
           min={1}
-          max={50}
+          max={100}
           onChange={onChange}
         />
         <SliderInput
@@ -60,7 +60,7 @@ function EnvelopeNode({ data, id }: any) {
           defaultValue={1}
           unit='ms'
           min={1}
-          max={50}
+          max={1000}
           onChange={onChange}
         />
       </div>
