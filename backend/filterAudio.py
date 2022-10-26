@@ -155,15 +155,12 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     length5 = int(total_len * ((Duration_inp-1) * x/6)) + length4
     length6 = int(total_len * ((Duration_inp-1) * x/12)) + length5
 
-    releasek = np.ones_like(t_vec_r)
-    releasej = np.ones_like(t_vec_r)
-    releasel = np.ones_like(t_vec_r)
-    if Duration_inp >= 3:
-        releaseg = np.linspace(1,0.75, length2 - length1+1)
-        releaseh = np.linspace(1,0.5, length3 - length2+1)
-        releasek = np.linspace(1,0.5, length4 - length3)
-        releasej = np.linspace(1,0.5, length5 - length4)
-        releasel = np.linspace(1,0.5, length6 - length5)
+ 
+    releaseg = np.linspace(1,0.75, length2 - length1+1)
+    releaseh = np.linspace(1,0.5, length3 - length2+1)
+    releasek = np.linspace(1,0.5, length4 - length3)
+    releasej = np.linspace(1,0.5, length5 - length4)
+    releasel = np.linspace(1,0.5, length6 - length5)
 
     cych = 2205
     cyc3h = 3 * cych
