@@ -45,17 +45,17 @@ function App() {
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
   const seconds = useRef<number>(1);
-  const [isReady, setIsReady] = useState<boolean>(false)
+  const [isReady, setIsReady] = useState<boolean>(false);
 
   const composeAudio = (data: any) => {
     if (data instanceof ArrayBuffer) {
       const chunk = new Float32Array(data);
       buffer.copyToChannel(chunk, 0, floatsRead.current);
       floatsRead.current += chunk.length;
-    
-      if (floatsRead.current >= seconds.current*44100) {
+
+      if (floatsRead.current >= seconds.current * 44100) {
         if (!isReady) {
-          setIsReady(true)
+          setIsReady(true);
         }
       }
     }
@@ -85,13 +85,13 @@ function App() {
   //when a tree is ready send it
   useEffect(() => {
     if (ws.readyState === webSocket.OPEN && tree && !isReady) {
-      const payload = { NodeTree: tree, Seconds: seconds.current };
+      const payload = { NodeTree: tree, SustainTime: seconds.current };
       ws.send(JSON.stringify(payload));
     }
   }, [ws, tree]);
 
   useEffect(() => {
-    console.log("seconds have changed");
+    console.log('seconds have changed');
   }, [seconds.current]);
 
   useEffect(() => {
@@ -100,19 +100,18 @@ function App() {
     }
   }, [isReady]);
 
-  const onSecondsChange =
-    (event: any) => {
-      event.preventDefault();
+  const onSecondsChange = (event: any) => {
+    event.preventDefault();
 
-      seconds.current = parseInt(event.target.value);
-      setBuffer(
-        new AudioBuffer({
-          numberOfChannels: CHANNELS,
-          length: 44100 * seconds.current,
-          sampleRate: 44100,
-        })
-      );
-    }
+    seconds.current = parseInt(event.target.value);
+    setBuffer(
+      new AudioBuffer({
+        numberOfChannels: CHANNELS,
+        length: 44100 * seconds.current,
+        sampleRate: 44100,
+      })
+    );
+  };
 
   const playAudio = () => {
     if (buffer) {
@@ -121,14 +120,14 @@ function App() {
       source.connect(context.destination);
       source.onended = () => {
         console.log('Sound is done playing!');
-        console.log("floats read", floatsRead.current)
-        setIsReady(false)
+        console.log('floats read', floatsRead.current);
+        setIsReady(false);
       };
       source.start();
 
       floatsRead.current = 0;
     }
-  }
+  };
 
   const submit = (tree: any) => {
     setTree(tree);
