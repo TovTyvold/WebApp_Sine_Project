@@ -3,7 +3,7 @@ import time
 import numpy as np 
 import matplotlib.pyplot as plt
 from numpy.linalg import norm
-from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete
+from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete, weierstrassFunc, pitch_12_up
 from soundGen import play
 from pointsFrequency import signal_to_hertz
 from ADSR_mod import ADSR
@@ -67,14 +67,15 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
             k += 1 
     
     else:
-        t = 0.1
+        t = 1
         Amp_array = 1
         N = Fs 
         t_vec = np.arange(N)*(T*t) 
         y = np.zeros((n_signals,len(t_vec)))
         k = 0
         y_sum = 0
-        sine_add = np.sin(np.linspace(-16 * np.pi,16 * np.pi,len(t_vec)))/10
+        #omega = 2 * np.pi
+        sine_add = np.sin(np.linspace(-8 * np.pi,8 * np.pi,len(t_vec)))
         omega = 2 * np.pi* sine_add
         for i in range(n_signals):
             y[k] = (Amp_array * amplitudes[k]) * np.sin(omega* frequencies[i] * t_vec)
@@ -84,8 +85,11 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
 
 
     normalized_y = y_sum/np.max(y_sum) 
-
-
+    N = 12
+    pitch_sig_up = pitch_12_up(normalized_y, N)
+    plt.figure()
+    plt.plot(t_vec,pitch_sig_up)
+    plt.show()
     t1 = time.time()
     total = t1-t0
     print(f"Timing stopped, END OF FUNCTION! It took {total:0.7f}s")
@@ -98,7 +102,7 @@ t0_func = time.time()
 print("Timing outside func started....")
 
 #t_vec, Fs, freqs, Array_of_various_signals = Create_Sine(np.array([10,10,10,10,10,10,10]), np.array([200, 400, 450, 500, 550, 600, 800]), 44100, list_ADSR = 0)
-Create_Sine([1], [200], 44100, list_ADSR = 0)
+Create_Sine([1, 1, 1, 1], [200, 400, 550, 330], 44100, list_ADSR = 0)
 
 t1_func = time.time()
 total = t1_func-t0_func

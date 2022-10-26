@@ -1,5 +1,7 @@
 
 from ctypes.wintypes import PMSG
+import torch
+from torch_pitch_shift import pitch_shift
 import wave
 from scipy import signal
 import numpy as np
@@ -67,6 +69,16 @@ def Low_frequency_Oscillator_saw(signal, t):
     t_vec = np.linspace(0, t, len(signal))
     return 2 * 20 * (t_vec % (1 / 20)) - 1
 
+def weierstrassFunc(signal, a):
+    t_vec = np.linspace(-2 * np.pi, 2 * np.pi, len(signal))
+    a = 0.5
+    tol = 0.1
+    b = 1/a + (3 / (2 * a)) * np.pi + tol
+    
+    weier = np.zeros_like(signal)
+    for i in range(100):
+        weier  += a **i * np.cos((b**(i) * np.pi * t_vec))
+    return weier
 
 
 def dirac_comb_discrete(y, N_, K_):
@@ -105,7 +117,18 @@ def hilbert(y):
     return np.imag(signal.hilbert(y))
 
 
-
+def pitch_12_up(signal, N):
+    """
+    Pitch up by N semitones
+    """
+    dtype = type(signal)
+    
+     # (samples, channels) --> (channels, samples)
+    sample = torch.tensor(signal, dtype=torch.float32, device="cuda" if torch.cuda.is_available() else "cpu",)
+    up = pitch_shift(sample, shift = N, sample_rate= 44100)
+    assert up.shape == sample.shape
+    pitch_corrected = np.swapaxes(up.cpu()[0].numpy(),0,1).astype(dtype)
+    return pitch_corrected
 
 def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     Fs = 44100
@@ -130,15 +153,12 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     length5 = int(total_len * ((Duration_inp-1) * x/6)) + length4
     length6 = int(total_len * ((Duration_inp-1) * x/12)) + length5
 
-    releasek = np.ones_like(t_vec_r)
-    releasej = np.ones_like(t_vec_r)
-    releasel = np.ones_like(t_vec_r)
-    if Duration_inp >= 3:
-        releaseg = np.linspace(1,0.75, length2 - length1+1)
-        releaseh = np.linspace(1,0.5, length3 - length2+1)
-        releasek = np.linspace(1,0.5, length4 - length3)
-        releasej = np.linspace(1,0.5, length5 - length4)
-        releasel = np.linspace(1,0.5, length6 - length5)
+ 
+    releaseg = np.linspace(1,0.75, length2 - length1+1)
+    releaseh = np.linspace(1,0.5, length3 - length2+1)
+    releasek = np.linspace(1,0.5, length4 - length3)
+    releasej = np.linspace(1,0.5, length5 - length4)
+    releasel = np.linspace(1,0.5, length6 - length5)
 
     cych = 2205
     cyc3h = 3 * cych
@@ -149,37 +169,72 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     norm_y = list(norm_y_a) * int((Duration))
 
     conv_y = np.zeros_like(t_vec_r)
+
+    # Determine the Dry/Wet factor with the reverb 
+    if DryWet == 0.0:
+        D1 = 1; D2 = 1; D3 = 1; D4 = 1; D5 = 1
+
+    elif DryWet == 1:
+        a = 1
+        D1 = 1 - 0.9 * DryWet*a; D2 = 1 - 0.8 * DryWet*a; D3 = 1 - 0.7 * DryWet*a
+        D4 = 1 - 0.7 * DryWet*a; D5 = 1 - 0.6 * DryWet*a
+
+
+    elif 0.75 <= DryWet < 1:
+        a = 1.2 + (1 - DryWet)*2.75
+        D1 = 1 - 0.9 * DryWet*a; D2 = 1 - 0.8 * DryWet*a; D3 = 1 - 0.7 * DryWet*a
+        D4 = 1 - 0.7 * DryWet*a; D5 = 1 - 0.6 * DryWet*a
+
+    elif 0.5 <= DryWet < 0.75:
+        a = 2 + (1 - DryWet - 0.3) * 3.5
+        D1 = 1 - 0.9 * DryWet*a; D2 = 1 - 0.8 * DryWet*a; D3 = 1 - 0.7 * DryWet*a
+        D4 = 1 - 0.7 * DryWet*a; D5 = 1 - 0.6 * DryWet*a
+
+
+    elif 0.25 <= DryWet < 0.5:
+        b = 8 - abs(1 - DryWet*4)*8
+        D1 = 1 - 0.9 * DryWet*b; D2 = 1 - 0.8 * DryWet*b; D3 = 1 - 0.7 * DryWet*b
+        D4 = 1 - 0.7 * DryWet*b; D5 = 1 - 0.6 * DryWet*b
+
+    elif 0 < DryWet < 0.25:
+        b = 0.1
+        D1 = 1 - 0.9 * DryWet*b; D2 = 1 - 0.8 * DryWet*b; D3 = 1 - 0.7 * DryWet*b
+        D4 = 1 - 0.7 * DryWet*b; D5 = 1 - 0.6 * DryWet*b
+    #Release constants
+    g = 0; h = 0; k = 0; j = 0; l = 0
+
+
     #Release constants
     g = 0; h = 0; k = 0; j = 0; l = 0
     for n in range(len(t_vec_r)):
     
         if n >= length1 and n < length2:
-            conv_y[n] = releaseg[g] * (norm_y[n]*0.4 - norm_y[n-length1+cych]*0.5 * DryWet)
+            conv_y[n] = releaseg[g] * (norm_y[n] * D1 - norm_y[n-length1+cych]*0.9 * DryWet)
             g += 1
 
         elif n >= length2 and n <= length3:
-            conv_y[n] = releaseh[h] * (norm_y[n- length2]*0.4 - norm_y[n-length2+cych]*0.3 * DryWet - norm_y[n- length2+cyc3h]*0.25 * DryWet\
-                - norm_y[n- length2+cyc5h]*0.2 * DryWet - norm_y[n- length2+cyc7h]*0.2 * DryWet)
+            conv_y[n] = releaseh[h] * (norm_y[n- length2] * D2 - norm_y[n-length2+cych]*0.3 * DryWet - norm_y[n- length2+cyc3h]*0.3  * DryWet\
+                - norm_y[n- length2+cyc5h]*0.1 * DryWet - norm_y[n- length2+cyc7h]*0.15 * DryWet)
             h += 1 
 
         elif n >= length3 and n <= length4:
-            conv_y[n] = releasek[k] * (norm_y[n-length3]*0.3 - norm_y[n-length3+cych]*0.2 * DryWet\
-                - norm_y[n- length3+cyc3h]*0.15 * DryWet - norm_y[n- length3+cyc5h]*0.15 * DryWet)
+            conv_y[n] = releasek[k] * (norm_y[n-length3] * D3 - norm_y[n-length3+cych]*0.3 * DryWet\
+                - norm_y[n- length3+cyc3h]*0.2 * DryWet - norm_y[n- length3+cyc5h]*0.1 * DryWet - norm_y[n- length3+cyc7h]*0.1 * DryWet)
             k += 1
 
         elif n >= length4 and n <= length5:
-            conv_y[n] = releasej[j] * (norm_y[n-length4]*0.2 - norm_y[n-length4+cych]*0.2 * DryWet - norm_y[n- length4+cyc3h]*0.1 * DryWet\
-                - norm_y[n- length4+cyc5h]*0.15 * DryWet - norm_y[n- length4+cyc7h]*0.15 * DryWet)
+            conv_y[n] = releasej[j] * (norm_y[n-length4] * D4 - norm_y[n-length4+cych]*0.2 * DryWet - norm_y[n- length4+cyc3h]*0.2 * DryWet\
+                - norm_y[n- length4+cyc5h]*0.1 * DryWet - norm_y[n - length4+cyc7h]*0.05 * DryWet - norm_y[n - length4+cyc9h]*0.05 * DryWet)
             j += 1
             
         elif n >= length5 and n < length6:
             dist = n - length5
-            conv_y[n] =  releasel[l] * (norm_y[dist]*0.2 - norm_y[dist+cych]*0.15 * DryWet - norm_y[dist+cyc3h]*0.15 * DryWet\
-                - norm_y[dist+cyc5h]*0.1 * DryWet - norm_y[dist+cyc7h]*0.01 * DryWet - norm_y[dist+cyc9h]*0.01 * DryWet)
+            conv_y[n] =  releasel[l] * (norm_y[dist] * D5 - norm_y[dist+cych]*0.2 * DryWet - norm_y[dist+cyc3h]*0.15 * DryWet\
+                - norm_y[dist+cyc5h]*0.05 * DryWet - norm_y[dist+cyc7h]*0.05 * DryWet - norm_y[dist+cyc9h]*0.05 * DryWet)
             l += 1
 
         else:
-            
+        
             conv_y[n] = norm_y[n]
     return conv_y, t_vec_r
 
