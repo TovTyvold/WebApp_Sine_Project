@@ -13,34 +13,83 @@
 }
 
 .mix-node {
-  border: 2px solid #21f40c;
+  border: 2px solid #f2a679;
+}
+.mix-node hr {
+  height: 2px;
+  border: none;
+  background-color: #f2a679;
+  border-radius: 15px;
 }
 .val-node {
   border: 2px solid #ff31c1;
+}
+.val-node hr {
+  height: 2px;
+  border: none;
+  background-color: #ff31c1;
+  border-radius: 15px;
 }
 
 .bezier-node {
   border: 2px solid #c0f1cf;
 }
+.bezier-node hr {
+  height: 2px;
+  border: none;
+  background-color: #c0f1cf;
+  border-radius: 15px;
+}
 
 .osc-node {
   border: 2px solid #1f939e;
+}
+.osc-node hr {
+  height: 2px;
+  border: none;
+  background-color: #1f939e;
+  border-radius: 15px;
 }
 
 .env-node {
   border: 2px solid #d5d51c;
 }
+.env-node hr {
+  height: 2px;
+  border: none;
+  background-color: #d5d51c;
+  border-radius: 15px;
+}
 
 .eff-node {
   border: 2px solid #1f9e3d;
+}
+.eff-node hr {
+  height: 2px;
+  border: none;
+  background-color: #1f9e3d;
+  border-radius: 15px;
 }
 
 .op-node {
   border: 2px solid #9e501f;
 }
+.op-node hr {
+  height: 2px;
+  border: none;
+  background-color: #9e501f;
+  border-radius: 15px;
+}
 
 .out-node {
   border: 2px solid #581f9e;
+}
+
+.out-node hr {
+  height: 2px;
+  border: none;
+  background-color: #581f9e;
+  border-radius: 15px;
 }
 
 .osc-input {
