@@ -44,7 +44,7 @@ function App() {
   const [ws, setWs] = useState<WebSocket>(webSocket);
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
-  const seconds = useRef<number>(1);
+  const seconds = useRef<number>(1.0);
   const [isReady, setIsReady] = useState<boolean>(false)
 
   const composeAudio = (data: any) => {
@@ -80,7 +80,7 @@ function App() {
     // return () => {
     //     ws.removeEventListener("close", onClose)
     // }
-  }, [ws, setWs, composeAudio]);
+  }, [ws, setWs]);
 
   //when a tree is ready send it
   useEffect(() => {
