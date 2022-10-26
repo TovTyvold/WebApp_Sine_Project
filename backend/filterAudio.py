@@ -108,8 +108,7 @@ def dirac_comb_discrete(y, N_, K_):
         part = (1/N_) *np.exp(2j * np.pi * n * i / K)
         sigSum = sigSum + part
     signal = sigSum.real * y
-    print(np.shape(signal))
-    return signal, K
+    return signal
 
 
 def hilbert(y):
@@ -236,7 +235,7 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
         else:
         
             conv_y[n] = norm_y[n]
-    return conv_y, t_vec_r
+    return conv_y
 
 
     
