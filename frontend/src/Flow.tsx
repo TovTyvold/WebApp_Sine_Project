@@ -108,8 +108,12 @@ const Flow = ({ submit, onSecondsChange }: any) => {
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
-    if (nodeType === 'oscillator') data = { shape: 'sin' };
+    if (nodeType === 'oscillator')
+      data = { frequency: 440, amplitude: 1, shape: 'sin' };
     if (nodeType === 'operation') data = { opType: 'sum' };
+    if (nodeType === 'value') data = { value: 1 };
+    if (nodeType === 'envelope')
+      data = { attack: 20, decay: 20, sustain: 60, release: 20 };
     if (nodeType === 'bezier')
       data = {
         points: [
@@ -138,7 +142,10 @@ const Flow = ({ submit, onSecondsChange }: any) => {
   }, []);
 
   const onConnect = useCallback(
-    (params: Edge | Connection) => setEdges((edges) => addEdge(params, edges)),
+    (params: Edge | Connection) =>
+      setEdges((edges) =>
+        addEdge({ ...params, style: { color: 'red' } }, edges)
+      ),
     [setEdges]
   );
 
