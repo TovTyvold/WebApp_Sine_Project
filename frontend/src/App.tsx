@@ -37,26 +37,29 @@ const API_WS = 'ws://localhost:5000/sound';
 const webSocket = new WebSocket(API_WS);
 const context = new AudioContext();
 
+//TODO: make AudioBufferSourceNode per CHUNK size https://stackoverflow.com/questions/28440262/web-audio-api-for-live-streaming
 function App() {
   // Hooks
   const [buffer, setBuffer] = useState<AudioBuffer>(dBuffer);
   const [ws, setWs] = useState<WebSocket>(webSocket);
   const [tree, setTree] = useState<Object>();
-  const bytesRead = useRef<number>(0);
+  const floatsRead = useRef<number>(0);
   const seconds = useRef<number>(1);
-  const [isReady, setIsReady] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(false)
 
-  const composeAudio = useCallback(
-    (data: any) => {
-      setIsReady(true);
-      if (data instanceof ArrayBuffer) {
-        const chunk = new Float32Array(data);
-        buffer.copyToChannel(chunk, 0, bytesRead.current);
-        bytesRead.current += chunk.length;
+  const composeAudio = (data: any) => {
+    if (data instanceof ArrayBuffer) {
+      const chunk = new Float32Array(data);
+      buffer.copyToChannel(chunk, 0, floatsRead.current);
+      floatsRead.current += chunk.length;
+    
+      if (floatsRead.current >= seconds.current*44100) {
+        if (!isReady) {
+          setIsReady(true)
+        }
       }
-    },
-    [buffer]
-  );
+    }
+  };
 
   //fix ws
   useEffect(() => {
@@ -81,12 +84,15 @@ function App() {
 
   //when a tree is ready send it
   useEffect(() => {
-    if (ws.readyState === webSocket.OPEN && tree) {
+    if (ws.readyState === webSocket.OPEN && tree && !isReady) {
       const payload = { NodeTree: tree, Seconds: seconds.current };
-      console.log(JSON.stringify(payload, null, 2));
       ws.send(JSON.stringify(payload));
     }
   }, [ws, tree]);
+
+  useEffect(() => {
+    console.log("seconds have changed");
+  }, [seconds.current]);
 
   useEffect(() => {
     if (isReady) {
@@ -94,7 +100,7 @@ function App() {
     }
   }, [isReady]);
 
-  const onSecondsChange = useCallback(
+  const onSecondsChange =
     (event: any) => {
       event.preventDefault();
 
@@ -106,43 +112,25 @@ function App() {
           sampleRate: 44100,
         })
       );
-    },
-    [setBuffer]
-  );
+    }
 
-  const playAudio = useCallback(() => {
+  const playAudio = () => {
     if (buffer) {
       const source = context.createBufferSource();
       source.buffer = buffer;
       source.connect(context.destination);
-      source.start();
       source.onended = () => {
         console.log('Sound is done playing!');
-        setIsReady(false);
+        console.log("floats read", floatsRead.current)
+        setIsReady(false)
       };
+      source.start();
 
-      bytesRead.current = 0;
+      floatsRead.current = 0;
     }
-  }, [buffer]);
+  }
 
-  const sanitize = (tree: any) => {
-    Object.keys(tree).forEach((key) => {
-      let keep: boolean = desiredFields.includes(key);
-
-      if (!keep) {
-        delete tree[key];
-      }
-      if (tree['children']) {
-        tree['children'].forEach((child: any) => {
-          sanitize(child);
-        });
-      }
-    });
-
-    return tree;
-  };
-
-  let submit = (tree: any) => {
+  const submit = (tree: any) => {
     setTree(tree);
   };
 
