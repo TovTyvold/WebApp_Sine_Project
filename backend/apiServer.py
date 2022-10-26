@@ -39,14 +39,16 @@ def handleInput(query):
                 
         return newList
                 
-    # seconds = 0
-    # for node in nodes:
-    #     if node["type"] == "out":
-    #         seconds = float(node["data"]["seconds"])
+    totalTime = 0 #largest envelope in ms
+    # "data": { "attack": "7", "decay": "6", "sustain": "9", "release": "7" },
+    for node in nodes:
+        if node["type"] == "envelope":
+            data = node["data"]
+            time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
+            if (time > totalTime):
+                totalTime = time
 
     print(nodes)
-                
-
     # nodes = prune(nodes, nodeKeep)
     # edges = prune(edges, edgeKeep)
 
@@ -84,8 +86,8 @@ def handleInput(query):
                     return {
                         "reverb" : {
                             "points" : child,
-                            "duration" : {"num":  duration},
-                            "wetdry" : {"num": wetdry},
+                            "duration": {"num":  duration},
+                            "wetdry": {"num": wetdry},
                         }
                     }
 
@@ -131,6 +133,19 @@ def handleInput(query):
                         }
                     }
 
+        if dType == "mix":
+            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
+            value0 = recClean(dData["value0"]) if type(dData["value0"]) == dict else {"num" : float(dData["value0"])}
+            value1 = recClean(dData["value1"]) if type(dData["value1"]) == dict else {"num" : float(dData["value1"])}
+
+            return {"mix" : 
+                {
+                    "percent": percent,
+                    "v1": value0,
+                    "v2": value1
+                }
+            }
+
         if dType == "bezier":
             return {"bezier": dData["points"]}
 
@@ -139,7 +154,10 @@ def handleInput(query):
 
         if dType == "envelope":
             child = recClean(dChildren[0])
-            adsr = [float(f) for f in dData.values()]
+            #a,d,r are in ms, s is a percentage
+            #convert these to seconds and fraction
+            adsr = [float(dData["attack"])/1000, float(dData["decay"])/1000, float(dData["sustain"])/100, float(dData["release"])/1000]
+            # adsr = [float(f) for f in dData.values()]
 
             return {
                 "envelope" : {
@@ -166,7 +184,7 @@ def handleInput(query):
 
     adjList = recClean(adjList["output0"])
 
-    return adjList
+    return adjList, totalTime
 
 
 CHUNKSIZE = 1024
@@ -178,13 +196,17 @@ async def websocket_endpoint(websocket: WebSocket):
     while (True):
         #recieve wave information
         query = await websocket.receive_json()
-        seconds = float(query["Seconds"])
-        query = handleInput(query["NodeTree"])
-
         print(query)
-        print(seconds)
+        sustainTime = float(query["SustainTime"])
+        query, envelopeTime = handleInput(query["NodeTree"])
 
-        soundData = pointsCalculation.newparse(query, SAMPLES, seconds)
+        envelopeTime /= 1000
+        print(query)
+        print("totalTime: ", envelopeTime+sustainTime, "sustainTime:", sustainTime, "envelopeTime:", envelopeTime)
+
+        soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+
+        await websocket.send_json(SAMPLES*(sustainTime + envelopeTime))
 
         #send chunkSize chunks of the sounddata until all is sent
         cb = soundGen.samplesToCB(soundData)
@@ -199,4 +221,3 @@ if __name__ == "__main__":
                             log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()
-

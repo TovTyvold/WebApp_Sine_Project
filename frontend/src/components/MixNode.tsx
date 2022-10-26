@@ -3,8 +3,14 @@ import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 
 function MixNode({ data, id }: any) {
-  const onChange = useCallback((event: any) => {
-    data.value = event.target.value
+  const onChange0 = useCallback((event: any) => {
+    data.value0 = event.target.value
+  }, [data])
+  const onChange1 = useCallback((event: any) => {
+    data.value1 = event.target.value
+  }, [data])
+  const onChangePercent = useCallback((value: any) => {
+    data.percent = value.target.value
   }, [data])
 
   return (
@@ -23,22 +29,20 @@ function MixNode({ data, id }: any) {
                 min='1'
                 max='100'
                 name='percent'
-                onChange={onChange}
+                onChange={onChangePercent}
                 className='slider nodrag'
             />
             <hr/>
             <NumberInput
                 label='Value'
-                name='value1'
-                onChange={onChange}
+                name='value0'
+                onChange={onChange0}
             />
             <NumberInput 
                 label='Value' 
-                name='value0' 
-                onChange={onChange} 
+                name='value1' 
+                onChange={onChange1}
             />
-
-
         </div>
     );
 }

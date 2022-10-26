@@ -45,18 +45,17 @@ function App() {
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
   const seconds = useRef<number>(1.0);
+  const expectedSampleCount = useRef<number>();
   const [isReady, setIsReady] = useState<boolean>(false)
 
-  const composeAudio = (data: any) => {
-    if (data instanceof ArrayBuffer) {
-      const chunk = new Float32Array(data);
-      buffer.copyToChannel(chunk, 0, floatsRead.current);
-      floatsRead.current += chunk.length;
+  const composeAudio = (data: any, samplesCount: number) => {
+    const chunk = new Float32Array(data);
+    buffer.copyToChannel(chunk, 0, floatsRead.current);
+    floatsRead.current += chunk.length;
 
-      if (floatsRead.current >= seconds.current * 44100) {
-        if (!isReady) {
-          setIsReady(true);
-        }
+    if (floatsRead.current >= samplesCount) {
+      if (!isReady) {
+        setIsReady(true);
       }
     }
   };
@@ -66,20 +65,26 @@ function App() {
     const onClose = () => {
       setTimeout(() => {
         setWs(new WebSocket(API_WS));
-        console.log(ws);
       }, 1000);
     };
 
     ws.binaryType = 'arraybuffer';
     ws.onmessage = (event: MessageEvent) => {
-      composeAudio(event.data);
+      if (event.data instanceof ArrayBuffer) {
+        if (expectedSampleCount.current) {
+          composeAudio(event.data, expectedSampleCount.current);
+        }
+      }
+      else {
+        expectedSampleCount.current = event.data
+      }
     };
     ws.addEventListener('close', onClose);
     //ws.onopen = () => (console.log(ws))
 
-    // return () => {
-    //     ws.removeEventListener("close", onClose)
-    // }
+    return () => {
+      ws.removeEventListener("close", onClose)
+    }
   }, [ws, setWs]);
 
   //when a tree is ready send it
@@ -91,10 +96,6 @@ function App() {
   }, [ws, tree]);
 
   useEffect(() => {
-    console.log('seconds have changed');
-  }, [seconds.current]);
-
-  useEffect(() => {
     if (isReady) {
       playAudio();
     }
@@ -103,7 +104,7 @@ function App() {
   const onSecondsChange = (event: any) => {
     event.preventDefault();
 
-    seconds.current = parseInt(event.target.value);
+    seconds.current = (event.target.value);
     setBuffer(
       new AudioBuffer({
         numberOfChannels: CHANNELS,

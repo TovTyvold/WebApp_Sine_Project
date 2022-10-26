@@ -1,7 +1,5 @@
 
 from ctypes.wintypes import PMSG
-import torch
-from torch_pitch_shift import pitch_shift
 import wave
 from scipy import signal
 import numpy as np
