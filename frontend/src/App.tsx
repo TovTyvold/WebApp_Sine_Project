@@ -9,6 +9,7 @@ import EnvelopeADSR from './components/EnvelopeADSR';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 import { Socket } from 'dgram';
+import AudioVisualiser from './components/AudioVisualiser';
 
 type Wave = {
   frequency: number | undefined;
@@ -164,6 +165,7 @@ function App() {
 
           <button onClick={playAudio}>play</button>
         </div>
+        <AudioVisualiser audioData={buffer} audioContext={context}></AudioVisualiser>
       </div>
 
       {/* <BezierEditor
