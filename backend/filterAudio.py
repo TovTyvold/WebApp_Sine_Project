@@ -69,6 +69,16 @@ def Low_frequency_Oscillator_saw(signal, t):
     t_vec = np.linspace(0, t, len(signal))
     return 2 * 20 * (t_vec % (1 / 20)) - 1
 
+def weierstrassFunc(signal, a):
+    t_vec = np.linspace(-2 * np.pi, 2 * np.pi, len(signal))
+    a = 0.5
+    tol = 0.1
+    b = 1/a + (3 / (2 * a)) * np.pi + tol
+    
+    weier = np.zeros_like(signal)
+    for i in range(100):
+        weier  += a **i * np.cos((b**(i) * np.pi * t_vec))
+    return weier
 
 
 def dirac_comb_discrete(y, N_, K_):
@@ -105,18 +115,6 @@ def dirac_comb_discrete(y, N_, K_):
 def hilbert(y):
     # Phase shift by pi/2
     return np.imag(signal.hilbert(y))
-
-
-def weierstrassFunc(signal, a, b):
-    t_vec = np.linspace(-2 * np.pi, 2 * np.pi, len(signal))
-    a = 0.5
-    tol = 0.1
-    b = 1/a + (3 / (2 * a)) * np.pi + tol
-    
-    weier = np.zeros_like(signal)
-    for i in range(100):
-        weier  += a **i * np.cos((b**(i) * np.pi * t_vec))
-    return weier, t_vec
 
 
 def pitch_12_up(signal, N):
