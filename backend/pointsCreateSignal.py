@@ -3,7 +3,8 @@ import time
 import numpy as np 
 import matplotlib.pyplot as plt
 from numpy.linalg import norm
-from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete, weierstrassFunc, pitch_12_up
+from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete, weierstrassFunc,\
+     pitch_12_up, Rev_Conv_Filter
 from soundGen import play
 from pointsFrequency import signal_to_hertz
 from ADSR_mod import ADSR
@@ -74,9 +75,9 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
         y = np.zeros((n_signals,len(t_vec)))
         k = 0
         y_sum = 0
-        #omega = 2 * np.pi
-        sine_add = np.sin(np.linspace(-8 * np.pi,8 * np.pi,len(t_vec)))
-        omega = 2 * np.pi* sine_add
+        omega = 2 * np.pi
+        #sine_add = np.sin(np.linspace(-8 * np.pi,8 * np.pi,len(t_vec)))
+        #omega = 2 * np.pi* sine_add
         for i in range(n_signals):
             y[k] = (Amp_array * amplitudes[k]) * np.sin(omega* frequencies[i] * t_vec)
             y_sum += y[k] 
@@ -85,11 +86,13 @@ def Create_Sine(amplitudes, frequencies, Fs, list_ADSR = 0):
 
 
     normalized_y = y_sum/np.max(y_sum) 
-    N = 12
-    pitch_sig_up = pitch_12_up(normalized_y, N)
+    Duration = 3
+    t_vec_r = np.arange(int(N * Duration)) * T * t
+    rev_y = Rev_Conv_Filter(normalized_y.copy(), Duration, 100)
     plt.figure()
-    plt.plot(t_vec,pitch_sig_up)
+    plt.plot(t_vec_r, rev_y)
     plt.show()
+    play(rev_y)
     t1 = time.time()
     total = t1-t0
     print(f"Timing stopped, END OF FUNCTION! It took {total:0.7f}s")
