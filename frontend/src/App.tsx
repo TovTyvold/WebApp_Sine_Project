@@ -82,7 +82,7 @@ function App() {
   //when a tree is ready send it
   useEffect(() => {
     if (ws.readyState === webSocket.OPEN && tree) {
-      const payload = { NodeTree: sanitize(tree), Seconds: seconds.current };
+      const payload = { NodeTree: tree, Seconds: seconds.current };
       console.log(JSON.stringify(payload, null, 2));
       ws.send(JSON.stringify(payload));
     }
@@ -98,7 +98,7 @@ function App() {
     (event: any) => {
       event.preventDefault();
 
-      seconds.current = event.target.value;
+      seconds.current = parseInt(event.target.value);
       setBuffer(
         new AudioBuffer({
           numberOfChannels: CHANNELS,
@@ -150,7 +150,7 @@ function App() {
     <div className='App'>
       <div className='container'>
         <header>
-          <h1>Web Synth</h1>
+          <h1>W.O.K.</h1>
         </header>
 
         <div
@@ -160,15 +160,17 @@ function App() {
             border: '2px #1f939e solid',
             borderRadius: '10px',
           }}>
-          <Flow submit={submit} />
-          <NumberInput
-            label={'seconds'}
-            name={'seconds'}
-            onChange={onSecondsChange}
-          />
+          <Flow submit={submit} onSecondsChange={onSecondsChange} />
+
           <button onClick={playAudio}>play</button>
         </div>
       </div>
+
+      {/* <BezierEditor
+        onChange={() => (console.log("a"))}
+        xAxisLabel="Time Percentage"
+        yAxisLabel="Progress Percentage"
+      /> */}
 
       {/* <form className='inputs-section' onSubmit={submit}>
           <Button className='submit-button' variant='contained' type='submit'>
@@ -212,9 +214,6 @@ function App() {
 export default App;
 
 // TODO
-// Get flowchart to work with backend
-// Add sound length, couple to framecount
-// Figure out alternative to 'Generate' button
-// Quadratic bezier visual input for envelope
-// FFT frequency visualizer?
-// Oscilliscope on oscillator node
+// Move Replay button
+// Make slider component
+// Frequency visualizer?

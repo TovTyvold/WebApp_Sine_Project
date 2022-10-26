@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
@@ -11,6 +17,7 @@ import ReactFlow, {
   Connection,
   useNodesState,
   useEdgesState,
+  applyNodeChanges,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -22,18 +29,23 @@ import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
 import ControllButtons from './components/ControlButtons';
 
+import ValueNode from './components/ValueNode';
+import BezierNode from './components/BezierNode';
+import MixNode from './components/MixNode';
+
 const initialNodes: Node[] = [
   {
-    id: 'output-0',
+    id: 'output0',
     type: 'out',
     data: {},
     position: { x: 750, y: 250 },
+    deletable: false,
   },
 ];
 
 const initialEdges: Edge[] = [];
 
-const Flow = ({ submit }: any) => {
+const Flow = ({ submit, onSecondsChange }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [instance, setInstance] = useState<any>(null);
@@ -46,6 +58,9 @@ const Flow = ({ submit }: any) => {
     envelope: 0,
     operation: 0,
     effect: 0,
+    value: 0,
+    bezier: 0,
+    mix: 0,
   });
 
   const nodeTypes = useMemo(
@@ -54,10 +69,23 @@ const Flow = ({ submit }: any) => {
       envelope: EnvelopeNode,
       operation: OperationNode,
       effect: EffectNode,
+      value: ValueNode,
       out: OutputNode,
+      bezier: BezierNode,
+      mix: MixNode,
     }),
     []
   );
+  useEffect(() => {
+    setNodes((nds) => {
+      nds.forEach((n) => {
+        if (n.id === 'output0') {
+          n.data.onchange = onSecondsChange;
+        }
+      });
+      return nds;
+    });
+  }, []);
 
   const createTree = useCallback((nodesList: Node[], edgesList: Edge[]) => {
     let map: any = new Map(
@@ -66,7 +94,7 @@ const Flow = ({ submit }: any) => {
     for (let { source, target } of edgesList) {
       map.get(target).children.push(map.get(source));
     }
-    return map.get('output-0');
+    return map.get('output0');
   }, []);
 
   const getFlow = useCallback(() => {
@@ -76,19 +104,29 @@ const Flow = ({ submit }: any) => {
       console.table(nodesList);
       console.table(edgesList);
 
-      submit(createTree(nodesList, edgesList));
+      // submit(createTree(nodesList, edgesList));
+      submit({ nodes: nodesList, edges: edgesList });
     }
   }, [instance]);
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     let data = {};
     if (nodeType === 'oscillator') data = { shape: 'sin' };
+    if (nodeType === 'operation') data = { opType: 'sum' };
+    if (nodeType === 'bezier')
+      data = {
+        points: [
+          [0, 0],
+          [0.5, 0.5],
+          [1, 1],
+        ],
+      };
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);
 
     const newNode = {
-      id: `${nodeType}-${idRef.current[nodeType]++}`,
+      id: `${nodeType}${idRef.current[nodeType]++}`,
       position: { x: x, y: y },
       type: nodeType,
       data: data,
@@ -175,8 +213,8 @@ const Flow = ({ submit }: any) => {
   );
 };
 
-export default ({ submit }: any) => (
+export default (props: any) => (
   <ReactFlowProvider>
-    <Flow submit={submit} />
+    <Flow submit={props.submit} onSecondsChange={props.onSecondsChange} />
   </ReactFlowProvider>
 );

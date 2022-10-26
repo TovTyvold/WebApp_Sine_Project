@@ -1,3 +1,6 @@
+.mix-node,
+.bezier-node,
+.val-node,
 .osc-node,
 .env-node,
 .eff-node,
@@ -8,6 +11,18 @@
   border-radius: 10px;
   background: white;
 }
+
+.mix-node {
+  border: 2px solid #21f40c;
+}
+.val-node {
+  border: 2px solid #ff31c1;
+}
+
+.bezier-node {
+  border: 2px solid #c0f1cf;
+}
+
 .osc-node {
   border: 2px solid #1f939e;
 }
@@ -45,6 +60,14 @@
   padding-inline: 1rem;
 }
 
+.op-radio {
+  font-size: 18pt;
+}
+
+.op-radio input {
+  accent-color: #1f939e;
+}
+
 .react-flow .react-flow__handle {
   width: 16px;
   height: 16px;
@@ -73,6 +96,31 @@ select {
   overflow: hidden;
   border-radius: 0.25em;
   padding-bottom: 10px;
+}
+
+.slidecontainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #1f939e;
+  height: 3px;
+  margin: 0.5rem;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+
+  background: #d5d51c;
+  cursor: pointer;
 }
 
 .btn {

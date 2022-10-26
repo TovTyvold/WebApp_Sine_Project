@@ -2,13 +2,21 @@ import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
 function OperationNode({ data, id }: any) {
+  const onChange = useCallback((event: any) => {
+    data.opType = event.target.value;
+  }, []);
   return (
     <div className='op-node'>
       <Handle id={'in-' + id} type='target' position={Position.Left} />
       <b>Operation</b>
-      <br />
+      <hr />
+      <div className='select'>
+        <select name='op' onChange={onChange}>
+          <option value='sum'>Sum +</option>
+          <option value='multi'>Times ×</option>
+        </select>
+      </div>
 
-      <b>Sum</b>
       <Handle id={'out-' + id} type='source' position={Position.Right} />
     </div>
   );
