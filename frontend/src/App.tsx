@@ -1,14 +1,7 @@
 //App.tsx
 import './App.css';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
-import NumberInput from './components/NumberInput';
-import Graph from './components/Graph';
-import Oscillator from './components/Oscillator';
-import EnvelopeADSR from './components/EnvelopeADSR';
-import Button from '@mui/material/Button';
-import AddIcon from '@mui/icons-material/Add';
-import { Socket } from 'dgram';
 
 type Wave = {
   frequency: number | undefined;
@@ -44,8 +37,8 @@ function App() {
   const [ws, setWs] = useState<WebSocket>(webSocket);
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
-  const seconds = useRef<number>(1.0);
   const expectedSampleCount = useRef<number>();
+  const seconds = useRef<number>(2.0);
   const [isReady, setIsReady] = useState<boolean>(false)
 
   const composeAudio = (data: any, samplesCount: number) => {
@@ -153,48 +146,6 @@ function App() {
           <button onClick={playAudio}>play</button>
         </div>
       </div>
-
-      {/* <BezierEditor
-        onChange={() => (console.log("a"))}
-        xAxisLabel="Time Percentage"
-        yAxisLabel="Progress Percentage"
-      /> */}
-
-      {/* <form className='inputs-section' onSubmit={submit}>
-          <Button className='submit-button' variant='contained' type='submit'>
-            Generate
-          </Button>
-          {inputValues.map((element, index) => {
-            return (
-              <div key={index} className='oscillator'>
-                <Oscillator
-                  element={element}
-                  index={index}
-                  onChange={handleInputChange}
-                  removeInput={removeInput}
-                />
-                <EnvelopeADSR
-                  element={element}
-                  index={index}
-                  onChange={handleInputChange}
-                />
-                <br />
-              </div>
-            );
-          })}
-
-          <br />
-        </form>
-        <Button
-          className='add-input-button'
-          variant='outlined'
-          onClick={(e) => addInput(e)}>
-          <AddIcon />
-        </Button>
-
-        <Button variant='contained' className='play-button' onClick={playAudio}>
-          Play
-        </Button> */}
     </div>
   );
 }
