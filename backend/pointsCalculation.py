@@ -119,8 +119,9 @@ def advSinePoints(ampls, freqs, samples, seconds, func=sin):
     return ypoints
 
 
-def newparse(data: dict, samples, seconds) -> List[float]:
+def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
     #TODO generate the xpoints here, and let recParse use them rather than generating them
+    seconds = envelopeTime + sustainTime
     xpoints = genSamples(samples, seconds)
     strToOp = {
         "+": operator.add,
@@ -193,9 +194,9 @@ def newparse(data: dict, samples, seconds) -> List[float]:
                 (_, wave) = recParse(v["points"])
                 (_, adsr) = recParse(v["adsr"])
 
-                print(adsr)
                 #envelope.symmetricEnvelope(adsr, genSamples(samples, seconds), points, 0.75)
-                adsr = envelope.getSymmEnv(adsr, 0.75, 0, sum(adsr))
+                # print(adsr)
+                adsr = envelope.getSymmEnv(adsr, 0.75, 0, sustainTime + (adsr[0]+adsr[1]+adsr[3]))
 
                 ypoints = list(
                     map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))
@@ -272,7 +273,7 @@ def noteNameToSamples(note):
 #generate samples for imperial march from star wars
 def starWars():
     def noteToSound(p):
-        return parse(noteNameToSamples(p[0]), 44100, p[1])
+        return newparse(noteNameToSamples(p[0]), 44100, p[1])
 
     completeSounds = []
     s = """
@@ -304,105 +305,5 @@ def starWars():
 
 
 if __name__ == "__main__":
+    pass
     # soundGen.play(starWars())
-
-    note1 = {
-        "wave": {
-            "shape": "sin",
-            "frequency": {
-                "+": [
-                    {"*": [
-                        {"bezier": envelope.getSymmEnv(
-                            [1, 1, 1, 1], 0.75, 0, 4)},
-                        {"num": 440}
-                    ]},
-                    {"num": 220}
-                ]
-            },
-            "amplitude": {
-                "+": [
-                    {"wave": {"shape": "sin", "frequency": {
-                        "num": 5}, "amplitude": {"num": 0.5}}},
-                    {"num": 0.5}
-                ]
-            }
-        },
-    }
-    # soundGen.play(newparse(note1, 44100, 4))
-
-    note2 = {
-        "wave": {
-            "shape": "sin",
-            "frequency": {
-                "+": [
-                    {"wave": {"shape": "sin", "frequency": {
-                        "num": 2}, "amplitude": {"num": 20}}},
-                    {"num": 440}
-                ]
-            },
-            "amplitude": {
-                "+": [
-                    #                    {"wave": {"shape": "sin", "frequency": {"num": 5}, "amplitude": {"num": 0.5}}},
-                    {"num": 0.5}
-                ]
-            }
-        },
-    }
-    # soundGen.play(newparse(note2, 44100, 4))
-
-    w1 = {"wave": {"shape": "sin", "frequency": {
-        "num": 440}, "amplitude": {"num": 1}}}
-    w2 = {"wave": {"shape": "sin", "frequency": {
-        "num": 660}, "amplitude": {"num": 1}}}
-    mixT = {
-        "mix": {
-            "percent": {
-                "+": [
-                    {"wave": {"shape": "sin", "frequency": {
-                        "num": 1}, "amplitude": {"num": 0.5}}},
-                    {"num": 0.5},
-                ]
-                # "bezier": [(1, 0), (2, 0.5), (3, 1)],
-            },
-            "v1": w1,
-            "v2": w2,
-        }
-    }
-    soundGen.play(newparse(mixT, 44100, 4))
-
-    mixT = {
-        "mix": {
-            "percent": {
-                # "+" : [
-                #     {"wave": {"shape": "sin", "frequency": {"num": 1}, "amplitude": {"num": 0.5}}},
-                #     {"num" : 0.5},
-                # ]
-                "bezier": [(1, 0), (3, 0.5), (5, 1)],
-            },
-            "v1": note1,
-            "v2": note2,
-        }
-    }
-    # soundGen.play(newparse(mixT, 44100, 6))
-
-    #preferred way to apply envelope
-    note = {"*": [
-        w1,
-        {"bezier": envelope.getSymmEnv([1, 1, 1, 1], 0.75, 0, 4)}
-    ]}
-
-    #alternative way to apply maxSeconds
-    note = {"envelope": {
-        "points": w1,
-        "adsr": {"list": [1, 1, 1, 1]}
-    }}
-
-    note = {'envelope':
-            {
-                'points': {
-                    'wave': {'shape': 'sin', 'frequency': {'num': 440.0}, 'amplitude': {'num': 1.0}}
-                },
-                'adsr': {'list': [1.0, 1.0, 1.0, 1.0]}
-            }
-            }
-    # soundGen.play(newparse(note, 44100, 4))

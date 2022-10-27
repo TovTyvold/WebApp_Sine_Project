@@ -8,7 +8,6 @@ from typing import List, Tuple, Union
 
 samplesCount = 44100
 
-
 class ChunkedBytes:
     bytesRead = 0
     b = bytes()
@@ -49,8 +48,8 @@ def samplesToCB(samples: Union[List[float], Tuple]) -> ChunkedBytes:
         samples = list(zip(*samples))
         samples = [lr for pair in samples for lr in pair]
 
-    bytesTuple = ChunkedBytes(struct.pack("%sf" % len(samples), *samples))
-    return bytesTuple
+    arraybytes = struct.pack("%sf" % len(samples), *samples)
+    return ChunkedBytes(arraybytes)
 
 
 if __name__ == "__main__":
