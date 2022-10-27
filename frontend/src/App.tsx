@@ -4,29 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
 import exp from 'constants';
 
-type Wave = {
-  frequency: number | undefined;
-  amplitude: number | undefined;
-  shape: string;
-  adsr?: number[];
-};
-
-const defaultInput: Wave = {
-  frequency: 440,
-  amplitude: 1,
-  shape: 'sin',
-  adsr: [1, 1, 3, 1],
-};
-
-const desiredFields = ['id', 'type', 'data', 'children'];
-
-const CHANNELS = 1;
-const dBuffer = new AudioBuffer({
-  numberOfChannels: CHANNELS,
-  length: 44100 * 2,
-  sampleRate: 44100,
-});
-
 const API_WS = 'ws://localhost:5000/sound';
 const webSocket = new WebSocket(API_WS);
 const context = new AudioContext();
@@ -39,19 +16,33 @@ function App() {
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
   const expectedSampleCount = useRef<number>();
+  const startTime = useRef<number>(0.0);
   const seconds = useRef<number>(2.0);
   const buffer = useRef<AudioBuffer>();
   const [isReady, setIsReady] = useState<boolean>(false)
 
-  const composeAudio = (data: any, buffer: any) => {
+  const composeAudio = (data: any, startTime: any) => {
     const chunk = new Float32Array(data);
-    buffer.current.copyToChannel(chunk, 0, floatsRead.current);
-    floatsRead.current += chunk.length;
+    if (floatsRead.current == 0) {
+      startTime.current = context.currentTime;
+    }
 
-    if (floatsRead.current >= buffer.current.length) {
-      if (!isReady) {
-        setIsReady(true);
-      }
+    let tmpBuff = new AudioBuffer({
+      numberOfChannels: 1,
+      length: chunk.length,
+      sampleRate: 44100
+    })
+    tmpBuff.copyToChannel(chunk, 0, 0);
+
+    const source = context.createBufferSource();
+    source.buffer = tmpBuff
+    source.connect(context.destination);
+    source.start(startTime.current + floatsRead.current/44100);
+
+    floatsRead.current += chunk.length;
+    if (floatsRead.current == expectedSampleCount.current) {
+      floatsRead.current = 0
+      console.log("recv all")
     }
   };
 
@@ -67,7 +58,7 @@ function App() {
       if (expectedSampleCount.current) {
         buffer.current = (
           new AudioBuffer({
-            numberOfChannels: CHANNELS,
+            numberOfChannels: 1,
             length: expectedSampleCount.current,
             sampleRate: 44100,
           })
@@ -107,7 +98,7 @@ function App() {
 
   useEffect(() => {
     if (isReady) {
-      playAudio();
+      // playAudio();
     }
   }, [isReady]);
 

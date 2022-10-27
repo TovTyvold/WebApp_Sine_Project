@@ -186,7 +186,7 @@ def handleInput(query):
     return recTree, recFindEnv(recTree)
 
 
-CHUNKSIZE = 1024
+CHUNKSIZE = 5000
 SAMPLES = 44100
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
