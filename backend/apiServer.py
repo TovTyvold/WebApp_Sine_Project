@@ -39,12 +39,6 @@ def handleInput(query):
                 
         return newList
                 
-
-
-    print(nodes)
-    # nodes = prune(nodes, nodeKeep)
-    # edges = prune(edges, edgeKeep)
-
     adjList = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
     adjList = dict((key, d[key]) for d in adjList for key in d)
 
@@ -181,26 +175,38 @@ def handleInput(query):
 
 
     # #{'envelope': {'points': {'wave': {'frequency': {'num': 200.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}, 'adsr': {'list': [1.0, 0.02, 1.0, 1.0]}}}
-    # def recFindEnc(tree:dict):
-    #     for key in tree.keys():
-    #         if key == "envelope":
-    #             time = sum(map(lambda a: float(a), [
-    #                        data["attack"], data["decay"], data["release"]]))
-    #             # tree[key]["adsr"]
-    #             return time
-    #     return tree
+    def recFindEnv(tree : dict):
+        if (type(tree) != dict):
+            return 0
+
+        a = []
+        for key in tree.keys():
+            data = tree[key]
+
+            if (type(data) == list):
+                a.append(max([recFindEnv(child) for child in data]))
+            elif key == "envelope":
+                data = data["adsr"]["list"]
+                time = sum([data[0], data[1], data[3]])
+                a.append(time)
+            elif type(data) == dict:
+                a.append(recFindEnv(data))
+            else:
+                return 0
+
+        return max(a)
 
 
-    #find topmost envelope and output its combined length in ms
-    totalTime = 0 #largest envelope in ms
-    for node in nodes:
-        if node["type"] == "envelope":
-            data = node["data"]
-            time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
-            if (time > totalTime):
-                totalTime = time
+    # #find topmost envelope and output its combined length in ms
+    # totalTime = 0 #largest envelope in ms
+    # for node in nodes:
+    #     if node["type"] == "envelope":
+    #         data = node["data"]
+    #         time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
+    #         if (time > totalTime):
+    #             totalTime = time
 
-    return adjList, totalTime
+    return adjList, recFindEnv(adjList)
 
 
 CHUNKSIZE = 1024
@@ -216,7 +222,7 @@ async def websocket_endpoint(websocket: WebSocket):
         sustainTime = float(query["SustainTime"])
         query, envelopeTime = handleInput(query["NodeTree"])
 
-        envelopeTime /= 1000
+        # envelopeTime /= 1000
         print(query)
         print("totalTime: ", envelopeTime+sustainTime, "sustainTime:", sustainTime, "envelopeTime:", envelopeTime)
 
