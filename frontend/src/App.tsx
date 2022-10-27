@@ -46,14 +46,16 @@ function App() {
 
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
-    for (let i=0; i < chunk.length; i++) {
-      let channelNum = channels.current != 1 ? i % channels.current : 0
-      buffer.current.getChannelData(channelNum)[floatsRead.current + 1] = chunk[i]
+    for (let ch = 0; ch < channels.current; ch++) {
+      for (let i = 0; i < chunk.length / channels.current; i++) {
+        buffer.current.getChannelData(ch)[Math.floor(floatsRead.current / channels.current) + i] = chunk[channels.current * i + ch % channels.current];
+      }
     }
-    // buffer.current.copyToChannel(chunk, 0, floatsRead.current);
+
     floatsRead.current += chunk.length;
 
-    if (floatsRead.current >= buffer.current.length) {
+    console.log(buffer.current.length)
+    if (floatsRead.current >= channels.current*buffer.current.length) {
       if (!isReady) {
         setIsReady(true);
       }
@@ -70,6 +72,8 @@ function App() {
       const format = JSON.parse(event.data)
       expectedSampleCount.current = format.SampleCount;
       channels.current = format.Channels;
+
+      console.log(expectedSampleCount.current, channels.current)
 
       if (expectedSampleCount.current) {
         buffer.current = (

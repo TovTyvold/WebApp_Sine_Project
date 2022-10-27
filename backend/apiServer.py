@@ -213,10 +213,12 @@ async def websocket_endpoint(websocket: WebSocket):
             print("processesing: \n", query)
             print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-            soundData, channelNum = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
 
             sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
-            await websocket.send_json({"SampleCount": sampleCount, "Channels": channelNum})
+            await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})
+
+            # soundGen.play(soundData, channels)
 
             #send chunkSize chunks of the sounddata until all is sent
             cb = soundGen.samplesToCB(soundData)

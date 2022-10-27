@@ -256,15 +256,15 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
         ypoints = parseddata
         yMax = max(ypoints)
         ypoints = [y / yMax for y in ypoints]
-        return t, ypoints
+        return ypoints, 1
     elif t == "stereopoints":
-        print(len(parseddata))
         ypoints0, ypoints1 = parseddata
         yMax0 = max(ypoints0)
         yMax1 = max(ypoints1)
-        ypoints0 = [y / yMax0 for y in ypoints0]
-        ypoints1 = [y / yMax1 for y in ypoints1]
-        return t, (ypoints0, ypoints1)
+        yMax = (yMax0 + yMax1)/2
+        ypoints0 = [y / yMax for y in ypoints0]
+        ypoints1 = [y / yMax for y in ypoints1]
+        return (ypoints0, ypoints1), 2
 
 
 def freqToSamples(freq):
