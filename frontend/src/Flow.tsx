@@ -121,7 +121,9 @@ const Flow = ({ submit, onSecondsChange }: any) => {
   }, [instance]);
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
-    const def = defaultData.get(nodeType);
+    //perform a deep copy of defaultData of nodeType
+    const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
+    
     let data: Object = def !== undefined ? def : {}
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);

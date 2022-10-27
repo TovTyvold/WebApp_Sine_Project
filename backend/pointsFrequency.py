@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from plotting import plot_array 
 
 
-def signal_to_hertz(normalized_signal, Fs, freqs, label):
+def signal_to_hertz(normalized_signal):
     """  
         Function that outputs frequencies after taking in a signal
          with/without noise using fft. 
@@ -19,6 +19,7 @@ def signal_to_hertz(normalized_signal, Fs, freqs, label):
         freq_list - dtype ndarray: List of frequencies taken from the signal
 
     """
+    Fs = 44100
     length = len(normalized_signal)
     Y_k = np.fft.fft(normalized_signal)[0:int(length/2)]/length # FFT function from numpy
     Y_k[1:] = 2*Y_k[1:] # need to take the single-sided spectrum only

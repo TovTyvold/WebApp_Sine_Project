@@ -100,6 +100,7 @@ function App() {
 
     return () => {
       ws.removeEventListener("close", onClose)
+      ws.close(1000)
     }
   }, [ws, setWs]);
 
