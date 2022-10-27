@@ -4,7 +4,7 @@ from re import A
 import uvicorn
 
 from typing import List, Optional, Dict, Union
-from fastapi import FastAPI, Response, HTTPException, WebSocket
+from fastapi import FastAPI, Response, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -192,25 +192,28 @@ SAMPLES = 44100
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    while (True):
-        #recieve wave information
-        query = await websocket.receive_json()
-        sustainTime = float(query["SustainTime"])
-        query, envelopeTime = handleInput(query["NodeTree"])
+    try:
+        while (True):
+            #recieve wave information
+            query = await websocket.receive_json()
+            sustainTime = float(query["SustainTime"])
+            query, envelopeTime = handleInput(query["NodeTree"])
 
-        print("processesing: \n", query)
-        print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:\n", envelopeTime)
+            print("processesing: \n", query)
+            print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-        soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
 
-        await websocket.send_json(len(soundData))
+            await websocket.send_json(len(soundData))
 
-        #send chunkSize chunks of the sounddata until all is sent
-        cb = soundGen.samplesToCB(soundData)
-        data = cb.readChunk(CHUNKSIZE)
-        while data:
-            await websocket.send_bytes(data)
+            #send chunkSize chunks of the sounddata until all is sent
+            cb = soundGen.samplesToCB(soundData)
             data = cb.readChunk(CHUNKSIZE)
+            while data:
+                await websocket.send_bytes(data)
+                data = cb.readChunk(CHUNKSIZE)
+    except WebSocketDisconnect:
+        print("disconnected")
 
 
 if __name__ == "__main__":
