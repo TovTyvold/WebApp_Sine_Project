@@ -106,22 +106,29 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     }
   }, [instance]);
 
-  const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
-    let data = {};
-    if (nodeType === 'oscillator')
-      data = { frequency: 440, amplitude: 1, shape: 'sin' };
-    if (nodeType === 'operation') data = { opType: 'sum' };
-    if (nodeType === 'value') data = { value: 1 };
-    if (nodeType === 'envelope')
-      data = { attack: 20, decay: 20, sustain: 60, release: 20 };
-    if (nodeType === 'bezier')
-      data = {
+  const defaultData: Map<string, Object> = new Map([
+    ["oscillator", { frequency: 440, amplitude: 1, shape: "sin" }],
+    ["operation", { opType: "sum" }],
+    ["value", { value: 1 }],
+    ["envelope", { attack: 20, decay: 20, sustain: 60, release: 20 }],
+    [
+      "bezier",
+      {
         points: [
           [0, 0],
           [0.5, 0.5],
           [1, 1],
         ],
-      };
+        start: 0,
+        end: 1
+      },
+    ],
+    ["mix", { percent: 50, value0: 0, value1: 1 }],
+  ]);
+
+  const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
+    const def = defaultData.get(nodeType);
+    let data: Object = def !== undefined ? def : {}
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);

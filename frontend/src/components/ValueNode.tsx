@@ -16,7 +16,7 @@ function ValueNode({ data, id }: any) {
       <hr />
       {/* <Handle type='source' position={Position.Right} /> */}
       <Handle id={'out-' + id} type='source' position={Position.Right} />
-      <NumberInput defaultValue={1} name='value' onChange={onChange} />
+      <NumberInput defaultValue={data.value} name='value' onChange={onChange} />
     </div>
   );
 }
