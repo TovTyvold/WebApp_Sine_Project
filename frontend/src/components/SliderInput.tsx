@@ -34,7 +34,7 @@ function SliderInput({
         className='slider nodrag'
       />
       <span
-        style={{ marginLeft: '10px', display: 'inline-block', width: '45px' }}>
+        style={{ marginLeft: '10px', display: 'inline-block', width: '65px' }}>
         {sliderValue} {unit}
       </span>
     </div>

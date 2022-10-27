@@ -62,7 +62,7 @@ function BezierNode({ data, id }: any) {
           rowColor={'#ffffff'}
         />
       </div>
-
+      <hr />
       <NumberInput
         defaultValue={start.current}
         label='Start'

@@ -8,11 +8,11 @@ function OutputNode({ data, id }: any) {
       <b>Output</b>
       <hr />
       <SliderInput
-        name='Seconds'
+        name='Sustain'
         defaultValue={2}
         min={1}
         max={20}
-        unit=''
+        unit='sec'
         step={0.1}
         onChange={data.onchange}
       />
