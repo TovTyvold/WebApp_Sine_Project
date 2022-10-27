@@ -130,8 +130,19 @@ def handleInput(query):
             return {"mix" : 
                 {
                     "percent": percent,
-                    "v1": value0,
-                    "v2": value1
+                    "value0": value0,
+                    "value1": value1
+                }
+            }
+
+        if dType == "pan":
+            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
+            points = recClean(dData["points"]) 
+
+            return {"pan" : 
+                {
+                    "percent": percent,
+                    "points": points
                 }
             }
 
@@ -226,11 +237,13 @@ async def websocket_endpoint(websocket: WebSocket):
         print(query)
         print("totalTime: ", envelopeTime+sustainTime, "sustainTime:", sustainTime, "envelopeTime:", envelopeTime)
 
-        soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+        soundType, soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+        # if (soundType == "stereopoints"):
+        #     await websocket.send_json({"SampleCount": len(soundData[0]), "Channels": 2})
+        # else:
+        await websocket.send_json({"SampleCount": len(soundData), "Channels": 1})
 
-        await websocket.send_json(len(soundData))
-
-        #send chunkSize chunks of the sounddata until all is sent
+        #send CHUNKSIZE chunks of the sounddata until all is sent
         cb = soundGen.samplesToCB(soundData)
         data = cb.readChunk(CHUNKSIZE)
         while data:

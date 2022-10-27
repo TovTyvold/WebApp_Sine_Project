@@ -190,6 +190,16 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
             if k == "list":
                 return ("list", v)
 
+            #pan = {percent : {}, points : {}}
+            if k == "pan":
+                percents = dimensionalise(recParse(v["percent"]))
+                (_, points) = recParse(v["points"])
+
+                points0 = [(1-per)*poi for per,poi in zip(percents, points)]
+                points1 = [per*poi for per,poi in zip(percents, points)]
+
+                return ("stereopoints", [points0, points1])
+
             if k == "envelope":
                 (_, wave) = recParse(v["points"])
                 (_, adsr) = recParse(v["adsr"])
@@ -222,8 +232,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
             if k == "mix":
                 percents = dimensionalise(recParse(v["percent"]))
                 #TODO throw error / warning if percents has values not in (0,1)
-                v1s = dimensionalise(recParse(v["v1"]))
-                v2s = dimensionalise(recParse(v["v2"]))
+                v1s = dimensionalise(recParse(v["value0"]))
+                v2s = dimensionalise(recParse(v["value1"]))
 
                 ypoints = []
                 for i in range(len(percents)):
@@ -241,11 +251,20 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
         raise Exception("Unknown key: " + k)
 
     #normalize input
-    ypoints = recParse(data)[1]
-    yMax = max(ypoints)
-    ypoints = [y / yMax for y in ypoints]
-
-    return ypoints
+    t, parseddata = recParse(data)
+    if t == "points":
+        ypoints = parseddata
+        yMax = max(ypoints)
+        ypoints = [y / yMax for y in ypoints]
+        return t, ypoints
+    elif t == "stereopoints":
+        print(len(parseddata))
+        ypoints0, ypoints1 = parseddata
+        yMax0 = max(ypoints0)
+        yMax1 = max(ypoints1)
+        ypoints0 = [y / yMax0 for y in ypoints0]
+        ypoints1 = [y / yMax1 for y in ypoints1]
+        return t, (ypoints0, ypoints1)
 
 
 def freqToSamples(freq):

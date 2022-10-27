@@ -39,13 +39,18 @@ function App() {
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
   const expectedSampleCount = useRef<number>();
+  const channels = useRef<number>(1);
   const seconds = useRef<number>(2.0);
   const buffer = useRef<AudioBuffer>();
   const [isReady, setIsReady] = useState<boolean>(false)
 
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
-    buffer.current.copyToChannel(chunk, 0, floatsRead.current);
+    for (let i=0; i < chunk.length; i++) {
+      let channelNum = channels.current != 1 ? i % channels.current : 0
+      buffer.current.getChannelData(channelNum)[floatsRead.current + 1] = chunk[i]
+    }
+    // buffer.current.copyToChannel(chunk, 0, floatsRead.current);
     floatsRead.current += chunk.length;
 
     if (floatsRead.current >= buffer.current.length) {
@@ -62,12 +67,14 @@ function App() {
       }
     } 
     else {
-      expectedSampleCount.current = event.data;
+      const format = JSON.parse(event.data)
+      expectedSampleCount.current = format.SampleCount;
+      channels.current = format.Channels;
 
       if (expectedSampleCount.current) {
         buffer.current = (
           new AudioBuffer({
-            numberOfChannels: CHANNELS,
+            numberOfChannels: channels.current,
             length: expectedSampleCount.current,
             sampleRate: 44100,
           })

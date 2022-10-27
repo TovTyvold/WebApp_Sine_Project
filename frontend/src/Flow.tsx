@@ -32,6 +32,7 @@ import ControllButtons from './components/ControlButtons';
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
 import MixNode from './components/MixNode';
+import PanNode from './components/PanNode';
 
 const initialNodes: Node[] = [
   {
@@ -63,6 +64,7 @@ const defaultData: Map<string, Object> = new Map([
     },
   ],
   ["mix", { percent: 50, value0: 0, value1: 1 }],
+  ["pan", { percent: 50}],
 ]);
 
 const Flow = ({ submit, onSecondsChange }: any) => {
@@ -81,6 +83,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     value: 0,
     bezier: 0,
     mix: 0,
+    pan: 0,
   });
 
   const nodeTypes = useMemo(
@@ -93,6 +96,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       out: OutputNode,
       bezier: BezierNode,
       mix: MixNode,
+      pan: PanNode,
     }),
     []
   );

@@ -38,6 +38,9 @@ export const ContextMenu = memo(
           <button className='btn-small' onClick={() => onClick('mix')}>
             Mix{' '}
           </button>
+          <button className='btn-small' onClick={() => onClick('pan')}>
+            Pan{' '}
+          </button>
         </div>
       </div>
     ) : null;
