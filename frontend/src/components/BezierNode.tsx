@@ -5,8 +5,8 @@ import NumberInput from './NumberInput';
 
 function BezierNode({ data, id }: any) {
   const point = useRef<[number, number, number, number]>([0.5, 0.5, 1, 1]);
-  const start = useRef<number>(0);
-  const end = useRef<number>(1);
+  const start = useRef<number>(data.start);
+  const end = useRef<number>(data.end);
 
   const bezierOnChange = useCallback(
     (points: Array<number>) => {

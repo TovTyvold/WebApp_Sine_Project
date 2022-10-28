@@ -57,23 +57,23 @@ def high_pass_Filter(y_sum, cutoff):
 
 
 #LFO
-def Low_frequency_Oscillator_sine(signal, t):
-    t_vec = np.linspace(0, t, len(signal))
+def Low_frequency_Oscillator_sine(input, t):
+    t_vec = np.linspace(0, t, len(input))
     return (1 + np.sin(2 * np.pi * 20 * t_vec)) / 2
     
 
 #LFO
-def Low_frequency_Oscillator_saw(signal, t):
-    t_vec = np.linspace(0, t, len(signal))
+def Low_frequency_Oscillator_saw(input, t):
+    t_vec = np.linspace(0, t, len(input))
     return 2 * 20 * (t_vec % (1 / 20)) - 1
 
-def weierstrassFunc(signal, a):
-    t_vec = np.linspace(-2 * np.pi, 2 * np.pi, len(signal))
+def weierstrassFunc(input, a):
+    t_vec = np.linspace(-2 * np.pi, 2 * np.pi, len(input))
     a = 0.5
     tol = 0.1
     b = 1/a + (3 / (2 * a)) * np.pi + tol
     
-    weier = np.zeros_like(signal)
+    weier = np.zeros_like(input)
     for i in range(100):
         weier  += a **i * np.cos((b**(i) * np.pi * t_vec))
     return weier
@@ -105,8 +105,8 @@ def dirac_comb_discrete(y, N_, K_):
     for i in range(N_):
         part = (1/N_) *np.exp(2j * np.pi * n * i / K)
         sigSum = sigSum + part
-    signal = sigSum.real * y
-    return signal
+    output = sigSum.real * y
+    return output
 
 
 def hilbert(y):
@@ -114,25 +114,12 @@ def hilbert(y):
     return np.imag(signal.hilbert(y))
 
 
-def pitch_12_up(signal, N):
-    """
-    Pitch up by N semitones
-    """
-    dtype = type(signal)
-    
-     # (samples, channels) --> (channels, samples)
-    sample = torch.tensor(signal, dtype=torch.float32, device="cuda" if torch.cuda.is_available() else "cpu",)
-    up = pitch_shift(sample, shift = N, sample_rate= 44100)
-    assert up.shape == sample.shape
-    pitch_corrected = np.swapaxes(up.cpu()[0].numpy(),0,1).astype(dtype)
-    return pitch_corrected
-
-def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
+def Rev_Conv_Filter(input, Duration_inp, DryWet_):
     Fs = 44100
     N = Fs 
     T = 1/Fs 
     t = Duration_inp
-    length = len(signal)
+    length = len(input)
     if Duration_inp == 1:
         Duration_inp = 2
     t = Duration_inp
@@ -162,7 +149,7 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     cyc5h = 5 * cych
     cyc7h = 7 * cych
     cyc9h = 9 * cych
-    norm_y_a = signal.copy()
+    norm_y_a = input.copy()
     norm_y = list(norm_y_a) * int((Duration))
 
     conv_y = np.zeros_like(t_vec_r)
@@ -236,6 +223,94 @@ def Rev_Conv_Filter(signal, Duration_inp, DryWet_):
     return conv_y
 
 
-    
+def semitoneFunc(input, n, shift_):
+    """
+    Currently can only take in a single frequency.
+    """
+    Fs = 44100
+    tol = 0.01
+    minSigLen = Fs / tol
+
+    # Add 1 if minSigLen is a odd number
+    if np.mod(minSigLen,2) !=0 :
+        minSigLen = minSigLen + 1
+
+    #length = len(input)
+    #new_f = f * np.exp(n/12)
+    freq_shift = shift_/10
+
+    if len(input) < minSigLen:
+        input = list(input) + list(np.zeros(int(minSigLen - len(input))))
+
+    df = Fs/len(input) 
+    n_samp_shift = int(freq_shift / df)
+
+    Y_k = np.fft.fft(input)
+
+    mag = np.abs(Y_k) 
+    phase = np.unwrap(np.angle(Y_k), np.pi)
+
+    # Shift the frequency
+    shift = n_samp_shift
+    N_ = len(Y_k)
+
+    # First half
+    mag1 = mag[1:int(N_/2)]
+    phase1 = phase[1:int(N_/2)]
+
+    # Second half
+    mag2 = mag[int(N_/(2)):]
+    phase2 = phase[int(N_/(2)):]
+
+    # Lets pad the arrays to the right
+    mag1s = list(np.zeros(shift)) + list(mag1[:-shift])
+    phase1s = list(np.zeros(shift)) + list(phase1[:-shift])
+
+    # Then pad the arrays to the left
+    mag2s = list(mag2[shift:]) + list(np.zeros(shift))
+    phase2s = list(phase2[shift:]) + list(np.zeros(shift))
+    # And concatenate
+    magS = []
+    magS.append(mag[0])
+    magS = magS + list(mag1s) + list(mag2s)
+
+    phaseS = []
+    phaseS.append(phase[0])
+    phaseS = phaseS + list(phase1s) + list(phase2s)
+
+    x = magS*np.cos(phaseS)               # change from polar to rectangular
+    y = magS*np.sin(phaseS)
+    new_fft2 = x + 1j*y                     #store signal as complex numbers
+    new_ifft2 = np.real(np.fft.ifft(new_fft2))
+    return new_ifft2
+
+
+def singleShift(input, shift_):
+    """
+    singleShit can be used to change a single frequency of the signal.   
+
+    Inputs:
+    -----------------------------
+    input - dtype ndarray: Signal
+    shift_ - dtype float/int: The addition or subtraction on the previous frequnecy, depending on the
+    sign of the value.
+
+    Returns:
+    ----------------------------
+    sigShifted - dtype ndarray: Array with a changed frequency
+
+
+    Example input for parameters:
+    ----------------------------
+    input = signal
+    shift_ = 40
+    """
+    t = np.linspace(0,1,len(input))
+    Fshift = shift_/10
+    sigHil = signal.hilbert(input)
+    sigHilShifted = sigHil * np.exp(1j * 2 * np.pi * Fshift * t)
+    sigShifted = np.real(sigHilShifted)
+    return sigShifted
+
 if __name__ == "__main__":
-    a = 1
+    abcd = 1

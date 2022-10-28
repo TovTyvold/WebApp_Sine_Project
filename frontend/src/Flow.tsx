@@ -25,6 +25,7 @@ import ControllButtons from './components/ControlButtons';
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
 import MixNode from './components/MixNode';
+import PanNode from './components/PanNode';
 
 const initialNodes: Node[] = [
   {
@@ -41,7 +42,28 @@ const initialNodes: Node[] = [
 
 const initialEdges: Edge[] = [];
 
-const Flow = ({ submit }: any) => {
+const defaultData: Map<string, Object> = new Map([
+  ["oscillator", { frequency: 440, amplitude: 1, shape: "sin" }],
+  ["operation", { opType: "sum" }],
+  ["value", { value: 1 }],
+  ["envelope", { attack: 20, decay: 20, sustain: 60, release: 20 }],
+  [
+    "bezier",
+    {
+      points: [
+        [0, 0],
+        [0.5, 0.5],
+        [1, 1],
+      ],
+      start: 0,
+      end: 1
+    },
+  ],
+  ["mix", { percent: 50, value0: 0, value1: 1 }],
+  ["pan", { percent: 50}],
+]);
+
+const Flow = ({ submit, onSecondsChange }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [instance, setInstance] = useState<any>(null);
@@ -57,6 +79,7 @@ const Flow = ({ submit }: any) => {
     value: 0,
     bezier: 0,
     mix: 0,
+    pan: 0,
   });
 
   const nodeTypes = useMemo(
@@ -69,6 +92,7 @@ const Flow = ({ submit }: any) => {
       out: OutputNode,
       bezier: BezierNode,
       mix: MixNode,
+      pan: PanNode,
     }),
     []
   );
@@ -86,16 +110,6 @@ const Flow = ({ submit }: any) => {
     };
   }, []);
 
-  const createTree = useCallback((nodesList: Node[], edgesList: Edge[]) => {
-    let map: any = new Map(
-      nodesList.map((o) => [o.id, { ...o, children: [] }])
-    );
-    for (let { source, target } of edgesList) {
-      map.get(target).children.push(map.get(source));
-    }
-    return map.get('output0');
-  }, []);
-
   const getFlow = useCallback(() => {
     if (instance) {
       const nodesList = instance.getNodes();
@@ -106,21 +120,10 @@ const Flow = ({ submit }: any) => {
   }, [instance]);
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
-    let data = {};
-    if (nodeType === 'oscillator')
-      data = { frequency: 440, amplitude: 1, shape: 'sin' };
-    if (nodeType === 'operation') data = { opType: 'sum' };
-    if (nodeType === 'value') data = { value: 1 };
-    if (nodeType === 'envelope')
-      data = { attack: 20, decay: 20, sustain: 60, release: 20 };
-    if (nodeType === 'bezier')
-      data = {
-        points: [
-          [0, 0],
-          [0.5, 0.5],
-          [1, 1],
-        ],
-      };
+    //perform a deep copy of defaultData of nodeType
+    const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
+    
+    let data: Object = def !== undefined ? def : {}
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);

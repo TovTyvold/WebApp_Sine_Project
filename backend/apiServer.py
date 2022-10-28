@@ -4,7 +4,7 @@ from re import A
 import uvicorn
 
 from typing import List, Optional, Dict, Union
-from fastapi import FastAPI, Response, HTTPException, WebSocket
+from fastapi import FastAPI, Response, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -21,14 +21,13 @@ app.add_middleware(CORSMiddleware, allow_origins=origins,
 
 def handleInput(query):
     #query is a (V,E) pair
-    print(query)
     nodes = query["nodes"]
     edges = query["edges"]
 
-    adjList = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
-    adjList = dict((key, d[key]) for d in adjList for key in d)
+    recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
+    recTree = dict((key, d[key]) for d in recTree for key in d)
 
-    sustainTime = adjList["output0"]["data"]["sustainTime"]
+    sustainTime = recTree["output0"]["data"]["sustainTime"]
 
     for e in edges:
         _, source = e["sourceHandle"].split("-")
@@ -37,17 +36,15 @@ def handleInput(query):
         target = target
 
         if tpos == "in":
-            adjList[target][tpos].append(adjList[source])
+            recTree[target][tpos].append(recTree[source])
         else:
-            adjList[target]["data"][tpos] = adjList[source]
-
+            recTree[target]["data"][tpos] = recTree[source]
 
     #convert the recurisve node format from the frontend into an AST 
-    def recClean(json):
-        print(json)
-        dData = json["data"]
+    #json should be constant and not changed by this function.
+    def recClean(json:dict) -> dict:
         dType = json["type"]
-        dId = json["id"]
+        dData = json["data"]
         dChildren = json["in"]
 
         if dType == "out":
@@ -118,8 +115,19 @@ def handleInput(query):
             return {"mix" : 
                 {
                     "percent": percent,
-                    "v1": value0,
-                    "v2": value1
+                    "value0": value0,
+                    "value1": value1
+                }
+            }
+
+        if dType == "pan":
+            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
+            points = recClean(dData["points"]) 
+
+            return {"pan" : 
+                {
+                    "percent": percent,
+                    "points": points
                 }
             }
 
@@ -143,35 +151,48 @@ def handleInput(query):
                 }
             }
 
-        if dType == "oscillator": #currently a leaf
+        if dType == "oscillator": 
+            data = {}
             for dk in dData.keys():
                 if dk in ["frequency", "amplitude"]:
                     if type(dData[dk]) == dict:
-                        dData[dk] = recClean(dData[dk])
+                        data[dk] = recClean(dData[dk]) 
+                        # dData[dk] = recClean(dData[dk]) 
                     else:
-                        dData[dk] = {"num" : float(dData[dk])}
+                        data[dk] = {"num" : float(dData[dk])}
 
             if "shape" not in dData:
-                dData["shape"] = "sin"
+                data["shape"] = "sin"
+            else:
+                data["shape"] = dData["shape"]
 
-            return {"wave" : dData}
+
+            return {"wave" : data}
 
         if dType == "operation":
             return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
-    adjList = recClean(adjList["output0"])
+    recTree = recClean(recTree["output0"])
 
+    #go through the tree and find the largest topmost envelope time
+    def recFindEnv(tree : dict):
+        if (type(tree) != dict):
+            return 0
 
-    # #{'envelope': {'points': {'wave': {'frequency': {'num': 200.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}, 'adsr': {'list': [1.0, 0.02, 1.0, 1.0]}}}
-    # def recFindEnc(tree:dict):
-    #     for key in tree.keys():
-    #         if key == "envelope":
-    #             time = sum(map(lambda a: float(a), [
-    #                        data["attack"], data["decay"], data["release"]]))
-    #             # tree[key]["adsr"]
-    #             return time
-    #     return tree
+        a = []
+        for key in tree.keys():
+            data = tree[key]
 
+            if (type(data) == list):
+                a.append(max([recFindEnv(child) for child in data]))
+            elif key == "envelope":
+                data = data["adsr"]["list"]
+                time = sum([data[0], data[1], data[3]])
+                a.append(time)
+            elif type(data) == dict:
+                a.append(recFindEnv(data))
+            else:
+                return 0
 
     #find topmost envelope and output its combined length in ms
     envelopeTime = 0 #largest envelope in ms
@@ -182,7 +203,7 @@ def handleInput(query):
             if (time > envelopeTime):
                 envelopeTime = time
 
-    return adjList, sustainTime, envelopeTime
+    return recTree, sustainTime, envelopeTime
 
 
 CHUNKSIZE = 1024
@@ -191,25 +212,30 @@ SAMPLES = 44100
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    while (True):
-        #recieve wave information
-        query = await websocket.receive_json()
-        query, sustainTime, envelopeTime = handleInput(query)
+    try:
+        while (True):
+            #recieve wave information
+            query = await websocket.receive_json()
+            query, sustainTime, envelopeTime = handleInput(query)
 
-        envelopeTime /= 1000
-        print(query)
-        print("totalTime: ", envelopeTime+sustainTime, "sustainTime:", sustainTime, "envelopeTime:", envelopeTime)
+            print("processesing: \n", query)
+            print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-        soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
 
-        await websocket.send_json(len(soundData))
+            sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
+            await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})
 
-        #send chunkSize chunks of the sounddata until all is sent
-        cb = soundGen.samplesToCB(soundData)
-        data = cb.readChunk(CHUNKSIZE)
-        while data:
-            await websocket.send_bytes(data)
+            # soundGen.play(soundData, channels)
+
+            #send chunkSize chunks of the sounddata until all is sent
+            cb = soundGen.samplesToCB(soundData)
             data = cb.readChunk(CHUNKSIZE)
+            while data:
+                await websocket.send_bytes(data)
+                data = cb.readChunk(CHUNKSIZE)
+    except WebSocketDisconnect:
+        print("disconnected")
 
 
 if __name__ == "__main__":

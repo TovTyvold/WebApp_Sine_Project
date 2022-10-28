@@ -3,19 +3,7 @@ import { Handle, Position } from "reactflow";
 import NumberInput from "./NumberInput";
 import SliderInput from "./SliderInput";
 
-function MixNode({ data, id }: any) {
-  const onChange0 = useCallback(
-    (event: any) => {
-      data.value0 = event.target.value;
-    },
-    [data]
-  );
-  const onChange1 = useCallback(
-    (event: any) => {
-      data.value1 = event.target.value;
-    },
-    [data]
-  );
+function PanNode({ data, id }: any) {
   const onChangePercent = useCallback(
     (event: any) => {
       data.percent = event.target.value;
@@ -24,8 +12,8 @@ function MixNode({ data, id }: any) {
   );
 
   return (
-    <div className="mix-node">
-      <b>Mix</b>
+    <div className="pan-node">
+      <b>Pan</b>
       {/* <Handle type='source' position={Position.Right} /> */}
       <Handle id={"out-" + id} type="source" position={Position.Right} />
       <Handle
@@ -35,18 +23,12 @@ function MixNode({ data, id }: any) {
         style={{ top: 50 }}
       />
       <Handle
-        id={"value0-" + id}
+        id={"points-" + id}
         type="target"
         position={Position.Left}
-        style={{ top: 130 }}
+        style={{ top: 110 }}
       />
-      <Handle
-        id={"value1-" + id}
-        type="target"
-        position={Position.Left}
-        style={{ top: 180 }}
-      />
-      <br />
+      <hr />
       <SliderInput
         name="percent"
         defaultValue={50}
@@ -55,11 +37,11 @@ function MixNode({ data, id }: any) {
         unit="%"
         onChange={onChangePercent}
       />
-      <hr />
-      <NumberInput label="Value" name="value0" onChange={onChange0} defaultValue={data.value0}/>
-      <NumberInput label="Value" name="value1" onChange={onChange1} defaultValue={data.value1}/>
+      <br></br>
+      Points
+
     </div>
   );
 }
 
-export default MixNode;
+export default PanNode;

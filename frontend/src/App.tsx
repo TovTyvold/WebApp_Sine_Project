@@ -25,16 +25,23 @@ function App() {
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
   const expectedSampleCount = useRef<number>();
+  const channels = useRef<number>(1);
   const buffer = useRef<AudioBuffer>();
   const [isReady, setIsReady] = useState<boolean>(false);
   const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
 
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
-    buffer.current.copyToChannel(chunk, 0, floatsRead.current);
+    for (let ch = 0; ch < channels.current; ch++) {
+      for (let i = 0; i < chunk.length / channels.current; i++) {
+        buffer.current.getChannelData(ch)[Math.floor(floatsRead.current / channels.current) + i] = chunk[channels.current * i + ch % channels.current];
+      }
+    }
+
     floatsRead.current += chunk.length;
 
-    if (floatsRead.current >= buffer.current.length) {
+    console.log(buffer.current.length)
+    if (floatsRead.current >= channels.current*buffer.current.length) {
       if (!isReady) {
         setIsReady(true);
       }
@@ -46,15 +53,22 @@ function App() {
       if (expectedSampleCount.current) {
         composeAudio(event.data, buffer);
       }
-    } else {
-      expectedSampleCount.current = event.data;
+    } 
+    else {
+      const format = JSON.parse(event.data)
+      expectedSampleCount.current = format.SampleCount;
+      channels.current = format.Channels;
+
+      console.log(expectedSampleCount.current, channels.current)
 
       if (expectedSampleCount.current) {
-        buffer.current = new AudioBuffer({
-          numberOfChannels: CHANNELS,
-          length: expectedSampleCount.current,
-          sampleRate: 44100,
-        });
+        buffer.current = (
+          new AudioBuffer({
+            numberOfChannels: channels.current,
+            length: expectedSampleCount.current,
+            sampleRate: 44100,
+          })
+        );
       }
     }
   };
@@ -75,8 +89,9 @@ function App() {
     //ws.onopen = () => (console.log(ws))
 
     return () => {
-      ws.removeEventListener('close', onClose);
-    };
+      ws.removeEventListener("close", onClose)
+      ws.close(1000)
+    }
   }, [ws, setWs]);
 
   //when a tree is ready send it
