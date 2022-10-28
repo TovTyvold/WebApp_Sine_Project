@@ -25,6 +25,7 @@ function App() {
     const chunk = new Float32Array(data);
     if (floatsRead.current == 0) {
       startTime.current = context.currentTime;
+      console.log("hellu")
     }
 
     let tmpBuff = new AudioBuffer({
@@ -38,6 +39,9 @@ function App() {
     source.buffer = tmpBuff
     source.connect(context.destination);
     source.start(startTime.current + floatsRead.current/44100);
+    source.onended = () => {console.log("done")}
+
+    console.log("time ",startTime.current + floatsRead.current/44100)
 
     floatsRead.current += chunk.length;
     if (floatsRead.current == expectedSampleCount.current) {
@@ -53,17 +57,8 @@ function App() {
       }
     } 
     else {
-      expectedSampleCount.current = event.data;
-
-      if (expectedSampleCount.current) {
-        buffer.current = (
-          new AudioBuffer({
-            numberOfChannels: 1,
-            length: expectedSampleCount.current,
-            sampleRate: 44100,
-          })
-        );
-      }
+      expectedSampleCount.current = JSON.parse(event.data).SampleCount;
+      console.log(expectedSampleCount.current)
     }
   }
 
@@ -108,23 +103,6 @@ function App() {
     seconds.current = (event.target.value);
   };
 
-  const playAudio = () => {
-    if (buffer) {
-      const source = context.createBufferSource();
-      if (buffer.current) {
-        source.buffer = buffer.current;
-        source.connect(context.destination);
-        source.onended = () => {
-          console.log("Sound is done playing!");
-          setIsReady(false);
-        };
-        source.start();
-
-        floatsRead.current = 0;
-      }
-    }
-  };
-
   const submit = (tree: any) => {
     setTree(tree);
   };
@@ -144,8 +122,6 @@ function App() {
             borderRadius: '10px',
           }}>
           <Flow submit={submit} onSecondsChange={onSecondsChange} />
-
-          <button onClick={playAudio}>play</button>
         </div>
       </div>
     </div>

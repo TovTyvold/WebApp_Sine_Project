@@ -77,20 +77,12 @@ def noteToFreq(note: str) -> float:
     return cPitch*math.pow((math.pow(2.0, 1.0/12.0)), stepsAway)
 
 
-def genSamples(samples: int, seconds: float):
-    return [i / samples for i in range(int(seconds * samples))]
-
-
 def advSine(amplFunction, freqFunction, samples, seconds):
     offsets = [0]*int(seconds*samples)
     for i in range(1, int(samples*seconds)):
         fp = freqFunction((i-1)/samples)
         fn = freqFunction(i/samples)
-        offsets[i] = 2*math.pi*(i/samples)*(fp-fn)
-
-    #compute prefix sum
-    for i in range(1, int(samples*seconds)):
-        offsets[i] += offsets[i-1]
+        offsets[i] = 2*math.pi*(i/samples)*(fp-fn) + offsets[i-1]
 
     ypoints = [0]*int(seconds*samples)
     for i in range(int(samples*seconds)):
@@ -101,36 +93,47 @@ def advSine(amplFunction, freqFunction, samples, seconds):
     return ypoints
 
 
-def advSinePoints(ampls, freqs, samples, seconds, func=sin):
-    #changing frequencies yielsd differnet phases,
-    #this syncs them
-    offsets = [0]*int(samples*seconds)
-    for i in range(1, int(samples*seconds)):
+def advSinePoints(ampls, freqs, samples, seconds, func, startSample, endSample):
+    #changing frequencies yields differnet phases,
+    #therefore we have to correct for this
+    #this correction is done by offsets
+    sampleC = endSample - startSample
+    offsets = [0]*int(sampleC)
+    # print(sampleC)
+    #goes through all samples 
+    for i in range(1, int(sampleC)):
+        x = (i+startSample)/samples
+        # print(x)
         fp = freqs[i-1]
         fn = freqs[i]
-        offsets[i] = (i/samples)*(fp-fn) + offsets[i-1]
+        print(fp)
+        print(fn)
+        # print(i)
+        offsets[i] = x*(fp-fn) + offsets[i-1]
 
-    ypoints = [0]*int(samples*seconds)
-    for i in range(int(samples*seconds)):
-        x = i/samples
+    ypoints = [0]*int(sampleC)
+    for i in range(int(sampleC)):
+        x = (i+startSample)/samples
+        # print(x)
 
         ypoints[i] = ampls[i]*func(freqs[i]*x + offsets[i])
 
     return ypoints
 
 
-def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
+def newparse(data: dict, sampleRate, sustainTime, envelopeTime, startSample, endSample) -> List[float]:
     #TODO generate the xpoints here, and let recParse use them rather than generating them
     seconds = envelopeTime + sustainTime
-    xpoints = genSamples(samples, seconds)
+
+    xpoints = [(startSample + i) / sampleRate for i in range(0, endSample-startSample)]
+
     strToOp = {
         "+": operator.add,
         "*": operator.mul,
     }
 
-    #turn a ("num", 1) into samples*seconds 1s, ie.. [1,1,1,1,1,1]
-    def dimensionalise(p): return [p[1]] * \
-        int(samples*seconds) if p[0] == "num" else p[1]
+    #turn a ("num", 1) into sampleRate*seconds 1s, ie.. [1,1,1,1,1,1]
+    def dimensionalise(p): return [p[1]] * int(len(xpoints)) if p[0] == "num" else p[1]
 
     #recursively parse the ast
     def recParse(data: dict) -> Dict[str, Union[List[float], Union[float, int]]]:
@@ -178,7 +181,7 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                 freqs = dimensionalise((freqT, freqV))
 
                 ypoints = advSinePoints(
-                    ampls, freqs, samples, seconds, func=func)
+                    ampls, freqs, sampleRate, seconds, func, startSample, endSample)
                 return ("points", ypoints)
 
             if k == "bezier":  # v = [(1,1),(2,1),(3,2)]
@@ -211,7 +214,7 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                     return ("num", functools.reduce(strToOp[k], ([v for _, v in l])))
 
                 #[[1,1,1], [2,2,2], [1,2,3]]
-                l = [[v]*int(samples*seconds) if t ==
+                l = [[v]*int(sampleRate*seconds) if t ==
                      "num" else v for (t, v) in l]
                 ypoints = list(functools.reduce(
                     lambda xs, ys: map(strToOp[k], xs, ys), l)
@@ -242,8 +245,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
 
     #normalize input
     ypoints = recParse(data)[1]
-    yMax = max(ypoints)
-    ypoints = [y / yMax for y in ypoints]
+    # yMax = max(ypoints)
+    # ypoints = [y / yMax for y in ypoints]
 
     return ypoints
 
@@ -305,5 +308,13 @@ def starWars():
 
 
 if __name__ == "__main__":
-    pass
+# def newparse(data: dict, sampleRate, sustainTime, envelopeTime, startSample, endSample) -> List[float]:
+    note = {"wave": {"shape": "sin", "frequency": {"num": 1}, "amplitude": {"num": 1}}}
+    strt = 10
+    end = 20
+    # for s in range(0, 100, 10):
+    ypoints = newparse(note, sampleRate=100, sustainTime=10, envelopeTime=0, startSample=strt, endSample=end)
+    xpoints = [i / 100 for i in range(strt, end)]
+    for x,y in zip(xpoints, ypoints):
+        print(x, ", ", y)
     # soundGen.play(starWars())

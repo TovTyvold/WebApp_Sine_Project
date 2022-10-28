@@ -12,6 +12,8 @@ import pointsCalculation
 import soundGen
 import ADSR_mod
 import copy
+from math import ceil
+import struct
 
 app = FastAPI()
 
@@ -186,7 +188,7 @@ def handleInput(query):
     return recTree, recFindEnv(recTree)
 
 
-CHUNKSIZE = 5000
+CHUNKSIZE = int(44100/2)
 SAMPLES = 44100
 @app.websocket("/sound")
 async def websocket_endpoint(websocket: WebSocket):
@@ -201,22 +203,51 @@ async def websocket_endpoint(websocket: WebSocket):
 
             print("processesing: \n", query)
             print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
+            totalTime = envelopeTime+sustainTime
 
-            soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            samplesSent = 0
+            await websocket.send_json({"SampleCount": int(SAMPLES*(envelopeTime+sustainTime))})
+            print(int(SAMPLES*(envelopeTime+sustainTime)))
+            for startSample in range(0, CHUNKSIZE*ceil(int((envelopeTime+sustainTime)*SAMPLES)/CHUNKSIZE), CHUNKSIZE):
+                endSample = startSample+CHUNKSIZE
+                if endSample > SAMPLES*totalTime:
+                    endSample = int(totalTime*SAMPLES)
 
-            await websocket.send_json(len(soundData))
+                print(startSample, ",", endSample)
+                samples = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime, startSample, endSample)
+                samplesSent += len(samples)
+                samples = struct.pack("%sf" % len(samples), *samples)
+                await websocket.send_bytes(samples)
 
-            #send chunkSize chunks of the sounddata until all is sent
-            cb = soundGen.samplesToCB(soundData)
-            data = cb.readChunk(CHUNKSIZE)
-            while data:
-                await websocket.send_bytes(data)
-                data = cb.readChunk(CHUNKSIZE)
+            print(samplesSent)
+
+
+            # #send chunkSize chunks of the sounddata until all is sent
+            #  cb = soundGen.samplesToCB(soundData)
+            # data = cb.readChunk(CHUNKSIZE)
+            # while data:
+            #     await websocket.send_bytes(data)
+            #     data = cb.readChunk(CHUNKSIZE)
     except WebSocketDisconnect:
         print("disconnected")
 
 
 if __name__ == "__main__":
+    note = {"wave": {"shape": "sin", "frequency": {"num": 1}, "amplitude": {"num": 1}}}
+    note = {"wave" : {"shape": "sin", "frequency": {"bezier": [[0,0], [0.5,0.5], [1,1]]}, "amplitude": {"num" : 1}}}
+    # note = {"bezier": [[0,0], [0.5,0.5], [1,1]]}
+    smpls = 20
+    smplStep = 10
+    time = 1
+    smplRate = smpls / time
+    for smplStart in range(0, smpls, smplStep):
+        # xpoints = [i / 100 for i in range(smplStart, smplStart+smplStep)]
+        xpoints = [(i) / smplRate for i in range(smplStart, smplStart+smplStep)]
+        ypoints = pointsCalculation.newparse(note, smplRate, time, 0, smplStart, smplStart+smplStep)
+
+        for x,y in zip(xpoints, ypoints):
+            print(x, ",", y)
+
     config = uvicorn.Config("apiServer:app", port=5000,
                             log_level="info", reload=True)
     server = uvicorn.Server(config)
