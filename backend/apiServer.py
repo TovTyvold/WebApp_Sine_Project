@@ -24,6 +24,9 @@ def handleInput(query):
     nodes = query["nodes"]
     edges = query["edges"]
 
+    print(nodes)
+    print(edges)
+
     recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
     recTree = dict((key, d[key]) for d in recTree for key in d)
 
@@ -40,9 +43,13 @@ def handleInput(query):
         else:
             recTree[target]["data"][tpos] = recTree[source]
 
+    print(recTree)
+
     #convert the recurisve node format from the frontend into an AST 
     #json should be constant and not changed by this function.
     def recClean(json:dict) -> dict:
+        if type(json) == int:
+            return {"num" : json/100}
         dType = json["type"]
         dData = json["data"]
         dChildren = json["in"]
@@ -172,7 +179,9 @@ def handleInput(query):
         if dType == "operation":
             return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
-    recTree = recClean(recTree["output0"])
+    soundTree = recClean(recTree["output0"])
+    panTree = recClean(recTree["output0"]["data"]["pan"])
+    print("pantree\n",panTree)
 
     #go through the tree and find the largest topmost envelope time
     def recFindEnv(tree : dict):
@@ -194,16 +203,19 @@ def handleInput(query):
             else:
                 return 0
 
-    #find topmost envelope and output its combined length in ms
-    envelopeTime = 0 #largest envelope in ms
-    for node in nodes:
-        if node["type"] == "envelope":
-            data = node["data"]
-            time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
-            if (time > envelopeTime):
-                envelopeTime = time
+        return max(a)
+    {'pan': {
+        'percent': {'+': [{'num': 0.5}, {'wave': {'frequency': {'num': 1.0}, 'amplitude': {'num': 0.5}, 'shape': 'sin'}}]}, 
+        'points': {'wave': {'frequency': {'num': 440.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}}
+    }
 
-    return recTree, sustainTime, envelopeTime
+    envelopeTime = recFindEnv(soundTree)
+    soundTree = {"pan" : { 
+        "percent" : panTree, 
+        "points" : soundTree
+    }}
+
+    return soundTree, sustainTime, envelopeTime
 
 
 CHUNKSIZE = 1024
