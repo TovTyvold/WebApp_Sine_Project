@@ -23,10 +23,15 @@ def handleInput(query):
     #query is a (V,E) pair
     nodes = query["nodes"]
     edges = query["edges"]
-                    
-    #create a recursive tree structure
+
+    print(nodes)
+    print(edges)
+
     recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
     recTree = dict((key, d[key]) for d in recTree for key in d)
+
+    sustainTime = recTree["output0"]["data"]["sustainTime"]
+
     for e in edges:
         _, source = e["sourceHandle"].split("-")
         tpos, target = e["targetHandle"].split("-")
@@ -38,9 +43,13 @@ def handleInput(query):
         else:
             recTree[target]["data"][tpos] = recTree[source]
 
+    print(recTree)
+
     #convert the recurisve node format from the frontend into an AST 
     #json should be constant and not changed by this function.
     def recClean(json:dict) -> dict:
+        if type(json) == int:
+            return {"num" : json/100}
         dType = json["type"]
         dData = json["data"]
         dChildren = json["in"]
@@ -113,8 +122,19 @@ def handleInput(query):
             return {"mix" : 
                 {
                     "percent": percent,
-                    "v1": value0,
-                    "v2": value1
+                    "value0": value0,
+                    "value1": value1
+                }
+            }
+
+        if dType == "pan":
+            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
+            points = recClean(dData["points"]) 
+
+            return {"pan" : 
+                {
+                    "percent": percent,
+                    "points": points
                 }
             }
 
@@ -159,7 +179,9 @@ def handleInput(query):
         if dType == "operation":
             return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
-    recTree = recClean(recTree["output0"])
+    soundTree = recClean(recTree["output0"])
+    panTree = recClean(recTree["output0"]["data"]["pan"])
+    print("pantree\n",panTree)
 
     #go through the tree and find the largest topmost envelope time
     def recFindEnv(tree : dict):
@@ -182,8 +204,18 @@ def handleInput(query):
                 return 0
 
         return max(a)
+    {'pan': {
+        'percent': {'+': [{'num': 0.5}, {'wave': {'frequency': {'num': 1.0}, 'amplitude': {'num': 0.5}, 'shape': 'sin'}}]}, 
+        'points': {'wave': {'frequency': {'num': 440.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}}
+    }
 
-    return recTree, recFindEnv(recTree)
+    envelopeTime = recFindEnv(soundTree)
+    soundTree = {"pan" : { 
+        "percent" : panTree, 
+        "points" : soundTree
+    }}
+
+    return soundTree, sustainTime, envelopeTime
 
 
 CHUNKSIZE = 1024
@@ -196,15 +228,17 @@ async def websocket_endpoint(websocket: WebSocket):
         while (True):
             #recieve wave information
             query = await websocket.receive_json()
-            sustainTime = float(query["SustainTime"])
-            query, envelopeTime = handleInput(query["NodeTree"])
+            query, sustainTime, envelopeTime = handleInput(query)
 
             print("processesing: \n", query)
             print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-            soundData = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
 
-            await websocket.send_json(len(soundData))
+            sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
+            await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})
+
+            # soundGen.play(soundData, channels)
 
             #send chunkSize chunks of the sounddata until all is sent
             cb = soundGen.samplesToCB(soundData)

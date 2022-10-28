@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 function SliderInput({
   name,
+  label,
   defaultValue,
   unit,
   step = 1,
@@ -20,7 +21,7 @@ function SliderInput({
     <div style={{ marginTop: '10px' }}>
       <div style={{ display: 'inline-block', width: '65px' }}>
         <label htmlFor={name} style={{ margin: '5px' }}>
-          {name.charAt(0).toUpperCase() + name.slice(1)}
+          {label ? label : name.charAt(0).toUpperCase() + name.slice(1)}
         </label>
       </div>
       <input

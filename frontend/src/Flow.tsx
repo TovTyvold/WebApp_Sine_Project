@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
@@ -12,12 +6,11 @@ import ReactFlow, {
   addEdge,
   updateEdge,
   Background,
-  Controls,
   Edge,
   Connection,
   useNodesState,
   useEdgesState,
-  applyNodeChanges,
+  useKeyPress,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -32,12 +25,16 @@ import ControllButtons from './components/ControlButtons';
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
 import MixNode from './components/MixNode';
+import PanNode from './components/PanNode';
 
 const initialNodes: Node[] = [
   {
     id: 'output0',
     type: 'out',
-    data: {},
+    data: {
+      sustainTime: 2,
+      pan: 50,
+    },
     position: { x: 750, y: 250 },
     deletable: false,
   },
@@ -63,6 +60,7 @@ const defaultData: Map<string, Object> = new Map([
     },
   ],
   ["mix", { percent: 50, value0: 0, value1: 1 }],
+  ["pan", { percent: 50}],
 ]);
 
 const Flow = ({ submit, onSecondsChange }: any) => {
@@ -81,6 +79,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     value: 0,
     bezier: 0,
     mix: 0,
+    pan: 0,
   });
 
   const nodeTypes = useMemo(
@@ -93,19 +92,11 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       out: OutputNode,
       bezier: BezierNode,
       mix: MixNode,
+      pan: PanNode,
     }),
     []
   );
-  useEffect(() => {
-    setNodes((nds) => {
-      nds.forEach((n) => {
-        if (n.id === 'output0') {
-          n.data.onchange = onSecondsChange;
-        }
-      });
-      return nds;
-    });
-  }, []);
+
 
   const getFlow = useCallback(() => {
     if (instance) {
@@ -115,6 +106,21 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       submit({ nodes: nodesList, edges: edgesList });
     }
   }, [instance]);
+
+  useEffect(() => {
+    const playListener = (event: any) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        getFlow();
+      }
+    };
+    document.addEventListener('keydown', playListener);
+    return () => {
+      document.removeEventListener('keydown', playListener);
+    };
+
+  }, [getFlow]);
+
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     //perform a deep copy of defaultData of nodeType
@@ -218,6 +224,6 @@ const Flow = ({ submit, onSecondsChange }: any) => {
 
 export default (props: any) => (
   <ReactFlowProvider>
-    <Flow submit={props.submit} onSecondsChange={props.onSecondsChange} />
+    <Flow submit={props.submit} />
   </ReactFlowProvider>
 );

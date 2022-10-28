@@ -31,6 +31,9 @@ function OscillatorNode({ data, id }: any) {
         type='target'
         position={Position.Left}
         style={{ top: 75 }}
+        onConnect={(p) => {
+          console.log('freq handle connect', p);
+        }}
       />
       <Handle
         id={'amplitude-' + id}
