@@ -21,35 +21,17 @@ app.add_middleware(CORSMiddleware, allow_origins=origins,
 
 def handleInput(query):
     #query is a (V,E) pair
+    print(query)
     nodes = query["nodes"]
     edges = query["edges"]
-
-    nodeKeep = ["id", "type", "data"]
-    edgeKeep = ["source", "sourceHandle", "target", "targetHandle"]
-    
-    def prune(dictlist, keep):
-        newList = []
-        for d in dictlist:
-            newD = {}
-            for k in d.keys():
-                if k in keep:
-                    newD[k] = d[k]
-
-            newList.append(newD)
-                
-        return newList
-                
-
-
-    print(nodes)
-    # nodes = prune(nodes, nodeKeep)
-    # edges = prune(edges, edgeKeep)
 
     adjList = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
     adjList = dict((key, d[key]) for d in adjList for key in d)
 
+    sustainTime = adjList["output0"]["data"]["sustainTime"]
+
     for e in edges:
-        spos, source = e["sourceHandle"].split("-")
+        _, source = e["sourceHandle"].split("-")
         tpos, target = e["targetHandle"].split("-")
         source = source
         target = target
@@ -192,15 +174,15 @@ def handleInput(query):
 
 
     #find topmost envelope and output its combined length in ms
-    totalTime = 0 #largest envelope in ms
+    envelopeTime = 0 #largest envelope in ms
     for node in nodes:
         if node["type"] == "envelope":
             data = node["data"]
             time = sum(map(lambda a : float(a), [data["attack"] , data["decay"] , data["release"]]))
-            if (time > totalTime):
-                totalTime = time
+            if (time > envelopeTime):
+                envelopeTime = time
 
-    return adjList, totalTime
+    return adjList, sustainTime, envelopeTime
 
 
 CHUNKSIZE = 1024
@@ -212,9 +194,7 @@ async def websocket_endpoint(websocket: WebSocket):
     while (True):
         #recieve wave information
         query = await websocket.receive_json()
-        print(query)
-        sustainTime = float(query["SustainTime"])
-        query, envelopeTime = handleInput(query["NodeTree"])
+        query, sustainTime, envelopeTime = handleInput(query)
 
         envelopeTime /= 1000
         print(query)
