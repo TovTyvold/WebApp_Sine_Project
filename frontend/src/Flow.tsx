@@ -97,6 +97,16 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     []
   );
 
+
+  const getFlow = useCallback(() => {
+    if (instance) {
+      const nodesList = instance.getNodes();
+      const edgesList = instance.getEdges();
+
+      submit({ nodes: nodesList, edges: edgesList });
+    }
+  }, [instance]);
+
   useEffect(() => {
     const playListener = (event: any) => {
       if (event.code === 'Space') {
@@ -108,16 +118,9 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     return () => {
       document.removeEventListener('keydown', playListener);
     };
-  }, []);
 
-  const getFlow = useCallback(() => {
-    if (instance) {
-      const nodesList = instance.getNodes();
-      const edgesList = instance.getEdges();
+  }, [getFlow]);
 
-      submit({ nodes: nodesList, edges: edgesList });
-    }
-  }, [instance]);
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     //perform a deep copy of defaultData of nodeType
