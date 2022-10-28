@@ -194,12 +194,15 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                 (_, wave) = recParse(v["points"])
                 (_, adsr) = recParse(v["adsr"])
 
-                #envelope.symmetricEnvelope(adsr, genSamples(samples, seconds), points, 0.75)
-                # print(adsr)
-                adsr = envelope.getSymmEnv(adsr, 0.75, 0, sustainTime + (adsr[0]+adsr[1]+adsr[3]))
+                adsr = envelope.getSymmEnv(adsr, 0.5, 0, sustainTime + (adsr[0]+adsr[1]+adsr[3]))
+                xs = [i/100 for i in range(int(seconds*100))]
+                ys = bezierCurve.compositeOn(adsr, xs)
+                for x,y in zip(xs,ys):
+                    print(x, "," , y)
 
-                ypoints = list(
-                    map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))
+                print(adsr)
+
+                ypoints = list(map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))
                 return ("points", ypoints)
 
             if k == "+" or k == "*":

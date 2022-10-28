@@ -118,7 +118,14 @@ const Flow = ({ submit, onSecondsChange }: any) => {
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     //perform a deep copy of defaultData of nodeType
-    const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
+    let def : undefined | Object = defaultData.get(nodeType)
+    if (def == undefined) {
+      def = {}
+    }
+    else {
+      //deepcopy of def
+      def = JSON.parse(JSON.stringify(def));
+    }
     
     let data: Object = def !== undefined ? def : {}
 

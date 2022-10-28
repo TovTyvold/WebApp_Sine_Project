@@ -1,5 +1,5 @@
 from math import sqrt
-from tkinter import W
+import envelope
 
 
 def bOfT(p0, p1, p2, t):
@@ -61,13 +61,13 @@ def composite(points, xsamples):
 
 
 def compositeFunc(points, dim=3):
-    def get(x):
+    def get(x:float) -> float:
         i = 1
         while True:
             px, _ = points[i-1]
             nx, _ = points[i+1]
 
-            if px <= x and x <= nx:
+            if px <= x and x < nx:
                 #found the correct point trio
                 break
 
@@ -76,9 +76,18 @@ def compositeFunc(points, dim=3):
             else:
                 break
 
+        # print(points[i-1], points[i], points[i+1])
         return func(points[i-1], points[i], points[i+1])(x)
     return get
 
 
 def compositeOn(points, xsamples):
     return [compositeFunc(points)(x) for x in xsamples]
+
+if __name__ == "__main__":
+    smpls = 10
+    secnds = 4
+    xpoints = [i/smpls for i in range(int(smpls*secnds))]
+    ypoints = compositeOn([(0, 0), (0.2, 0.5), (0.4, 1), (0.9, 0.8200000000000001), (1.4, 0.64), (2.3499999999999996, 0.64), (3.3, 0.64), (3.5465, 0.32), (3.7929999999999997, 0)], xpoints)
+    for x,y in zip(xpoints, ypoints):
+        print(x, ",", y)
