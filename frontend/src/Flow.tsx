@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
@@ -12,12 +6,11 @@ import ReactFlow, {
   addEdge,
   updateEdge,
   Background,
-  Controls,
   Edge,
   Connection,
   useNodesState,
   useEdgesState,
-  applyNodeChanges,
+  useKeyPress,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -37,7 +30,10 @@ const initialNodes: Node[] = [
   {
     id: 'output0',
     type: 'out',
-    data: {},
+    data: {
+      sustainTime: 2,
+      pan: 50,
+    },
     position: { x: 750, y: 250 },
     deletable: false,
   },
@@ -45,7 +41,7 @@ const initialNodes: Node[] = [
 
 const initialEdges: Edge[] = [];
 
-const Flow = ({ submit, onSecondsChange }: any) => {
+const Flow = ({ submit }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [instance, setInstance] = useState<any>(null);
@@ -76,15 +72,18 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     }),
     []
   );
+
   useEffect(() => {
-    setNodes((nds) => {
-      nds.forEach((n) => {
-        if (n.id === 'output0') {
-          n.data.onchange = onSecondsChange;
-        }
-      });
-      return nds;
-    });
+    const playListener = (event: any) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        getFlow();
+      }
+    };
+    document.addEventListener('keydown', playListener);
+    return () => {
+      document.removeEventListener('keydown', playListener);
+    };
   }, []);
 
   const createTree = useCallback((nodesList: Node[], edgesList: Edge[]) => {
@@ -219,6 +218,6 @@ const Flow = ({ submit, onSecondsChange }: any) => {
 
 export default (props: any) => (
   <ReactFlowProvider>
-    <Flow submit={props.submit} onSecondsChange={props.onSecondsChange} />
+    <Flow submit={props.submit} />
   </ReactFlowProvider>
 );

@@ -2,23 +2,7 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
-import exp from 'constants';
-
-type Wave = {
-  frequency: number | undefined;
-  amplitude: number | undefined;
-  shape: string;
-  adsr?: number[];
-};
-
-const defaultInput: Wave = {
-  frequency: 440,
-  amplitude: 1,
-  shape: 'sin',
-  adsr: [1, 1, 3, 1],
-};
-
-const desiredFields = ['id', 'type', 'data', 'children'];
+import AudioVisualiser from './AudioVisualizer';
 
 const CHANNELS = 1;
 const dBuffer = new AudioBuffer({
@@ -31,6 +15,8 @@ const API_WS = 'ws://localhost:5000/sound';
 const webSocket = new WebSocket(API_WS);
 const context = new AudioContext();
 
+//const source = context.createBufferSource();
+
 //TODO: make AudioBufferSourceNode per CHUNK size https://stackoverflow.com/questions/28440262/web-audio-api-for-live-streaming
 function App() {
   // Hooks
@@ -39,9 +25,9 @@ function App() {
   const [tree, setTree] = useState<Object>();
   const floatsRead = useRef<number>(0);
   const expectedSampleCount = useRef<number>();
-  const seconds = useRef<number>(2.0);
   const buffer = useRef<AudioBuffer>();
-  const [isReady, setIsReady] = useState<boolean>(false)
+  const [isReady, setIsReady] = useState<boolean>(false);
+  const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
 
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
@@ -60,21 +46,18 @@ function App() {
       if (expectedSampleCount.current) {
         composeAudio(event.data, buffer);
       }
-    } 
-    else {
+    } else {
       expectedSampleCount.current = event.data;
 
       if (expectedSampleCount.current) {
-        buffer.current = (
-          new AudioBuffer({
-            numberOfChannels: CHANNELS,
-            length: expectedSampleCount.current,
-            sampleRate: 44100,
-          })
-        );
+        buffer.current = new AudioBuffer({
+          numberOfChannels: CHANNELS,
+          length: expectedSampleCount.current,
+          sampleRate: 44100,
+        });
       }
     }
-  }
+  };
 
   //fix ws
   useEffect(() => {
@@ -84,23 +67,22 @@ function App() {
       }, 1000);
     };
 
-    ws.binaryType = "arraybuffer";
+    ws.binaryType = 'arraybuffer';
     ws.onmessage = (event: MessageEvent) => {
       handleInput(event);
     };
-    ws.addEventListener("close", onClose);
+    ws.addEventListener('close', onClose);
     //ws.onopen = () => (console.log(ws))
 
     return () => {
-      ws.removeEventListener("close", onClose)
-    }
+      ws.removeEventListener('close', onClose);
+    };
   }, [ws, setWs]);
 
   //when a tree is ready send it
   useEffect(() => {
     if (ws.readyState === webSocket.OPEN && tree && !isReady) {
-      const payload = { NodeTree: tree, SustainTime: seconds.current };
-      ws.send(JSON.stringify(payload));
+      ws.send(JSON.stringify(tree));
     }
   }, [ws, tree]);
 
@@ -110,24 +92,18 @@ function App() {
     }
   }, [isReady]);
 
-  const onSecondsChange = (event: any) => {
-    event.preventDefault();
-
-    seconds.current = (event.target.value);
-  };
-
   const playAudio = () => {
     if (buffer) {
-      const source = context.createBufferSource();
       if (buffer.current) {
-        source.buffer = buffer.current;
-        source.connect(context.destination);
-        source.onended = () => {
-          console.log("Sound is done playing!");
+        const src = source.current;
+        src.buffer = buffer.current;
+        src.connect(context.destination);
+        src.onended = () => {
+          console.log('Sound is done playing!');
           setIsReady(false);
         };
-        source.start();
-
+        src.start();
+        source.current = context.createBufferSource();
         floatsRead.current = 0;
       }
     }
@@ -143,7 +119,7 @@ function App() {
         <header>
           <h1>W.O.K.</h1>
         </header>
-
+        <AudioVisualiser audioCtx={context} audioSrc={source.current} />
         <div
           style={{
             width: '80vw',
@@ -151,9 +127,7 @@ function App() {
             border: '2px #1f939e solid',
             borderRadius: '10px',
           }}>
-          <Flow submit={submit} onSecondsChange={onSecondsChange} />
-
-          <button onClick={playAudio}>play</button>
+          <Flow submit={submit} />
         </div>
       </div>
     </div>
@@ -161,8 +135,3 @@ function App() {
 }
 
 export default App;
-
-// TODO
-// Move Replay button
-// Make slider component
-// Frequency visualizer?
