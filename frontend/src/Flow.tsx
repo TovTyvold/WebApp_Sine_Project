@@ -25,7 +25,6 @@ import ControllButtons from './components/ControlButtons';
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
 import MixNode from './components/MixNode';
-import PanNode from './components/PanNode';
 
 const initialNodes: Node[] = [
   {
@@ -43,12 +42,12 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 const defaultData: Map<string, Object> = new Map([
-  ["oscillator", { frequency: 440, amplitude: 1, shape: "sin" }],
-  ["operation", { opType: "sum" }],
-  ["value", { value: 1 }],
-  ["envelope", { attack: 20, decay: 20, sustain: 60, release: 20 }],
+  ['oscillator', { frequency: 440, amplitude: 1, shape: 'sin' }],
+  ['operation', { opType: 'sum' }],
+  ['value', { value: 1 }],
+  ['envelope', { attack: 20, decay: 20, sustain: 60, release: 20 }],
   [
-    "bezier",
+    'bezier',
     {
       points: [
         [0, 0],
@@ -56,11 +55,11 @@ const defaultData: Map<string, Object> = new Map([
         [1, 1],
       ],
       start: 0,
-      end: 1
+      end: 1,
     },
   ],
-  ["mix", { percent: 50, value0: 0, value1: 1 }],
-  ["pan", { percent: 50}],
+  ['mix', { percent: 50, value0: 0, value1: 1 }],
+  ['pan', { percent: 50 }],
 ]);
 
 const Flow = ({ submit, onSecondsChange }: any) => {
@@ -79,7 +78,6 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     value: 0,
     bezier: 0,
     mix: 0,
-    pan: 0,
   });
 
   const nodeTypes = useMemo(
@@ -92,11 +90,9 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       out: OutputNode,
       bezier: BezierNode,
       mix: MixNode,
-      pan: PanNode,
     }),
     []
   );
-
 
   const getFlow = useCallback(() => {
     if (instance) {
@@ -118,15 +114,13 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     return () => {
       document.removeEventListener('keydown', playListener);
     };
-
   }, [getFlow]);
-
 
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
     //perform a deep copy of defaultData of nodeType
     const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
-    
-    let data: Object = def !== undefined ? def : {}
+
+    let data: Object = def !== undefined ? def : {};
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
     const y = (1 / view.zoom) * (nodePos.y - view.y);
