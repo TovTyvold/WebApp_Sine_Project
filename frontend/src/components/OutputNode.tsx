@@ -4,8 +4,9 @@ import SliderInput from './SliderInput';
 
 function OutputNode({ data, id }: any) {
   const onChange = useCallback((event: any) => {
-    if (event.target.name === 'pan') data.pan = event.target.value;
-    if (event.target.name === 'sustain') data.sustainTime = event.target.value;
+    if (event.target.name === 'pan') data.pan.percent = event.target.value;
+    if (event.target.name === 'sustain')
+      data.sustainTime.sec = event.target.value;
   }, []);
   return (
     <div className='out-node'>
@@ -25,7 +26,7 @@ function OutputNode({ data, id }: any) {
       <hr />
       <SliderInput
         name='pan'
-        defaultValue={data.pan}
+        defaultValue={data.pan.percent}
         min={0}
         max={100}
         unit=''
@@ -33,7 +34,7 @@ function OutputNode({ data, id }: any) {
       />
       <SliderInput
         name='sustain'
-        defaultValue={data.seconds}
+        defaultValue={data.sustainTime.sec}
         min={1}
         max={20}
         unit='sec'

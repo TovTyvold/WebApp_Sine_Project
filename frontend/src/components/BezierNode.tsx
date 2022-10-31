@@ -3,7 +3,7 @@ import { BezierCurveEditor } from 'react-bezier-curve-editor';
 import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 
-function BezierNode({ data, id }: any) {
+function BezierNode({ data, id, selected }: any) {
   const point = useRef<[number, number, number, number]>([0.5, 0.5, 1, 1]);
   const start = useRef<number>(data.start);
   const end = useRef<number>(data.end);
@@ -43,7 +43,7 @@ function BezierNode({ data, id }: any) {
   }, []);
 
   return (
-    <div className='bezier-node'>
+    <div className={'bezier-node' + (selected ? ' node-selected' : '')}>
       <b>Bezier</b>
       {/* <Handle type='source' position={Position.Right} /> */}
       <Handle id={'out-' + id} type='source' position={Position.Right} />

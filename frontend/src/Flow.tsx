@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
   Node,
@@ -15,26 +14,26 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import './flow-node.css';
 
+import { ContextMenu } from './components/ContextMenu';
+import ControllButtons from './components/ControlButtons';
 import EnvelopeNode from './components/EnvelopeNode';
 import OscillatorNode from './components/OscillatorNode';
 import OperationNode from './components/OperationNode';
 import EffectNode from './components/EffectNode';
 import OutputNode from './components/OutputNode';
-import ControllButtons from './components/ControlButtons';
-
+import MixNode from './components/MixNode';
 import ValueNode from './components/ValueNode';
 import BezierNode from './components/BezierNode';
-import MixNode from './components/MixNode';
 
 const initialNodes: Node[] = [
   {
     id: 'output0',
     type: 'out',
     data: {
-      sustainTime: 2,
-      pan: 50,
+      sustainTime: { sec: 2 },
+      pan: { percent: 50 },
     },
-    position: { x: 750, y: 250 },
+    position: { x: 850, y: 250 },
     deletable: false,
   },
 ];
@@ -45,7 +44,15 @@ const defaultData: Map<string, Object> = new Map([
   ['oscillator', { frequency: 440, amplitude: 1, shape: 'sin' }],
   ['operation', { opType: 'sum' }],
   ['value', { value: 1 }],
-  ['envelope', { attack: 20, decay: 20, sustain: 60, release: 20 }],
+  [
+    'envelope',
+    {
+      attack: { ms: 20 },
+      decay: { ms: 20 },
+      sustain: { percent: 60 },
+      release: { ms: 20 },
+    },
+  ],
   [
     'bezier',
     {
@@ -116,25 +123,32 @@ const Flow = ({ submit }: any) => {
     };
   }, [getFlow]);
 
-  const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
-    //perform a deep copy of defaultData of nodeType
-    const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
+  const addNode = useCallback(
+    (nodeType: string, nodePos: any, view: any, data?: any) => {
+      let nodeData: Object;
+      if (data) {
+        nodeData = data;
+      } else {
+        //perform a deep copy of defaultData of nodeType
+        const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
+        nodeData = def !== undefined ? def : {};
+      }
 
-    let data: Object = def !== undefined ? def : {};
+      const x = (1 / view.zoom) * (nodePos.x - view.x);
+      const y = (1 / view.zoom) * (nodePos.y - view.y);
 
-    const x = (1 / view.zoom) * (nodePos.x - view.x);
-    const y = (1 / view.zoom) * (nodePos.y - view.y);
+      const newNode = {
+        id: `${nodeType}${idRef.current[nodeType]++}`,
+        position: { x: x, y: y },
+        type: nodeType,
+        data: nodeData,
+      };
 
-    const newNode = {
-      id: `${nodeType}${idRef.current[nodeType]++}`,
-      position: { x: x, y: y },
-      type: nodeType,
-      data: data,
-    };
-
-    setNodes((nds) => nds.concat(newNode));
-    setShowContextMenu(false);
-  }, []);
+      setNodes((nds) => nds.concat(newNode));
+      setShowContextMenu(false);
+    },
+    []
+  );
 
   useEffect(() => {
     const duplicateListener = (event: any) => {
@@ -142,15 +156,28 @@ const Flow = ({ submit }: any) => {
         event.preventDefault();
         if (currentNode.current) {
           const c: Node = currentNode.current;
-
           const newPos = { x: c.position.x + 100, y: c.position.y + 100 };
-          if (c.type) addNode(c.type, newPos, currView);
+          if (c.type) addNode(c.type, newPos, currView, c.data);
         }
       }
     };
     document.addEventListener('keydown', duplicateListener);
     return () => {
       document.removeEventListener('keydown', duplicateListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const ctxMenuListener = (event: any) => {
+      if (event.ctrlKey && event.key === 'a') {
+        event.preventDefault();
+        console.log('gang');
+        onPaneContextMenu(event, true);
+      }
+    };
+    document.addEventListener('keydown', ctxMenuListener);
+    return () => {
+      document.removeEventListener('keydown', ctxMenuListener);
     };
   }, []);
 
@@ -193,15 +220,23 @@ const Flow = ({ submit }: any) => {
     }
   }, []);
 
-  const onPaneContextMenu = useCallback((event: any) => {
+  const onPaneContextMenu = useCallback((event: any, hotkey?: boolean) => {
     event.preventDefault();
-
-    setShowContextMenu(true);
+    let viewport_x;
+    let viewport_y;
     const boundingBox = event.target.getBoundingClientRect();
-    const viewport_x = event.pageX - boundingBox.left;
-    const viewport_y = event.pageY - boundingBox.top;
+
+    console.log(boundingBox);
+    if (hotkey) {
+      viewport_x = 300;
+      viewport_y = 200;
+    } else {
+      viewport_x = event.pageX - boundingBox.left;
+      viewport_y = event.pageY - boundingBox.top;
+    }
 
     setContextPosition({ x: viewport_x, y: viewport_y });
+    setShowContextMenu(true);
   }, []);
 
   const onPaneClick = useCallback((event: any) => {

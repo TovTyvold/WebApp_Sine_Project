@@ -1,24 +1,23 @@
 import { useCallback, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
 import SliderInput from './SliderInput';
 
-function EnvelopeNode({ data, id }: any) {
+function EnvelopeNode({ data, id, selected }: any) {
   const onChange = useCallback((event: any) => {
     event.preventDefault();
     const value = event.target.value;
     switch (event.target.name) {
       case 'attack':
-        data.attack = value;
+        data.attack = { ms: value };
         break;
       case 'decay':
-        data.decay = value;
+        data.decay = { ms: value };
         break;
       case 'sustain':
-        data.sustain = value;
+        data.sustain = { percent: value };
         break;
       case 'release':
-        data.release = value;
+        data.release = { ms: value };
         break;
       default:
         console.log('Error: incorrect target');
@@ -26,14 +25,14 @@ function EnvelopeNode({ data, id }: any) {
   }, []);
 
   return (
-    <div className='env-node'>
+    <div className={'env-node' + (selected ? ' node-selected' : '')}>
       <Handle id={'in-' + id} type='target' position={Position.Left} />
       <b>ADSR Envelope</b>
       <hr />
       <div className='slidecontainer'>
         <SliderInput
           name='attack'
-          defaultValue={1}
+          defaultValue={data.attack.ms}
           unit='ms'
           min={1}
           max={1000}
@@ -41,7 +40,7 @@ function EnvelopeNode({ data, id }: any) {
         />
         <SliderInput
           name='decay'
-          defaultValue={1}
+          defaultValue={data.decay.ms}
           unit='ms'
           min={1}
           max={1000}
@@ -49,7 +48,7 @@ function EnvelopeNode({ data, id }: any) {
         />
         <SliderInput
           name='sustain'
-          defaultValue={1}
+          defaultValue={data.sustain.percent}
           unit='%'
           min={1}
           max={100}
@@ -57,7 +56,7 @@ function EnvelopeNode({ data, id }: any) {
         />
         <SliderInput
           name='release'
-          defaultValue={1}
+          defaultValue={data.release.ms}
           unit='ms'
           min={1}
           max={1000}
