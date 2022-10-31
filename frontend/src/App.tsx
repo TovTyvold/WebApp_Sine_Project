@@ -46,6 +46,8 @@ function App() {
   const bytesRead = useRef<number>(0);
   const seconds = useRef<number>(1);
   const [isReady, setIsReady] = useState<boolean>(false);
+  const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
+
 
   const composeAudio = useCallback(
     (data: any) => {
@@ -165,7 +167,7 @@ function App() {
 
           <button onClick={playAudio}>play</button>
         </div>
-        <AudioVisualiser audioData={buffer} audioContext={context}></AudioVisualiser>
+        <AudioVisualiser audioContext={context} audioSource={source.current}></AudioVisualiser>
       </div>
 
       {/* <BezierEditor
