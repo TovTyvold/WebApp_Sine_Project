@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 
 const WIDTH = document.body.offsetWidth * 0.8;
-const HEIGHT = 200;
+const HEIGHT = 100;
 
 interface IProps {
   audioCtx: AudioContext;
