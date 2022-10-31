@@ -2,6 +2,9 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
+import AudioVis from './components/AudioVisualiser';
+import AudioVisualiser from './AudioVisualizer';
+
 
 type Wave = {
   frequency: number | undefined;
@@ -150,6 +153,7 @@ function App() {
         <header>
           <h1>W.O.K.</h1>
         </header>
+        <AudioVisualiser audioCtx={context} audioSrc={source.current} />
         <div
           style={{
             width: '80vw',
@@ -160,6 +164,7 @@ function App() {
           <Flow submit={submit} />
         </div>
       </div>
+      <AudioVis audioContext={context} audioSource={source.current} ></AudioVis>
     </div>
   );
 }
