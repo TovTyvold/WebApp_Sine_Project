@@ -154,6 +154,7 @@ function App() {
           <h1>W.O.K.</h1>
         </header>
         <AudioVisualiser audioCtx={context} audioSrc={source.current} />
+        <AudioVis audioContext={context} audioSource={source.current} ></AudioVis>
         <div
           style={{
             width: '80vw',
@@ -164,7 +165,6 @@ function App() {
           <Flow submit={submit} />
         </div>
       </div>
-      <AudioVis audioContext={context} audioSource={source.current} ></AudioVis>
     </div>
   );
 }
