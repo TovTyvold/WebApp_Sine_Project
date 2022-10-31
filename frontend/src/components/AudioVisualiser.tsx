@@ -1,4 +1,4 @@
-import React, { Component, ContextType, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 
 interface IProps {
@@ -9,17 +9,12 @@ interface IProps {
 function AudioVis({ audioContext, audioSource }: IProps) {
     const node = useRef<HTMLCanvasElement>(document.createElement('canvas'));
     
-    
     const analyser = audioContext.createAnalyser();
     audioSource.connect(analyser);
     analyser.fftSize = 256;
 
     const bufferLength = analyser.frequencyBinCount;
-    //const dataArray = new Uint8Array(audioData.getChannelData(0).length);// new Uint8Array(bufferLength);
-    const dataArray =  new Uint8Array(bufferLength); // audioData.getChannelData(0)
-    
-
-    console.log("DataArray:", dataArray)
+    const dataArray =  new Uint8Array(bufferLength); 
 
     const WIDTH = document.body.offsetWidth * 0.805;
     const HEIGHT = 200;
@@ -36,12 +31,9 @@ function AudioVis({ audioContext, audioSource }: IProps) {
 
     
     const draw = () => {
-        // console.log("her", analyser.getByteFrequencyData(dataArray)) undefined
-        console.log("first", dataArray);
         requestAnimationFrame(draw);
 
         analyser.getByteFrequencyData(dataArray);
-        console.log("second", dataArray);
 
         if (context) {
             context.fillStyle = 'whitesmoke';
@@ -61,9 +53,6 @@ function AudioVis({ audioContext, audioSource }: IProps) {
     }
 
     draw(); 
-
-    
-    //console.log(audioData.getChannelData(0))
 
     return <canvas 
                 ref={node} 
