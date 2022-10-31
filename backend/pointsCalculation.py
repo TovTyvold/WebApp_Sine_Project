@@ -140,8 +140,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
             if k == "reverb":
                 _, points = recParse(v["points"])
                 _, duration = recParse(v["duration"])
-                _, wetdry = recParse(v["wetdry"]) #float in 0, 100
-                return ("points", filterAudio.Rev_Conv_Filter(points, duration, wetdry)[0])
+                _, mixPercent = recParse(v["mixPercent"]) #float in 0, 100
+                return ("points", filterAudio.Rev_Conv_Filter(points, duration, mixPercent)[0])
 
             if k == "lpf":
                 _, points = recParse(v["points"])
