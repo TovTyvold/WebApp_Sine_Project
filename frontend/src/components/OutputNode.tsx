@@ -29,7 +29,7 @@ function OutputNode({ data, id }: any) {
         defaultValue={data.pan}
         min={0}
         max={100}
-        unit=''
+        unit='%'
         onChange={onChange}
       />
       <SliderInput
