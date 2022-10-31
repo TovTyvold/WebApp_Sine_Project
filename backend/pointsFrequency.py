@@ -30,14 +30,14 @@ def signal_to_hertz(normalized_signal):
     #plt.savefig(f"backend/figures/demo/Periodogram.png")
 
     # Test Frequencies
-    """ 
+    
     freq_list = []
 
     for k in range(1,len(Pxx)-1):
         if Pxx[k-1] < Pxx[k] and Pxx[k] > Pxx[k+1]:
             freq_list.append(f[k])
 
-    
+    """ 
     print("Checking frequencies...")
     sorted_rand_freq = np.sort(freqs)
     #np. set_printoptions(threshold=np. inf)
@@ -73,7 +73,7 @@ def signal_to_hertz(normalized_signal):
     print(np.sort(freqs)) 
     """
 
-    return f, Pxx
+    return freq_list
 
 if __name__ == "__main__":
     a = 2
