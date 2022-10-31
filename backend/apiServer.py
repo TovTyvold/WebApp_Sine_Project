@@ -4,7 +4,7 @@ from re import A
 import uvicorn
 
 from typing import List, Optional, Dict, Union
-from fastapi import FastAPI, Response, HTTPException, WebSocket
+from fastapi import FastAPI, Response, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -24,55 +24,119 @@ def handleInput(query):
     nodes = query["nodes"]
     edges = query["edges"]
 
-    nodeKeep = ["id", "type", "data"]
-    edgeKeep = ["source", "sourceHandle", "target", "targetHandle"]
-    
-    def prune(dictlist, keep):
-        newList = []
-        for d in dictlist:
-            newD = {}
-            for k in d.keys():
-                if k in keep:
-                    newD[k] = d[k]
-
-            newList.append(newD)
-                
-        return newList
-                
-    # seconds = 0
-    # for node in nodes:
-    #     if node["type"] == "out":
-    #         seconds = float(node["data"]["seconds"])
-
     print(nodes)
-                
+    print(edges)
 
-    # nodes = prune(nodes, nodeKeep)
-    # edges = prune(edges, edgeKeep)
+    recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
+    recTree = dict((key, d[key]) for d in recTree for key in d)
 
-    adjList = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
-    adjList = dict((key, d[key]) for d in adjList for key in d)
+    sustainTime = recTree["output0"]["data"]["sustainTime"]
 
     for e in edges:
-        spos, source = e["sourceHandle"].split("-")
+        _, source = e["sourceHandle"].split("-")
         tpos, target = e["targetHandle"].split("-")
         source = source
         target = target
 
         if tpos == "in":
-            adjList[target][tpos].append(adjList[source])
+            recTree[target][tpos].append(recTree[source])
         else:
-            adjList[target]["data"][tpos] = adjList[source]
+            recTree[target]["data"][tpos] = recTree[source]
+
+    print(recTree)
 
     #convert the recurisve node format from the frontend into an AST 
-    def recClean(json):
-        dData = json["data"]
+    #json should be constant and not changed by this function.
+    def recClean(json:dict) -> dict:
+        if type(json) == int:
+            return {"num" : json/100}
         dType = json["type"]
-        dId = json["id"]
+        dData = json["data"]
         dChildren = json["in"]
 
         if dType == "out":
             return recClean(json["in"][0])
+
+        if dType == "effect":
+                child = recClean(dChildren[0])
+
+                if dData["effectName"] == "reverb":
+                    duration = float(dData["params"]["duration"])
+                    wetdry = float(dData["params"]["mixPercent"])
+
+                    return {
+                        "reverb" : {
+                            "points" : child,
+                            "duration": {"num":  duration},
+                            "wetdry": {"num": wetdry},
+                        }
+                    }
+
+                if dData["effectName"] in ["lpf", "hpf"]:
+                    cutoff = float(dData["params"]["cutoff"])
+
+                    return {
+                        dData["effectName"] : {
+                            "points" : child,
+                            "cutoff" : {"num": cutoff},
+                        }
+                    }
+
+                if dData["effectName"] in ["lfo-sin", "lfo-saw"]:
+                    rate = float(dData["params"]["rate"])
+
+                    return {
+                        dData["effectName"] : {
+                            "points" : child,
+                            "rate" : {"num": rate},
+                        }
+                    }
+
+                if dData["effectName"] == "dirac":
+                    precision = float(dData["params"]["precision"])
+                    rate = float(dData["params"]["rate"])
+
+                    return {
+                        "dirac" : {
+                            "points" : child,
+                            "rate" : {"num": rate},
+                            "precision" : {"num": precision},
+                        }
+                    }
+
+                if dData["effectName"] == "dirac":
+                    level = float(dData["params"]["level"])
+
+                    return {
+                        "dirac" : {
+                            "points" : child,
+                            "level" : {"num": level},
+                        }
+                    }
+
+        if dType == "mix":
+            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
+            value0 = recClean(dData["value0"]) if type(dData["value0"]) == dict else {"num" : float(dData["value0"])}
+            value1 = recClean(dData["value1"]) if type(dData["value1"]) == dict else {"num" : float(dData["value1"])}
+
+            return {"mix" : 
+                {
+                    "percent": percent,
+                    "value0": value0,
+                    "value1": value1
+                }
+            }
+
+        if dType == "pan":
+            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
+            points = recClean(dData["points"]) 
+
+            return {"pan" : 
+                {
+                    "percent": percent,
+                    "points": points
+                }
+            }
 
         if dType == "bezier":
             return {"bezier": dData["points"]}
@@ -82,7 +146,10 @@ def handleInput(query):
 
         if dType == "envelope":
             child = recClean(dChildren[0])
-            adsr = [float(f) for f in dData.values()]
+            #a,d,r are in ms, s is a percentage
+            #convert these to seconds and fraction
+            adsr = [float(dData["attack"])/1000, float(dData["decay"])/1000, float(dData["sustain"])/100, float(dData["release"])/1000]
+            # adsr = [float(f) for f in dData.values()]
 
             return {
                 "envelope" : {
@@ -91,25 +158,64 @@ def handleInput(query):
                 }
             }
 
-        if dType == "oscillator": #currently a leaf
+        if dType == "oscillator": 
+            data = {}
             for dk in dData.keys():
                 if dk in ["frequency", "amplitude"]:
-                    if type(dData[dk]) == str:
-                        dData[dk] = {"num" : float(dData[dk])}
+                    if type(dData[dk]) == dict:
+                        data[dk] = recClean(dData[dk]) 
+                        # dData[dk] = recClean(dData[dk]) 
                     else:
-                        dData[dk] = recClean(dData[dk])
+                        data[dk] = {"num" : float(dData[dk])}
 
             if "shape" not in dData:
-                dData["shape"] = "sin"
+                data["shape"] = "sin"
+            else:
+                data["shape"] = dData["shape"]
 
-            return {"wave" : dData}
+
+            return {"wave" : data}
 
         if dType == "operation":
-            return {"+" : [recClean(child) for child in dChildren]}
+            return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
-    adjList = recClean(adjList["output0"])
+    soundTree = recClean(recTree["output0"])
+    panTree = recClean(recTree["output0"]["data"]["pan"])
+    print("pantree\n",panTree)
 
-    return adjList
+    #go through the tree and find the largest topmost envelope time
+    def recFindEnv(tree : dict):
+        if (type(tree) != dict):
+            return 0
+
+        a = []
+        for key in tree.keys():
+            data = tree[key]
+
+            if (type(data) == list):
+                a.append(max([recFindEnv(child) for child in data]))
+            elif key == "envelope":
+                data = data["adsr"]["list"]
+                time = sum([data[0], data[1], data[3]])
+                a.append(time)
+            elif type(data) == dict:
+                a.append(recFindEnv(data))
+            else:
+                return 0
+
+        return max(a)
+    {'pan': {
+        'percent': {'+': [{'num': 0.5}, {'wave': {'frequency': {'num': 1.0}, 'amplitude': {'num': 0.5}, 'shape': 'sin'}}]}, 
+        'points': {'wave': {'frequency': {'num': 440.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}}
+    }
+
+    envelopeTime = recFindEnv(soundTree)
+    soundTree = {"pan" : { 
+        "percent" : panTree, 
+        "points" : soundTree
+    }}
+
+    return soundTree, sustainTime, envelopeTime
 
 
 CHUNKSIZE = 1024
@@ -118,23 +224,30 @@ SAMPLES = 44100
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    while (True):
-        #recieve wave information
-        query = await websocket.receive_json()
-        seconds = query["Seconds"]
-        query = handleInput(query["NodeTree"])
+    try:
+        while (True):
+            #recieve wave information
+            query = await websocket.receive_json()
+            query, sustainTime, envelopeTime = handleInput(query)
 
-        print(query)
-        print(seconds)
+            print("processesing: \n", query)
+            print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-        soundData = pointsCalculation.newparse(query, SAMPLES, seconds)
+            soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
 
-        #send chunkSize chunks of the sounddata until all is sent
-        cb = soundGen.samplesToCB(soundData)
-        data = cb.readChunk(CHUNKSIZE)
-        while data:
-            await websocket.send_bytes(data)
+            sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
+            await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})
+
+            # soundGen.play(soundData, channels)
+
+            #send chunkSize chunks of the sounddata until all is sent
+            cb = soundGen.samplesToCB(soundData)
             data = cb.readChunk(CHUNKSIZE)
+            while data:
+                await websocket.send_bytes(data)
+                data = cb.readChunk(CHUNKSIZE)
+    except WebSocketDisconnect:
+        print("disconnected")
 
 
 if __name__ == "__main__":
@@ -142,4 +255,3 @@ if __name__ == "__main__":
                             log_level="info", reload=True)
     server = uvicorn.Server(config)
     server.run()
-

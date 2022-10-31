@@ -14,8 +14,9 @@ def symmetricEnvelope(adsr, xsamples, ysamples, percent):
     return list(map(lambda a,b : a*b, ysamples, bz))
 
 def getSymmEnv(adsr, percent, first, final):
-    (A,D,S,R) = adsr
-    susLevel = 0.6
+    (A,D,Sper,R) = adsr
+    S = final - (A+D+R)
+    susLevel = Sper
 
     l = [(first, 0), (A*percent, (1-percent)), (A, 1), (A+D*(1-percent), susLevel + (1-percent)*(1-susLevel)),
          (A+D, susLevel), (A+D+S*0.5, susLevel), (A+D+S, susLevel), (A+D+S+R*(1-percent), (1-percent)*susLevel), (final, 0)]

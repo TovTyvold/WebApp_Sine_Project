@@ -31,6 +31,9 @@ function OscillatorNode({ data, id }: any) {
         type='target'
         position={Position.Left}
         style={{ top: 75 }}
+        onConnect={(p) => {
+          console.log('freq handle connect', p);
+        }}
       />
       <Handle
         id={'amplitude-' + id}
@@ -40,13 +43,17 @@ function OscillatorNode({ data, id }: any) {
       />
       <b>Oscillator</b>
 
-      <br />
+      <hr />
       <NumberInput
-        label='Frequency (Hz)'
         name='frequency'
+        defaultValue={data.frequency}
         onChange={onChange}
       />
-      <NumberInput label='Amplitude' name='amplitude' onChange={onChange} />
+      <NumberInput
+        name='amplitude'
+        defaultValue={data.amplitude}
+        onChange={onChange}
+      />
       <WaveTypeInput onChange={onChange} />
       <Handle id={'out-' + id} type='source' position={Position.Right} />
     </div>
