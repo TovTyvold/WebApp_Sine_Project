@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ContextMenu } from './components/ContextMenu';
 import ReactFlow, {
   ReactFlowProvider,
@@ -12,12 +6,11 @@ import ReactFlow, {
   addEdge,
   updateEdge,
   Background,
-  Controls,
   Edge,
   Connection,
   useNodesState,
   useEdgesState,
-  applyNodeChanges,
+  useKeyPress,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -37,7 +30,10 @@ const initialNodes: Node[] = [
   {
     id: 'output0',
     type: 'out',
-    data: {},
+    data: {
+      sustainTime: 2,
+      pan: 50,
+    },
     position: { x: 750, y: 250 },
     deletable: false,
   },
@@ -46,12 +42,12 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 const defaultData: Map<string, Object> = new Map([
-  ["oscillator", { frequency: 440, amplitude: 1, shape: "sin" }],
-  ["operation", { opType: "sum" }],
-  ["value", { value: 1 }],
-  ["envelope", { attack: 20, decay: 20, sustain: 60, release: 20 }],
+  ['oscillator', { frequency: 440, amplitude: 1, shape: 'sin' }],
+  ['operation', { opType: 'sum' }],
+  ['value', { value: 1 }],
+  ['envelope', { attack: 20, decay: 20, sustain: 60, release: 20 }],
   [
-    "bezier",
+    'bezier',
     {
       points: [
         [0, 0],
@@ -59,10 +55,11 @@ const defaultData: Map<string, Object> = new Map([
         [1, 1],
       ],
       start: 0,
-      end: 1
+      end: 1,
     },
   ],
-  ["mix", { percent: 50, value0: 0, value1: 1 }],
+  ['mix', { percent: 50, value0: 0, value1: 1 }],
+  ['pan', { percent: 50 }],
 ]);
 
 const Flow = ({ submit, onSecondsChange }: any) => {
@@ -96,16 +93,6 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     }),
     []
   );
-  useEffect(() => {
-    setNodes((nds) => {
-      nds.forEach((n) => {
-        if (n.id === 'output0') {
-          n.data.onchange = onSecondsChange;
-        }
-      });
-      return nds;
-    });
-  }, []);
 
   const getFlow = useCallback(() => {
     if (instance) {
@@ -116,8 +103,22 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     }
   }, [instance]);
 
+  useEffect(() => {
+    const playListener = (event: any) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        getFlow();
+      }
+    };
+    document.addEventListener('keydown', playListener);
+    return () => {
+      document.removeEventListener('keydown', playListener);
+    };
+  }, [getFlow]);
+
   const addNode = useCallback((nodeType: string, nodePos: any, view: any) => {
-    const def = defaultData.get(nodeType);
+    //perform a deep copy of defaultData of nodeType
+    let def : Object | undefined = defaultData.get(nodeType)
     let data: Object = def !== undefined ? def : {}
 
     const x = (1 / view.zoom) * (nodePos.x - view.x);
@@ -216,6 +217,6 @@ const Flow = ({ submit, onSecondsChange }: any) => {
 
 export default (props: any) => (
   <ReactFlowProvider>
-    <Flow submit={props.submit} onSecondsChange={props.onSecondsChange} />
+    <Flow submit={props.submit} />
   </ReactFlowProvider>
 );

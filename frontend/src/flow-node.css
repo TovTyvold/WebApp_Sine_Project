@@ -1,3 +1,4 @@
+.pan-node,
 .mix-node,
 .bezier-node,
 .val-node,
@@ -12,6 +13,16 @@
   background: white;
 }
 
+.pan-node {
+  border: 2px solid #e71;
+}
+.pan-node hr {
+  height: 2px;
+  border: none;
+  background-color: #e71;
+  border-radius: 15px;
+}
+
 .mix-node {
   border: 2px solid #f2a679;
 }
@@ -21,6 +32,7 @@
   background-color: #f2a679;
   border-radius: 15px;
 }
+
 .val-node {
   border: 2px solid #ff31c1;
 }
