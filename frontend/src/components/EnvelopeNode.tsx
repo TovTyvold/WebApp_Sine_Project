@@ -1,24 +1,23 @@
 import { useCallback, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
 import SliderInput from './SliderInput';
 
 function EnvelopeNode({ data, id }: any) {
-  const onChange = useCallback((event: any) => {
+  const onChange = useCallback((event: any, unit: string) => {
     event.preventDefault();
     const value = event.target.value;
     switch (event.target.name) {
       case 'attack':
-        data.attack = value;
+        data.attack = `${value}${unit}`;
         break;
       case 'decay':
-        data.decay = value;
+        data.decay = `${value}${unit}`;
         break;
       case 'sustain':
-        data.sustain = value;
+        data.sustain = `${value}${unit}`;
         break;
       case 'release':
-        data.release = value;
+        data.release = `${value}${unit}`;
         break;
       default:
         console.log('Error: incorrect target');

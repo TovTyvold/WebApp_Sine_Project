@@ -4,7 +4,7 @@ function SliderInput({
   name,
   label,
   defaultValue,
-  unit,
+  unit = '',
   step = 1,
   min,
   max,
@@ -14,7 +14,7 @@ function SliderInput({
   const onValueChange = useCallback((event: any) => {
     event.preventDefault();
     setSliderValue(event.target.value);
-    onChange(event);
+    onChange(event, unit);
   }, []);
 
   return (

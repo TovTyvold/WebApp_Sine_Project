@@ -3,9 +3,10 @@ import { Handle, Position } from 'reactflow';
 import SliderInput from './SliderInput';
 
 function OutputNode({ data, id }: any) {
-  const onChange = useCallback((event: any) => {
-    if (event.target.name === 'pan') data.pan = event.target.value;
-    if (event.target.name === 'sustain') data.sustainTime = event.target.value;
+  const onChange = useCallback((event: any, unit: string) => {
+    if (event.target.name === 'pan') data.pan = `${event.target.value}${unit}`;
+    if (event.target.name === 'sustain')
+      data.sustainTime = `${event.target.value}${unit}`;
   }, []);
   return (
     <div className='out-node'>
