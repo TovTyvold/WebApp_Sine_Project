@@ -2,7 +2,25 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
+import AudioVis from './components/AudioVisualiser';
 import AudioVisualiser from './AudioVisualizer';
+
+
+type Wave = {
+  frequency: number | undefined;
+  amplitude: number | undefined;
+  shape: string;
+  adsr?: number[];
+};
+
+const defaultInput: Wave = {
+  frequency: 440,
+  amplitude: 1,
+  shape: 'sin',
+  adsr: [1, 1, 3, 1],
+};
+
+const desiredFields = ['id', 'type', 'data', 'children'];
 
 const CHANNELS = 1;
 const dBuffer = new AudioBuffer({
@@ -29,6 +47,7 @@ function App() {
   const buffer = useRef<AudioBuffer>();
   const [isReady, setIsReady] = useState<boolean>(false);
   const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
+
 
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
@@ -135,6 +154,7 @@ function App() {
           <h1>W.O.K.</h1>
         </header>
         <AudioVisualiser audioCtx={context} audioSrc={source.current} />
+        <AudioVis audioContext={context} audioSource={source.current} ></AudioVis>
         <div
           style={{
             width: '80vw',

@@ -185,13 +185,6 @@ select {
   opacity: 1;
 }
 
-.slider::-webkit-slider-thumb {
-  appearance: none;
-
-  background: #d5d51c;
-  cursor: pointer;
-}
-
 .btn {
   font-weight: 0;
   font-size: 18px;
