@@ -244,3 +244,8 @@ select {
   color: #1f939e;
   border: solid 1px #1f939e;
 }
+
+.node-selected {
+  box-shadow: 4px 4px 4px grey;
+  /* border-width: 5px; */
+}

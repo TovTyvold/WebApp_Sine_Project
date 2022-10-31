@@ -18,28 +18,25 @@ export const ContextMenu = memo(
         <hr />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <button className='btn-small' onClick={() => onClick('oscillator')}>
-            Oscillator{' '}
+            Oscillator
           </button>
           <button className='btn-small' onClick={() => onClick('envelope')}>
-            Envelope{' '}
+            Envelope
           </button>
           <button className='btn-small' onClick={() => onClick('effect')}>
-            Effect{' '}
+            Effect
           </button>
           <button className='btn-small' onClick={() => onClick('operation')}>
-            Operation{' '}
+            Operation
           </button>
           <button className='btn-small' onClick={() => onClick('value')}>
-            Value{' '}
+            Value
           </button>
           <button className='btn-small' onClick={() => onClick('bezier')}>
-            Bezier{' '}
+            Bezier
           </button>
           <button className='btn-small' onClick={() => onClick('mix')}>
-            Mix{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('pan')}>
-            Pan{' '}
+            Mix
           </button>
         </div>
       </div>

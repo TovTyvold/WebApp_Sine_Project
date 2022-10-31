@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 import WaveTypeInput from './WaveTypeInput';
 
-function OscillatorNode({ data, id }: any) {
+function OscillatorNode({ data, id, selected }: any) {
   const onChange = useCallback(
     (event: any) => {
       const value = event.target.value;
@@ -25,7 +25,7 @@ function OscillatorNode({ data, id }: any) {
   );
 
   return (
-    <div className='osc-node'>
+    <div className={'osc-node' + (selected ? ' node-selected' : '')}>
       <Handle
         id={'frequency-' + id}
         type='target'

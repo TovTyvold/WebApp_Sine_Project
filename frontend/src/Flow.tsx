@@ -10,7 +10,7 @@ import ReactFlow, {
   Connection,
   useNodesState,
   useEdgesState,
-  useKeyPress,
+  OnSelectionChangeParams,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './flow-node.css';
@@ -59,12 +59,12 @@ const defaultData: Map<string, Object> = new Map([
     },
   ],
   ['mix', { percent: 50, value0: 0, value1: 1 }],
-  ['pan', { percent: 50 }],
 ]);
 
-const Flow = ({ submit, onSecondsChange }: any) => {
+const Flow = ({ submit }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const currentNode = useRef<Node>();
   const [instance, setInstance] = useState<any>(null);
   const edgeUpdateSuccessful = useRef(true);
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -136,6 +136,33 @@ const Flow = ({ submit, onSecondsChange }: any) => {
     setShowContextMenu(false);
   }, []);
 
+  useEffect(() => {
+    const duplicateListener = (event: any) => {
+      if (event.ctrlKey && event.key === 'd') {
+        event.preventDefault();
+        if (currentNode.current) {
+          const c: Node = currentNode.current;
+
+          const newPos = { x: c.position.x + 100, y: c.position.y + 100 };
+          if (c.type) addNode(c.type, newPos, currView);
+        }
+      }
+    };
+    document.addEventListener('keydown', duplicateListener);
+    return () => {
+      document.removeEventListener('keydown', duplicateListener);
+    };
+  }, []);
+
+  const onSelectionChange = useCallback(
+    ({ nodes, edges }: OnSelectionChangeParams) => {
+      nodes.forEach((node: Node) => {
+        if (node.selected) currentNode.current = node;
+      });
+    },
+    []
+  );
+
   const removeNode = useCallback((n: Node) => {
     setNodes((nds) => nds.filter((node) => node.id !== n.id));
   }, []);
@@ -191,6 +218,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       edges={edges}
       onPaneContextMenu={onPaneContextMenu}
       onPaneClick={onPaneClick}
+      onSelectionChange={onSelectionChange}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onEdgeUpdate={onEdgeUpdate}
@@ -208,7 +236,7 @@ const Flow = ({ submit, onSecondsChange }: any) => {
       <ContextMenu
         show={showContextMenu}
         position={contextPosition}
-        onClick={(e: any) => addNode(e, contextPosition, currView)}
+        onClick={(n: any) => addNode(n, contextPosition, currView)}
       />
       <ControllButtons getFlow={getFlow} />
       <Background />
