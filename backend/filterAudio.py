@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pointsFrequency import signal_to_hertz
 from plotting import plot_array 
-from pointsNoise import coloredNoise
+from pointsNoise import cNoise
+from coloredNoise import white_noise, brownian_noise, pink_noise, blue_noise, violet_noise
 
 
 
@@ -260,9 +261,15 @@ def vibratoFunc(input, Modfreq, width, W):
     Inputs:
     -----------------------------
     input - dtype ndarray: Signal
-    Modfreq - dtype float/int: The frequency the sinusoidal wave that creates vibrato should have
-    width - dtype float/int: Length of the delay signal. 
-    W - dtype float/int: Speed of the increase in frequency. High W results in a larger low-frequency variance domain.
+    Modfreq - dtype float/int: The frequency the sinusoidal wave that creates vibrato. 
+        0.1 < Modfreq < 5
+    width - dtype float/int: Length of each vibrato-effect. 
+        0.0003 < width < 0.003
+    W - dtype float/int: Speed of the increase/decrease in frequency. 
+        Can take any W > 0. 
+        For 0 < W < 1 we have decreasing frequency
+        For 1 < W we have increasing frequency.
+        For W = 1 or W = 0 we have a plain vibrato.
     Returns:
     ----------------------------
     x - dtype ndarray: Array with input filtered
@@ -281,12 +288,12 @@ def vibratoFunc(input, Modfreq, width, W):
     WIDTH = int(width * Fs)
  
     length = len(input)
-    if W == 0:
-        MODFREQ = Modfreq/Fs 
+    if W == 0 or W == 1:
+        MODFREQ = Modfreq/Fs + np.zeros(length)
     else:
         if  0 < W  < 1:
-            MODFREQ = Modfreq / (Fs * 2)
-        elif W >= 1:
+            MODFREQ = np.linspace(Modfreq, Modfreq * W, length) / Fs 
+        elif W > 1:
             MODFREQ = np.linspace(Modfreq/(W), Modfreq, length) / Fs
     L = 1 + DELAY + WIDTH*2
     
@@ -327,11 +334,12 @@ def whiteChorus(input, width):
 
     Example input for parameters:
     ----------------------------
-    input = signal; Modfreq = 1.5; width = 0.003; W = 4
+    input = signal; width = 0.003; 
     """
     # Get lowpass noise
-    lowpass_noise = coloredNoise(input, noise_intensity=  10,exponent = 1, fmin = 0.01)
-    lowpass_noise = lowpass_noise / np.max(np.abs(lowpass_noise))
+    
+    lp_noise = brownian_noise(len(input))
+    lowpass_noise = low_pass_Filter(lp_noise, 1)
     Fs = 44100
     Delay = width 
 
@@ -342,13 +350,14 @@ def whiteChorus(input, width):
     length = len(input)
     MODFREQ = lowpass_noise / Fs
     L = 1 + DELAY + WIDTH*2
-
+    print(MODFREQ)
     BL = 0.7
     FF = 1
     FB = -0.7
     x = np.zeros_like(input)
     Delayline = np.zeros(L)
     for n in range(length):
+        
         DelaylineS = []
         # Time delay
         MOD = MODFREQ[n]
