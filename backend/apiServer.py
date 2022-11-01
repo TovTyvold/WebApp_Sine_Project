@@ -14,44 +14,20 @@ app.add_middleware(CORSMiddleware, allow_origins=origins,
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
-#converts numbers with units to floats e.g. 100ms to 0.1, 100% to 1
-def parseTypedNumber(xs: str) -> Tuple[str, float]:
-    if type(xs) != str:
-        print("warning, passed non str", xs, "to parseTypedNumber")
-        return "", xs
-
-    def find(pred, xs):
-        for i in range(len(xs)):
-            if pred(xs[i]):
-                return i
-        return len(xs)
-
-    nonNumberIndex = find(lambda a : not(a.isdigit() or a == "."), xs)
-    t = xs[nonNumberIndex:]
-    v = (xs[:nonNumberIndex])
-    v = 0 if v == "" else float(v)
-    return (t, v)
-
-
-def convertToNumber(xs:str) -> float:
-    t, v = parseTypedNumber(xs)
-
-    if t == "ms":
-        return v/1000
-    if t == "%":
-        return v/100
-    else:
-        return v
-
-
 #convert recTree recursively into an AST
 #json should be constant and not changed by this function.
 def recClean(json: Union[dict, str, float, int]) -> dict:
     if type(json) in [str, float, int]:
-        return {"num": convertToNumber(json)}
+        return {"num": float(json)}
 
     if type(json) == list:
-        return [{"num": convertToNumber(v)} for v in json]
+        return [{"num": float(v)} for v in json]
+
+    if "percent" in json:
+        return {"num": float(json["percent"]) / 100}
+
+    if "ms" in json:
+        return {"num": float(json["ms"]) / 1000}
 
     dType = json["type"]
     dData = json["data"]
@@ -139,7 +115,7 @@ def handleInput(query):
         }}
 
 
-    sustainTime = convertToNumber(recTree["output0"]["data"]["sustainTime"])
+    sustainTime = recTree["output0"]["data"]["sustainTime"]["sec"]
     envelopeTime = recFindEnv(soundTree)
     return soundTree, sustainTime, envelopeTime
 

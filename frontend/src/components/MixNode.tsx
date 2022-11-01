@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 import SliderInput from './SliderInput';
 
-function MixNode({ data, id }: any) {
+function MixNode({ data, id, selected }: any) {
   const onChange0 = useCallback(
     (event: any, unit: string) => {
       data.value0 = `${event.target.value}${unit}`;
@@ -24,7 +24,7 @@ function MixNode({ data, id }: any) {
   );
 
   return (
-    <div className='mix-node'>
+    <div className={'mix-node' + (selected ? ' node-selected' : '')}>
       <b>Mix</b>
       {/* <Handle type='source' position={Position.Right} /> */}
       <Handle id={'out-' + id} type='source' position={Position.Right} />

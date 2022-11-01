@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 import NumberInput from './NumberInput';
 
-function ValueNode({ data, id }: any) {
+function ValueNode({ data, id, selected }: any) {
   const onChange = useCallback(
     (event: any) => {
       data.value = event.target.value;
@@ -11,7 +11,7 @@ function ValueNode({ data, id }: any) {
   );
 
   return (
-    <div className='val-node'>
+    <div className={'val-node' + (selected ? ' node-selected' : '')}>
       <b>Value</b>
       <hr />
       {/* <Handle type='source' position={Position.Right} /> */}

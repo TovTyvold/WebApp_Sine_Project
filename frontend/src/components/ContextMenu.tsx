@@ -1,7 +1,24 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 
 export const ContextMenu = memo(
   ({ show, position, onClick }: any): JSX.Element | null => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const options = [
+      'oscillator',
+      'envelope',
+      'effect',
+      'operation',
+      'value',
+      'bezier',
+      'mix',
+    ];
+
+    useEffect(() => {
+      if (!show) setSearchTerm('');
+    }, [show]);
+
+    useEffect(() => {}, [searchTerm]);
+
     return show ? (
       <div
         style={{
@@ -15,32 +32,34 @@ export const ContextMenu = memo(
           padding: '10px',
         }}>
         <b> Add Node</b>
+        <br />
+        <input
+          type='text'
+          placeholder='Search'
+          onChange={(event: any) => {
+            setSearchTerm(event.target.value);
+          }}
+        />
         <hr />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <button className='btn-small' onClick={() => onClick('oscillator')}>
-            Oscillator{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('envelope')}>
-            Envelope{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('effect')}>
-            Effect{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('operation')}>
-            Operation{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('value')}>
-            Value{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('bezier')}>
-            Bezier{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('mix')}>
-            Mix{' '}
-          </button>
-          <button className='btn-small' onClick={() => onClick('pan')}>
-            Pan{' '}
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column' }} id='ctxMenu'>
+          {options
+            .filter((option) => {
+              if (searchTerm === '') {
+                return option;
+              } else if (option.includes(searchTerm.toLocaleLowerCase())) {
+                return option;
+              }
+            })
+            .map((option) => {
+              return (
+                <button
+                  key={option}
+                  className='btn-small'
+                  onClick={() => onClick(option)}>
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </button>
+              );
+            })}
         </div>
       </div>
     ) : null;

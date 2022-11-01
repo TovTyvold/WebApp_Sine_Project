@@ -20,7 +20,7 @@ function FilterEffect2(props: any) {
 
 const params: any = {};
 
-function EffectNode({ data, id }: any) {
+function EffectNode({ data, id, selected }: any) {
   const [selection, setSelection] = useState('reverb');
 
   const onSelectionChange = useCallback((event: any) => {
@@ -39,7 +39,7 @@ function EffectNode({ data, id }: any) {
   );
 
   return (
-    <div className='eff-node'>
+    <div className={'eff-node' + (selected ? ' node-selected' : '')}>
       <Handle id={'in-' + id} type='target' position={Position.Left} />
 
       <b>Effect</b>
