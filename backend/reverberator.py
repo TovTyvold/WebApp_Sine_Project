@@ -2,7 +2,15 @@ import numpy as np
 import scipy.signal as signal
 import matplotlib.pyplot as plt 
 
+"""
+Module for applying reverb to the input signal 
 
+Main function is main_reverb, which computes the delay line, calls both comb and all-pass and goes through the algo.  
+
+To produce a reverb effect, call main_reverb with the signal as input.
+
+Wet/dry parameter is to be added.
+"""
 def allPass(input, delay, gain):
     B = np.zeros(delay) 
     B[0] = gain 
@@ -44,12 +52,7 @@ def delay(input, delay, gain = 1):
     return output
 
 
-def main(input):
-    sample_rate = 44100
-    num_samples = len(input)
-
-
-
+def main_reverb(input):
     delays = [2205, 2469, 2690, 2998, 3175, 3439]
     delays_early = [877, 1561, 1715, 1825, 3082, 3510]
     gains_early = [1.02, 0.818, 0.635, 0.719, 0.267, 0.242]
@@ -60,8 +63,8 @@ def main(input):
     allpass_g = 0.7 
 
     output_gain = 0.075 
-    dry = 1 
-    wet = 1 
+    dry = 1
+    wet = 1
     width = 1
     wet1 = wet * (width / 2 + 0.5)
     wet2 = wet * ((1 - width) / 2)
@@ -69,9 +72,7 @@ def main(input):
     early_reflections = np.zeros_like(input)
     combs_out = np.zeros_like(input)
 
-
     # Algo 
-
     for i in range(6):
         early_reflections = early_reflections + delay(input, delays_early[i], gains_early[i])[:len(input)]
 
@@ -94,28 +95,31 @@ if __name__ == "__main__":
     frequencies = [50]
     n_signals = len(frequencies)
     amplitudes = [1]
-    t = 1
+    t = 2
     Amp_array = 1
     N = Fs 
-    t_vec = np.arange(N)*(T*t) 
+    t_vec = np.arange(t * N)*(T*t) 
     y = np.zeros((n_signals,len(t_vec)))
     k = 0
     y_sum = 0
     omega = 2 * np.pi
-    #sine_add = np.sin(np.linspace(-8 * np.pi,8 * np.pi,len(t_vec)))
-    #omega = 2 * np.pi* sine_add
+    sine_add = np.sin(np.linspace(-8 * np.pi,8 * np.pi,len(t_vec)))
+    omega = 2 * np.pi* sine_add
+    
     for i in range(n_signals):
         y[k] = (Amp_array * amplitudes[k]) * np.sin(omega* frequencies[i] * t_vec)
         y_sum += y[k] 
         k += 1  
     input = y_sum 
-    rev_out = main(input)
+    
+    rev_out = main_reverb(input)
 
-
-
+    from soundGen import play
     Fs_n = len(rev_out)
     T = 1/Fs
     N = Fs_n 
     t_vec_r = np.arange(int(N))*(T*t)
+
+    play(rev_out)
     plt.plot(t_vec_r, rev_out)
     plt.show() """
