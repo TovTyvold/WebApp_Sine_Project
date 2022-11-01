@@ -338,24 +338,26 @@ def whiteChorus(input, width):
     """
     # Get lowpass noise
     
-    lp_noise = brownian_noise(len(input))
-    lowpass_noise = low_pass_Filter(lp_noise, 1)
+    lowpass_noise = white_noise(len(input))
+    #lowpass_noise = low_pass_Filter(lowpass_noise,10)
     Fs = 44100
     Delay = width 
 
     # WIDTH can't be greater than DELAY.
     DELAY = int(Delay * Fs)
     WIDTH = int(width * Fs)
+    print("Delay", DELAY)
+    print("Width", WIDTH)
  
     length = len(input)
-    MODFREQ = lowpass_noise / Fs
+    MODFREQ = (lowpass_noise/10)
     L = 1 + DELAY + WIDTH*2
+    print(np.max(MODFREQ))
     print(MODFREQ)
-    BL = 0.7
-    FF = 1
-    FB = -0.7
     x = np.zeros_like(input)
     Delayline = np.zeros(L)
+
+    FB = -0.7; BL = 0.7; FF = 1
     for n in range(length):
         
         DelaylineS = []
@@ -374,11 +376,34 @@ def whiteChorus(input, width):
         DelaylineS.append(DelaylineS_)
         Delayline = list(DelaylineS) + list(Delayline[:L-1])
         x[n] =  BL * Delayline[i] + FF * (DelaylineS_) + input[n]
+    
+    """ for n in range(length):
+        DelaylineS = []
+        # Time delay
+        MOD = MODFREQ[n]
+        TAP = 1 + DELAY + WIDTH * MOD 
+        i = int(TAP)
+        frac = TAP - i 
+        # Time index-delay -> K
+        # System of equations
+        # -------------------
+        # Delay Line and
+        # Spline Comb -> Chorus equation
+        g1 = (frac**(3))/6
+        g2 = ((1+frac)**3 - 4*(frac)**3)/6
+        g3 = ((2-frac)**3 - 4*(1 - frac)**3)/6
+        g4 = ((1 - frac)**(3))/6
 
+        DelaylineS.append(input[n]) 
+        Delayline = list(DelaylineS) + list(Delayline[:L-1])
 
+        x[n] = Delayline[i+1] * g1 + Delayline[i] * g2 \
+            + Delayline[i-1] * g3 + Delayline[i-2] * g4 
+     """
     # Normalize:
-    g = BL + FF + FB
-    x = (x * g)/ np.max(np.abs(x))
+    g = FF + BL + FB
+    #g = g1 + g2 + g3 + g4 
+    x = (x * g) / np.max(np.abs(x))
     return x
 
 
