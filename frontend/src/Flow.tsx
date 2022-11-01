@@ -130,8 +130,9 @@ const Flow = ({ submit }: any) => {
         nodeData = data;
       } else {
         //perform a deep copy of defaultData of nodeType
-        const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
-        nodeData = def !== undefined ? def : {};
+        // const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
+        const def = defaultData.get(nodeType);
+        nodeData = def !== undefined ? JSON.parse(JSON.stringify(def)) : {};
       }
 
       const x = (1 / view.zoom) * (nodePos.x - view.x);
@@ -171,7 +172,6 @@ const Flow = ({ submit }: any) => {
     const ctxMenuListener = (event: any) => {
       if (event.ctrlKey && event.key === 'a') {
         event.preventDefault();
-        console.log('gang');
         onPaneContextMenu(event, true);
       }
     };
