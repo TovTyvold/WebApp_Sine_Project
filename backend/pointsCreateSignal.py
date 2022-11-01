@@ -1,17 +1,16 @@
 
-from ast import Mod
 import time
 import numpy as np 
 import matplotlib.pyplot as plt
 from numpy.linalg import norm
-from torch import sign
+from matplotlib.widgets import Slider, Button 
 
 from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete, weierstrassFunc,\
-     Rev_Conv_Filter, semitoneFunc, singleShift, vibratoFunc, whiteChorus, reverberatorFunc
-from reverberator import main
+    semitoneFunc, singleShift, vibratoFunc, whiteChorus
+from reverberator import main_reverb
+from coloredNoise import plot_spectrum, white_noise, brownian_noise, violet_noise, pink_noise, blue_noise
 from soundGen import play
 from pointsFrequency import signal_to_hertz
-from ADSR_mod import ADSR
 from pointsNoise import coloredNoise
 from plotting import plot_array
 from pointsCalculation import noteToFreq
@@ -19,77 +18,76 @@ from pointsCalculation import noteToFreq
 plt.style.use('ggplot')
 
 
-def Create_Sine(amplitudes, frequencies, Fs):
-    t0 = time.time()
-    n_signals = len(frequencies)
-
-    # Set variables
+def Create_Sine(amplitudes, frequencies):
+    Fs = 44100
     T = 1/(Fs) 
     N = Fs
-    
-    t = 2
-    Amp_array = 1
-    N = Fs 
-    t_vec = np.arange(t*N)*(T*t) 
-    y = np.zeros((n_signals,len(t_vec)))
-    k = 0
-    y_sum = 0
-    omega = 2 * np.pi
-    sine_add = np.sin(np.linspace(-12 * np.pi,12 * np.pi,len(t_vec)))
-    omega = 2 * np.pi* sine_add
-    for i in range(n_signals):
-        y[k] = (Amp_array * amplitudes[k]) * np.sin(omega* frequencies[i] * t_vec)
-        y_sum += y[k] 
-        k += 1  
+    t = 1
+    t0 = time.time()
+
+    # Set variables
+    def slider_plot(amplitudes, frequencies, t_vec):  
+        y = np.zeros(len(t_vec))
+
+        #omega = 2 * np.pi
+        sine_add = np.sin(np.linspace(-12 * np.pi,12 * np.pi,len(t_vec)))
+        omega = 2 * np.pi* sine_add
+        y = amplitudes * np.sin(omega * frequencies * t_vec)  
+        return y
+
+    init_amp = amplitudes[0]
+    init_freq = frequencies[0]
+    t_vec = np.arange(t*N)*(T*t)
+
+    y = slider_plot(amplitudes, frequencies, t_vec)
 
 
-    normalized_y = y_sum/np.max(abs(y_sum)) 
-    #play(normalized_y.copy())
-    #width = 0.001
-    #Modfreq = 2.5 # Hertz to passs to sine wave, Should be between 0.1-5 Hz
-    #W = 2
-    #y_shifted = singleShift(normalized_y.copy(), n=2, shift_ = 200)
-    
-    #y_vibrato = vibratoFunc(normalized_y.copy(), Modfreq, width, W)
-    #y_chorus = whiteChorus(normalized_y.copy(), width) 
-    """ ya = 0
-    k = 0
-    for i in frequencies:
-        ya += amplitudes[k] * np.sin(omega * (i+200) * t_vec)
-        k+=1
-    ya = ya / np.max(np.abs(ya)) """
-    #rev_y, t_vec_r = Rev_Conv_Filter(normalized_y.copy(), Duration_inp=t+ 2, DryWet_ = 100)
-    #reverberator = reverberatorFunc(normalized_y.copy(), DryWet = 0.7)
-    rev_out = main(normalized_y.copy()) 
-    Fs_n = len(rev_out)
-    T = 1/Fs
-    N = Fs_n 
-    t_vec_r = np.arange(int(N))*(T*t)
+    fig, ax = plt.subplots()
+    line, = ax.plot(t_vec, slider_plot(init_amp, init_freq, t_vec), lw=2)
 
-    plt.figure()
-    plt.plot(t_vec_r, rev_out, 'g')
-    plt.figure()
-    plt.plot(t_vec, normalized_y.copy(), 'y')
+    fig.subplots_adjust(left= 0.25, bottom = 0.25)
 
-    #play(y_vibrato)
-    plt.ion()
-    play(list(normalized_y.copy()) + list(rev_out))
-    #play(rev_out)
+    axfreq = fig.add_axes([0.25, 0.1, 0.65, 0.03])
+    freq_slider = Slider(ax=axfreq, label = 'Frequency [Hz]', valmin = 0.1, valmax = 40, valinit=init_freq)
+
+    axamp = fig.add_axes([0.1, 0.25, 0.0225, 0.63])
+    amp_slider = Slider(ax=axamp, label = 'Amplitude', valmin = 0, valmax = 10, valinit=init_amp, orientation='vertical')
+
+    def update(val):
+        line.set_ydata( slider_plot(amp_slider.val, freq_slider.val, t_vec))
+        fig.canvas.draw_idle()
+
+    freq_slider.on_changed(update)
+    amp_slider.on_changed(update)
+
+    resetax = fig.add_axes([0.8, 0.025, 0.1, 0.04])
+    button = Button(resetax, 'Reset', hovercolor = '0.975')
+
+    def reset(event):
+        freq_slider.reset()
+        amp_slider.reset()
+    button.on_clicked(reset)
     plt.show()
-    plt.pause(2)
-    plt.ioff() 
+
+    """ plt.ion()
+    plt.figure()
+    plt.show()
+    plt.pause(4)
+    plt.ioff()  """
+
+
 
     t1 = time.time()
     total = t1-t0
     print(f"Timing stopped, END OF FUNCTION! It took {total:0.7f}s")
-    return t_vec, Fs, frequencies
+    return Fs, frequencies
 
 
 
 t0_func = time.time()
 print("Timing outside func started....")
 
-Create_Sine([1], [50], 44100)
+Create_Sine([1], [50])
 
 
 t1_func = time.time()

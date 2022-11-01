@@ -161,7 +161,7 @@ def hilbert(y):
     """
     return np.imag(signal.hilbert(y))
 
-# TODO Be able to pitch signals that have semirandom frequencies
+# To do: Be able to pitch signals that have semirandom frequencies
 def semitoneFunc(input, shift_):
     """
     Currently can only take in a single frequency.
@@ -357,13 +357,10 @@ def whiteChorus(input, width):
         frac = TAP - i 
         # Time index-delay -> K
         K = MOD + frac
-        #print(K)
         # System of equations
         # -------------------
-        # Delay Line
-        #x_h = input[n] + FB * input[int(n-K)]
-        #All-Pass Comb -> Chorus equation 
-        #x[n] =  BL * input[i] + FF * (x_h) + input[n]
+        # Delay Line and
+        # All-Pass Comb -> Chorus equation 
         DelaylineS_ = input[n] + FB * input[int(n-K)]
         DelaylineS.append(DelaylineS_)
         Delayline = list(DelaylineS) + list(Delayline[:L-1])
@@ -372,10 +369,6 @@ def whiteChorus(input, width):
 
     # Normalize:
     g = BL + FF + FB
-    #L2 = 1/(np.sqrt(1 - g*g))
-    #L_inf = 1/(1 - np.abs(g))
-    #c_1 = 1/L_inf 
-    #c_2 = 1/L2
     x = (x * g)/ np.max(np.abs(x))
     return x
 
