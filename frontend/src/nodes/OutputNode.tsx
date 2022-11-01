@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import SliderInput from './SliderInput';
+import SliderInput from '../components/SliderInput';
 
 function OutputNode({ data, id }: any) {
   const onChange = useCallback((event: any) => {

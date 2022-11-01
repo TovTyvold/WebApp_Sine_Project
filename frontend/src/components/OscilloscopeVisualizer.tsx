@@ -8,7 +8,7 @@ interface IProps {
   audioSrc: AudioBufferSourceNode;
 }
 
-function AudioVisualiser({ audioCtx, audioSrc }: IProps) {
+function OscilloscopeVisualizer({ audioCtx, audioSrc }: IProps) {
   const node = useRef<HTMLCanvasElement>(document.createElement('canvas'));
   const canvas = node.current;
 
@@ -62,4 +62,4 @@ function AudioVisualiser({ audioCtx, audioSrc }: IProps) {
     </>
   );
 }
-export default AudioVisualiser;
+export default OscilloscopeVisualizer;

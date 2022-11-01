@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import SliderInput from './SliderInput';
+import SliderInput from '../components/SliderInput';
 
 function EnvelopeNode({ data, id, selected }: any) {
   const onChange = useCallback((event: any) => {

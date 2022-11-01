@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { BezierCurveEditor } from 'react-bezier-curve-editor';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
+import NumberInput from '../components/NumberInput';
 
 function BezierNode({ data, id, selected }: any) {
   const point = useRef<[number, number, number, number]>([0.5, 0.5, 1, 1]);

@@ -16,14 +16,14 @@ import './flow-node.css';
 
 import { ContextMenu } from './components/ContextMenu';
 import ControllButtons from './components/ControlButtons';
-import EnvelopeNode from './components/EnvelopeNode';
-import OscillatorNode from './components/OscillatorNode';
-import OperationNode from './components/OperationNode';
-import EffectNode from './components/EffectNode';
-import OutputNode from './components/OutputNode';
-import MixNode from './components/MixNode';
-import ValueNode from './components/ValueNode';
-import BezierNode from './components/BezierNode';
+import EnvelopeNode from './nodes/EnvelopeNode';
+import OscillatorNode from './nodes/OscillatorNode';
+import OperationNode from './nodes/OperationNode';
+import EffectNode from './nodes/EffectNode';
+import OutputNode from './nodes/OutputNode';
+import MixNode from './nodes/MixNode';
+import ValueNode from './nodes/ValueNode';
+import BezierNode from './nodes/BezierNode';
 
 const initialNodes: Node[] = [
   {
@@ -170,7 +170,7 @@ const Flow = ({ submit }: any) => {
 
   useEffect(() => {
     const ctxMenuListener = (event: any) => {
-      if (event.ctrlKey && event.key === 'a') {
+      if (event.shiftKey && event.key === 'A') {
         event.preventDefault();
         onPaneContextMenu(event, true);
       }
@@ -225,8 +225,6 @@ const Flow = ({ submit }: any) => {
     let viewport_x;
     let viewport_y;
     const boundingBox = event.target.getBoundingClientRect();
-
-    console.log(boundingBox);
     if (hotkey) {
       viewport_x = 300;
       viewport_y = 200;

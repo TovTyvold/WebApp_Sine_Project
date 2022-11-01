@@ -2,9 +2,8 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
-import AudioVis from './components/AudioVisualiser';
-import AudioVisualiser from './AudioVisualizer';
-
+import BarGraphVisualizer from './components/BarGraphVisualizer';
+import OscilloscopeVisualizer from './components/OscilloscopeVisualizer';
 
 type Wave = {
   frequency: number | undefined;
@@ -48,19 +47,20 @@ function App() {
   const [isReady, setIsReady] = useState<boolean>(false);
   const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
 
-
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
     for (let ch = 0; ch < channels.current; ch++) {
       for (let i = 0; i < chunk.length / channels.current; i++) {
-        buffer.current.getChannelData(ch)[Math.floor(floatsRead.current / channels.current) + i] = chunk[channels.current * i + ch % channels.current];
+        buffer.current.getChannelData(ch)[
+          Math.floor(floatsRead.current / channels.current) + i
+        ] = chunk[channels.current * i + (ch % channels.current)];
       }
     }
 
     floatsRead.current += chunk.length;
 
-    console.log(buffer.current.length)
-    if (floatsRead.current >= channels.current*buffer.current.length) {
+    console.log(buffer.current.length);
+    if (floatsRead.current >= channels.current * buffer.current.length) {
       if (!isReady) {
         setIsReady(true);
       }
@@ -72,22 +72,19 @@ function App() {
       if (expectedSampleCount.current) {
         composeAudio(event.data, buffer);
       }
-    } 
-    else {
-      const format = JSON.parse(event.data)
+    } else {
+      const format = JSON.parse(event.data);
       expectedSampleCount.current = format.SampleCount;
       channels.current = format.Channels;
 
-      console.log(expectedSampleCount.current, channels.current)
+      console.log(expectedSampleCount.current, channels.current);
 
       if (expectedSampleCount.current) {
-        buffer.current = (
-          new AudioBuffer({
-            numberOfChannels: channels.current,
-            length: expectedSampleCount.current,
-            sampleRate: 44100,
-          })
-        );
+        buffer.current = new AudioBuffer({
+          numberOfChannels: channels.current,
+          length: expectedSampleCount.current,
+          sampleRate: 44100,
+        });
       }
     }
   };
@@ -108,9 +105,9 @@ function App() {
     //ws.onopen = () => (console.log(ws))
 
     return () => {
-      ws.removeEventListener("close", onClose)
-      ws.close(1000)
-    }
+      ws.removeEventListener('close', onClose);
+      ws.close(1000);
+    };
   }, [ws, setWs]);
 
   //when a tree is ready send it
@@ -153,8 +150,11 @@ function App() {
         <header>
           <h1>W.O.K.</h1>
         </header>
-        <AudioVisualiser audioCtx={context} audioSrc={source.current} />
-        <AudioVis audioContext={context} audioSource={source.current} ></AudioVis>
+        <OscilloscopeVisualizer audioCtx={context} audioSrc={source.current} />
+        <BarGraphVisualizer
+          audioContext={context}
+          audioSource={source.current}
+        />
         <div
           style={{
             width: '80vw',

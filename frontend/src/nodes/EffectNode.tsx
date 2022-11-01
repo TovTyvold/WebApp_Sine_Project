@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
+import NumberInput from '../components/NumberInput';
 
 function FilterEffect1({ name, onChange }: any) {
   return (
