@@ -59,7 +59,6 @@ const defaultData: Map<string, Object> = new Map([
     },
   ],
   ['mix', { percent: 50, value0: 0, value1: 1 }],
-  ['pan', { percent: 50 }],
 ]);
 
 const Flow = ({ submit, onSecondsChange }: any) => {

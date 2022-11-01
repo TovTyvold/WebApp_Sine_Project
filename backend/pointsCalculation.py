@@ -202,11 +202,12 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
 
             if k == "envelope":
                 (_, wave) = recParse(v["points"])
-                (_, adsr) = recParse(v["adsr"])
+                (_, attack) = recParse(v["attack"])
+                (_, decay) = recParse(v["decay"])
+                (_, sustain) = recParse(v["sustain"])
+                (_, release) = recParse(v["release"])
 
-                #envelope.symmetricEnvelope(adsr, genSamples(samples, seconds), points, 0.75)
-                # print(adsr)
-                adsr = envelope.getSymmEnv(adsr, 0.75, 0, sustainTime + (adsr[0]+adsr[1]+adsr[3]))
+                adsr = envelope.getSymmEnv([attack, decay, sustain, release], 0.75, 0, sustainTime + (attack+decay+release))
 
                 ypoints = list(
                     map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))
