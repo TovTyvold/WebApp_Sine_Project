@@ -1,17 +1,11 @@
-from asyncio.windows_events import INFINITE
-from operator import mod
-from re import A
 import uvicorn
 
-from typing import List, Optional, Dict, Union
-from fastapi import FastAPI, Response, HTTPException, WebSocket, WebSocketDisconnect
+from typing import List, Optional, Dict, Union, Tuple
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 import pointsCalculation
 import soundGen
-import ADSR_mod
-import copy
 
 app = FastAPI()
 
@@ -19,18 +13,107 @@ origins = ["http://localhost", "http://localhost:3000"]
 app.add_middleware(CORSMiddleware, allow_origins=origins,
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+
+#converts numbers with units to floats e.g. 100ms to 0.1, 100% to 1
+def parseTypedNumber(xs: str) -> Tuple[str, float]:
+    if type(xs) != str:
+        print("warning, passed non str", xs, "to parseTypedNumber")
+        return "", xs
+
+    def find(pred, xs):
+        for i in range(len(xs)):
+            if pred(xs[i]):
+                return i
+        return len(xs)
+
+    nonNumberIndex = find(lambda a : not(a.isdigit() or a == "."), xs)
+    t = xs[nonNumberIndex:]
+    v = (xs[:nonNumberIndex])
+    v = 0 if v == "" else float(v)
+    return (t, v)
+
+
+def convertToNumber(xs:str) -> float:
+    t, v = parseTypedNumber(xs)
+
+    if t == "ms":
+        return v/1000
+    if t == "%":
+        return v/100
+    else:
+        return v
+
+
+#convert recTree recursively into an AST
+#json should be constant and not changed by this function.
+def recClean(json: Union[dict, str, float, int]) -> dict:
+    if type(json) in [str, float, int]:
+        return {"num": convertToNumber(json)}
+
+    if type(json) == list:
+        return [{"num": convertToNumber(v)} for v in json]
+
+    dType = json["type"]
+    dData = json["data"]
+    dChildren = json["in"]
+
+    if dType == "out":
+        return recClean(json["in"][0])
+
+    if dType == "effect":
+        return {dData["effectName"] : dict([(k, recClean(dData["params"][k])) for k in dData["params"].keys()]+[("points", recClean(dChildren[0]))])}
+
+    if dType == "mix":
+        return {dType : dict([(k, recClean(dData[k])) for k in dData.keys()])}
+
+    if dType == "bezier":
+        return {"bezier": dData["points"]}
+
+    if dType == "value":
+        return recClean(dData["value"])
+
+    if dType == "envelope":
+        return {"envelope": dict([(k, recClean(dData[k])) for k in dData.keys()]+[("points", recClean(dChildren[0]))])}
+
+    if dType == "oscillator": 
+        return {"wave": dict([k,dData[k]] if k == "shape" else [k, recClean(dData[k])] for k in dData.keys())}
+
+    if dType == "operation":
+        return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
+
+#go through the tree and find the largest topmost envelope time
+def recFindEnv(tree : dict):
+    if (type(tree) != dict):
+        return 0
+
+    a = []
+    for key in tree.keys():
+        data = tree[key]
+
+        if (type(data) == list):
+            a.append(max([recFindEnv(child) for child in data]))
+        elif key == "envelope":
+            #we do not recurse here
+            #therefore only the topmost envelope time is used
+            times = [data[k]["num"] if k in ["attack", "decay", "release"] else 0 for k in data]
+            time = sum(times)
+            a.append(time)
+        elif type(data) == dict:
+            a.append(recFindEnv(data))
+        else:
+            return 0
+
+    #could be multiple envelopes in the signal (e.g. added togheter), 
+    # we want the longest one
+    return max(a)
+
 def handleInput(query):
     #query is a (V,E) pair
     nodes = query["nodes"]
     edges = query["edges"]
 
-    print(nodes)
-    print(edges)
-
     recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
     recTree = dict((key, d[key]) for d in recTree for key in d)
-
-    sustainTime = recTree["output0"]["data"]["sustainTime"]
 
     for e in edges:
         _, source = e["sourceHandle"].split("-")
@@ -43,178 +126,21 @@ def handleInput(query):
         else:
             recTree[target]["data"][tpos] = recTree[source]
 
-    print(recTree)
-
-    #convert the recurisve node format from the frontend into an AST 
-    #json should be constant and not changed by this function.
-    def recClean(json:dict) -> dict:
-        if type(json) == int:
-            return {"num" : json/100}
-        dType = json["type"]
-        dData = json["data"]
-        dChildren = json["in"]
-
-        if dType == "out":
-            return recClean(json["in"][0])
-
-        if dType == "effect":
-                child = recClean(dChildren[0])
-
-                if dData["effectName"] == "reverb":
-                    duration = float(dData["params"]["duration"])
-                    wetdry = float(dData["params"]["mixPercent"])
-
-                    return {
-                        "reverb" : {
-                            "points" : child,
-                            "duration": {"num":  duration},
-                            "wetdry": {"num": wetdry},
-                        }
-                    }
-
-                if dData["effectName"] in ["lpf", "hpf"]:
-                    cutoff = float(dData["params"]["cutoff"])
-
-                    return {
-                        dData["effectName"] : {
-                            "points" : child,
-                            "cutoff" : {"num": cutoff},
-                        }
-                    }
-
-                if dData["effectName"] in ["lfo-sin", "lfo-saw"]:
-                    rate = float(dData["params"]["rate"])
-
-                    return {
-                        dData["effectName"] : {
-                            "points" : child,
-                            "rate" : {"num": rate},
-                        }
-                    }
-
-                if dData["effectName"] == "dirac":
-                    precision = float(dData["params"]["precision"])
-                    rate = float(dData["params"]["rate"])
-
-                    return {
-                        "dirac" : {
-                            "points" : child,
-                            "rate" : {"num": rate},
-                            "precision" : {"num": precision},
-                        }
-                    }
-
-                if dData["effectName"] == "dirac":
-                    level = float(dData["params"]["level"])
-
-                    return {
-                        "dirac" : {
-                            "points" : child,
-                            "level" : {"num": level},
-                        }
-                    }
-
-        if dType == "mix":
-            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
-            value0 = recClean(dData["value0"]) if type(dData["value0"]) == dict else {"num" : float(dData["value0"])}
-            value1 = recClean(dData["value1"]) if type(dData["value1"]) == dict else {"num" : float(dData["value1"])}
-
-            return {"mix" : 
-                {
-                    "percent": percent,
-                    "value0": value0,
-                    "value1": value1
-                }
-            }
-
-        if dType == "pan":
-            percent = recClean(dData["percent"]) if type(dData["percent"]) == dict else {"num" : float(dData["percent"]) / 100}
-            points = recClean(dData["points"]) 
-
-            return {"pan" : 
-                {
-                    "percent": percent,
-                    "points": points
-                }
-            }
-
-        if dType == "bezier":
-            return {"bezier": dData["points"]}
-
-        if dType == "value":
-            return {"num" : float(dData["value"])}
-
-        if dType == "envelope":
-            child = recClean(dChildren[0])
-            #a,d,r are in ms, s is a percentage
-            #convert these to seconds and fraction
-            adsr = [float(dData["attack"])/1000, float(dData["decay"])/1000, float(dData["sustain"])/100, float(dData["release"])/1000]
-            # adsr = [float(f) for f in dData.values()]
-
-            return {
-                "envelope" : {
-                    "points" : child, 
-                    "adsr" : {"list" : adsr}
-                }
-            }
-
-        if dType == "oscillator": 
-            data = {}
-            for dk in dData.keys():
-                if dk in ["frequency", "amplitude"]:
-                    if type(dData[dk]) == dict:
-                        data[dk] = recClean(dData[dk]) 
-                        # dData[dk] = recClean(dData[dk]) 
-                    else:
-                        data[dk] = {"num" : float(dData[dk])}
-
-            if "shape" not in dData:
-                data["shape"] = "sin"
-            else:
-                data["shape"] = dData["shape"]
-
-
-            return {"wave" : data}
-
-        if dType == "operation":
-            return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
-
     soundTree = recClean(recTree["output0"])
     panTree = recClean(recTree["output0"]["data"]["pan"])
-    print("pantree\n",panTree)
+    print("\nsoundtree\n",soundTree)
+    print("\npantree\n",panTree)
 
-    #go through the tree and find the largest topmost envelope time
-    def recFindEnv(tree : dict):
-        if (type(tree) != dict):
-            return 0
+    #do not add panning if pan percent is set to 0.5
+    if not ("num" in panTree and panTree["num"] == 0.5):
+        soundTree = {"pan" : { 
+            "percent" : panTree, 
+            "points" : soundTree
+        }}
 
-        a = []
-        for key in tree.keys():
-            data = tree[key]
 
-            if (type(data) == list):
-                a.append(max([recFindEnv(child) for child in data]))
-            elif key == "envelope":
-                data = data["adsr"]["list"]
-                time = sum([data[0], data[1], data[3]])
-                a.append(time)
-            elif type(data) == dict:
-                a.append(recFindEnv(data))
-            else:
-                return 0
-
-        return max(a)
-    {'pan': {
-        'percent': {'+': [{'num': 0.5}, {'wave': {'frequency': {'num': 1.0}, 'amplitude': {'num': 0.5}, 'shape': 'sin'}}]}, 
-        'points': {'wave': {'frequency': {'num': 440.0}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}}
-    }
-
+    sustainTime = convertToNumber(recTree["output0"]["data"]["sustainTime"])
     envelopeTime = recFindEnv(soundTree)
-    soundTree = {"pan" : { 
-        "percent" : panTree, 
-        "points" : soundTree
-    }}
-
     return soundTree, sustainTime, envelopeTime
 
 
@@ -230,10 +156,12 @@ async def websocket_endpoint(websocket: WebSocket):
             query = await websocket.receive_json()
             query, sustainTime, envelopeTime = handleInput(query)
 
-            print("processesing: \n", query)
+            print("\nprocessesing: \n", query)
             print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
             soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+
+            print("done processesing")
 
             sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
             await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})

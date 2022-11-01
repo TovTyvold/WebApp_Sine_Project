@@ -140,8 +140,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
             if k == "reverb":
                 _, points = recParse(v["points"])
                 _, duration = recParse(v["duration"])
-                _, wetdry = recParse(v["wetdry"]) #float in 0, 100
-                return ("points", filterAudio.Rev_Conv_Filter(points, duration, wetdry)[0])
+                _, mixPercent = recParse(v["mixPercent"]) #float in 0, 100
+                return ("points", filterAudio.Rev_Conv_Filter(points, duration, mixPercent)[0])
 
             if k == "lpf":
                 _, points = recParse(v["points"])
@@ -202,11 +202,12 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
 
             if k == "envelope":
                 (_, wave) = recParse(v["points"])
-                (_, adsr) = recParse(v["adsr"])
+                (_, attack) = recParse(v["attack"])
+                (_, decay) = recParse(v["decay"])
+                (_, sustain) = recParse(v["sustain"])
+                (_, release) = recParse(v["release"])
 
-                #envelope.symmetricEnvelope(adsr, genSamples(samples, seconds), points, 0.75)
-                # print(adsr)
-                adsr = envelope.getSymmEnv(adsr, 0.75, 0, sustainTime + (adsr[0]+adsr[1]+adsr[3]))
+                adsr = envelope.getSymmEnv([attack, decay, sustain, release], 0.75, 0, sustainTime + (attack+decay+release))
 
                 ypoints = list(
                     map(operator.mul, bezierCurve.compositeOn(adsr, xpoints), wave))

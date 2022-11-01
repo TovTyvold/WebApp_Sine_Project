@@ -1,170 +1,42 @@
-[
-  [
-    {
-      "width": 338,
-      "height": 128,
-      "id": "output0",
-      "type": "out",
-      "data": { "sustainTime": 2, "pan": 50 },
-      "position": { "x": 1139.5594171360399, "y": 331.5302638870562 },
-      "deletable": false,
-      "selected": true,
-      "positionAbsolute": { "x": 1139.5594171360399, "y": 331.5302638870562 },
-      "dragging": false
+{
+  "pan": {
+    "percent": {
+      "*": [
+        {
+          "wave": {
+            "frequency": { "num": 1.0 },
+            "amplitude": { "num": 0.5 },
+            "shape": "sin"
+          }
+        },
+        { "num": 0.5 }
+      ]
     },
-    {
-      "width": 230,
-      "height": 250,
-      "id": "oscillator0",
-      "position": { "x": 81.81011142544656, "y": 419.8366470333794 },
-      "type": "oscillator",
-      "data": { "frequency": 440, "amplitude": 1, "shape": "sin" },
-      "selected": false,
-      "positionAbsolute": { "x": 81.81011142544656, "y": 419.8366470333794 },
-      "dragging": false
-    },
-    {
-      "width": 338,
-      "height": 139,
-      "id": "pan0",
-      "position": { "x": 483.8366210176942, "y": 240.95329184783793 },
-      "type": "pan",
-      "data": { "percent": "0" },
-      "selected": false,
-      "positionAbsolute": { "x": 483.8366210176942, "y": 240.95329184783793 },
-      "dragging": false
-    },
-    {
-      "width": 230,
-      "height": 250,
-      "id": "oscillator1",
-      "position": { "x": -138.87416524675055, "y": 42.3989147862232 },
-      "type": "oscillator",
-      "data": { "frequency": "1", "amplitude": "0.5", "shape": "sin" },
-      "selected": false,
-      "positionAbsolute": { "x": -138.87416524675055, "y": 42.3989147862232 },
-      "dragging": false
-    },
-    {
-      "width": 230,
-      "height": 134,
-      "id": "value0",
-      "position": { "x": -168.38069806086042, "y": 299.35163804243035 },
-      "type": "value",
-      "data": { "value": "0.5" },
-      "selected": false,
-      "dragging": false,
-      "positionAbsolute": { "x": -168.38069806086042, "y": 299.35163804243035 }
-    },
-    {
-      "width": 110,
-      "height": 115,
-      "id": "operation0",
-      "position": { "x": 235.48996983226914, "y": 203.4554063965732 },
-      "type": "operation",
-      "data": { "opType": "sum" },
-      "selected": false,
-      "positionAbsolute": { "x": 235.48996983226914, "y": 203.4554063965732 },
-      "dragging": false
-    },
-    {
-      "width": 230,
-      "height": 250,
-      "id": "oscillator2",
-      "position": { "x": 523.7933842034679, "y": 441.35182721033436 },
-      "type": "oscillator",
-      "data": { "frequency": "1", "amplitude": "0.5", "shape": "sin" },
-      "selected": false,
-      "positionAbsolute": { "x": 523.7933842034679, "y": 441.35182721033436 },
-      "dragging": false
-    },
-    {
-      "width": 230,
-      "height": 134,
-      "id": "value1",
-      "position": { "x": 503.5916305831421, "y": 708.8208376734989 },
-      "type": "value",
-      "data": { "value": "0.5" },
-      "selected": false,
-      "positionAbsolute": { "x": 503.5916305831421, "y": 708.8208376734989 },
-      "dragging": false
-    },
-    {
-      "width": 110,
-      "height": 115,
-      "id": "operation1",
-      "position": { "x": 889.2968669589709, "y": 583.1222561760192 },
-      "type": "operation",
-      "data": { "opType": "sum" },
-      "selected": false,
-      "positionAbsolute": { "x": 889.2968669589709, "y": 583.1222561760192 },
-      "dragging": false
+    "points": {
+      "envelope": {
+        "attack": { "num": 0.397 },
+        "decay": { "num": 0.327 },
+        "sustain": { "num": 0.68 },
+        "release": { "num": 0.752 },
+        "points": {
+          "wave": {
+            "frequency": {
+              "*": [
+                {
+                  "bezier": [
+                    [0, 0],
+                    [0.5, 0.5],
+                    [1, 1]
+                  ]
+                },
+                { "num": 220.0 }
+              ]
+            },
+            "amplitude": { "num": 1 },
+            "shape": "sin"
+          }
+        }
+      }
     }
-  ],
-  [
-    {
-      "source": "pan0",
-      "sourceHandle": "out-pan0",
-      "target": "output0",
-      "targetHandle": "in-output0",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-pan0out-pan0-output0in-output0"
-    },
-    {
-      "source": "oscillator0",
-      "sourceHandle": "out-oscillator0",
-      "target": "pan0",
-      "targetHandle": "points-pan0",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-oscillator0out-oscillator0-pan0points-pan0"
-    },
-    {
-      "source": "value0",
-      "sourceHandle": "out-value0",
-      "target": "operation0",
-      "targetHandle": "in-operation0",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-value0out-value0-operation0in-operation0"
-    },
-    {
-      "source": "oscillator1",
-      "sourceHandle": "out-oscillator1",
-      "target": "operation0",
-      "targetHandle": "in-operation0",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-oscillator1out-oscillator1-operation0in-operation0"
-    },
-    {
-      "source": "operation0",
-      "sourceHandle": "out-operation0",
-      "target": "pan0",
-      "targetHandle": "percent-pan0",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-operation0out-operation0-pan0percent-pan0"
-    },
-    {
-      "source": "oscillator2",
-      "sourceHandle": "out-oscillator2",
-      "target": "operation1",
-      "targetHandle": "in-operation1",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-oscillator2out-oscillator2-operation1in-operation1"
-    },
-    {
-      "source": "value1",
-      "sourceHandle": "out-value1",
-      "target": "operation1",
-      "targetHandle": "in-operation1",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-value1out-value1-operation1in-operation1"
-    },
-    {
-      "source": "operation1",
-      "sourceHandle": "out-operation1",
-      "target": "output0",
-      "targetHandle": "pan-output0",
-      "style": { "color": "red" },
-      "id": "reactflow__edge-operation1out-operation1-output0pan-output0"
-    }
-  ]
-]
+  }
+}
