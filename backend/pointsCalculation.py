@@ -1,6 +1,8 @@
 import math
 from enum import Enum
-from typing import List, Dict, Union
+from os import stat_result
+import time
+from typing import Callable, List, Dict, Union
 import random
 import functools
 import soundGen
@@ -118,8 +120,7 @@ def advSinePoints(ampls, freqs, samples, seconds, func=sin):
 
     return ypoints
 
-
-def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
+def parse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
     #TODO generate the xpoints here, and let recParse use them rather than generating them
     seconds = envelopeTime + sustainTime
     xpoints = genSamples(samples, seconds)
@@ -268,32 +269,28 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
         return (ypoints0, ypoints1), 2
 
 
-def freqToSamples(freq):
-    return {'+': [
-        {'envelope':
-            {
-                'points': {'wave': {'shape': 'sin', 'frequency': freq, 'amplitude': 15}},
-                'numbers': {'list': [
-                    {'num': 100},
-                    {'num': 200},
-                    {'num': 50},
-                    {'num': 100}
-                ]}
-            }
-         }
-    ]}
+def freqToProfile(freq):
+    return {'envelope': 
+        {'attack': {'num': 0.11}, 'decay': {'num': 0.129}, 'sustain': {'num': 0.6}, 'release': {'num': 0.375}, 'points': {'wave': {'frequency': {'num': freq}, 'amplitude': {'num': 1.0}, 'shape': 'sin'}}}
+    }
 
+def noteNumToSamples(noteNum: int) -> float:
+    freq = 440.0*math.pow(2, (noteNum-69)/12)
+
+    samples, _ = parse(freqToProfile(freq), 22100, 0.125, 0.129+0.375+0.11)
+
+    return samples
 
 def noteNameToSamples(note):
     freq = noteToFreq(note)
 
-    return freqToSamples(freq)
+    return freqToProfile(freq)
 
 
 #generate samples for imperial march from star wars
 def starWars():
     def noteToSound(p):
-        return newparse(noteNameToSamples(p[0]), 44100, p[1])
+        return parse(noteNameToSamples(p[0]), 44100, p[1])
 
     completeSounds = []
     s = """
@@ -323,7 +320,94 @@ def starWars():
 
     return completeSounds
 
+class Generator:
+    t: int = 0.0
+    sampleRate: int = 44100
+    func = lambda x, state: x
+    state: dict = {}
+
+    def __init__(self, profile:dict, sampleRate:int):
+        self.sampleRate = sampleRate
+        self.func = parseNote(profile)
+
+    def get(self):
+        y = self.func(self.t, self.state)
+        self.t += 1.0 / self.sampleRate
+        return y
+
+def advSine(func, amplFunction, freqFunction, t, state):
+    # return amplFunction(t, state)*func(freqFunction(t, state)*t)
+    if freqFunction not in state:
+        state[freqFunction] = {}
+
+    po = state[freqFunction]["prevoffset"] if "prevoffset" in state[freqFunction] else 0
+    pf = state[freqFunction]["prevfreq"] if "prevfreq" in state[freqFunction] else freqFunction(0, {})
+    
+    f = freqFunction(t, state)
+    o = t*(pf-f) + po
+
+    state[freqFunction]["prevoffset"] = o
+    state[freqFunction]["prevfreq"] = f
+    return amplFunction(t, state)*func(freqFunction(t, state)*t + o)
+
+def parseNote(data: dict):
+    def recParse(data: dict) -> Callable[[float, dict], float]:
+        for k in data.keys(): #should only have one key
+            v = data[k]
+
+            if k == "wave":
+                func = conversionTable[v["shape"]]
+                ampl = recParse(v["amplitude"])
+                freq = recParse(v["frequency"])
+
+                return lambda t, state : advSine(func, ampl, freq, t, state)
+
+            if k == "num":
+                return lambda t, state : v
+
+            if k == "f":
+                return lambda t, state : t/v
+
+            if k == "+":
+                return lambda t, state : sum([recParse(operand)(t, state) for operand in v])
+        raise Exception("Unknown key: " + k)
+    return recParse(data)
+
 
 if __name__ == "__main__":
-    pass
-    # soundGen.play(starWars())
+    sampleRate = 44100
+    profile = {"+": [
+         {"wave": {"frequency": {"num": 440}, "amplitude": {"num": 1}, "shape": "sin"}},
+        {"wave": {"frequency": {"num": 880}, "amplitude": {"num": 0.5}, "shape": "sin"}},
+        {"wave": {"frequency": {"num": 1100}, "amplitude": {"num": 0.25}, "shape": "sin"}},
+        {"wave": {"frequency": {"num": 1100}, "amplitude": {"num": 0.25}, "shape": "sin"}},
+        {"wave": {"frequency": {"num": 1100}, "amplitude": {"num": 0.25}, "shape": "sin"}},
+        {"wave": {"frequency": {"num": 1100}, "amplitude": {"num": 0.25}, "shape": "sin"}},
+    ]}
+
+    aprofile = {"+" : [{"wave": {"frequency": {"num": 1.5}, "amplitude": {"num": 2.5}, "shape": "sin"}}, {"num": 220}]}
+    profile = {"wave": {"frequency": aprofile, "amplitude": {"num": 1}, "shape": "sin"}}
+    # profile = {"wave": {"frequency": {"num": 220}, "amplitude": {"num": 1}, "shape": "sin"}}
+
+
+    gen = Generator(profile, sampleRate)
+    ypoints = []
+    times = []
+    t1 = time.time()
+    for i in range(6*sampleRate):
+        # print(i/sampleRate, ",", gen.get())
+        t2 = time.time()
+        ypoints.append(gen.get())
+        t3 = time.time()
+
+        times.append(t3-t2)
+    t2 = time.time()
+    print(t2-t1)
+    print(44100 * sum(times)/len(times))
+    # soundGen.play(ypoints)
+
+    t1 = time.time()
+    ypoints = parse(profile, 44100, 6, 0)[0]
+    t2 = time.time()
+    print(t2-t1)
+    # soundGen.play(ypoints)

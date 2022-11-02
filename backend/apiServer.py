@@ -18,10 +18,11 @@ app.add_middleware(CORSMiddleware, allow_origins=origins,
 #json should be constant and not changed by this function.
 def recClean(json: Union[dict, str, float, int]) -> dict:
     if type(json) in [str, float, int]:
+        print(json)
         return {"num": float(json)}
 
     if type(json) == list:
-        return [{"num": float(v)} for v in json]
+        return [recClean(v) for v in json]
 
     if "percent" in json:
         return {"num": float(json["percent"]) / 100}
@@ -62,7 +63,7 @@ def recFindEnv(tree : dict):
     if (type(tree) != dict):
         return 0
 
-    a = []
+    a = [0]
     for key in tree.keys():
         data = tree[key]
 
@@ -115,7 +116,7 @@ def handleInput(query):
         }}
 
 
-    sustainTime = recTree["output0"]["data"]["sustainTime"]["sec"]
+    sustainTime = float(recTree["output0"]["data"]["sustainTime"]["sec"])
     envelopeTime = recFindEnv(soundTree)
     return soundTree, sustainTime, envelopeTime
 
@@ -135,14 +136,14 @@ async def websocket_endpoint(websocket: WebSocket):
             print("\nprocessesing: \n", query)
             print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-            soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            soundData, channels = pointsCalculation.parse(query, SAMPLES, sustainTime, envelopeTime)
 
             print("done processesing")
 
             sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
             await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})
 
-            # soundGen.play(soundData, channels)
+            # soundGen.play(soundData, channels
 
             #send chunkSize chunks of the sounddata until all is sent
             cb = soundGen.samplesToCB(soundData)
@@ -155,7 +156,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("apiServer:app", port=5000,
-                            log_level="info", reload=True)
-    server = uvicorn.Server(config)
-    server.run()
+    uvicorn.run("apiServer:app", host="127.0.0.1", port=5000, log_level="info", reload=True)

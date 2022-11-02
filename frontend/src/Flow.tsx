@@ -170,7 +170,7 @@ const Flow = ({ submit }: any) => {
 
   useEffect(() => {
     const ctxMenuListener = (event: any) => {
-      if (event.ctrlKey && event.key === 'a') {
+      if (event.shiftKey && event.key === 'A') {
         event.preventDefault();
         onPaneContextMenu(event, true);
       }
