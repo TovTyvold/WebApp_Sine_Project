@@ -147,7 +147,6 @@ def dirac_comb_discrete(y, N_, K_):
     output = sigSum.real * y
     return output 
 
-
 def hilbert(y):
     """
     Imposes the transfer function Hilbert, produses a pi/2 phase-shift.
@@ -161,70 +160,6 @@ def hilbert(y):
      dtype [ndarray]: Fitlered signal
     """
     return np.imag(signal.hilbert(y))
-
-# To do: Be able to pitch signals that have semirandom frequencies
-def semitoneFunc(input, shift_):
-    """
-    Currently can only take in a single frequency.
-    Parameter "n" for semitones is yet to be implemented.
-    """
-    Fs = 44100
-    tol = 0.01
-    minSigLen = Fs / tol
-
-    # Add 1 if minSigLen is a odd number
-    if np.mod(minSigLen,2) !=0 :
-        minSigLen = minSigLen + 1
-
-    #length = len(input)
-    #new_f = f * np.exp(n/12)
-    freq_shift = shift_/10
-
-    if len(input) < minSigLen:
-        input = list(input) + list(np.zeros(int(minSigLen - len(input))))
-
-    df = Fs/len(input) 
-    n_samp_shift = int(freq_shift / df)
-
-    Y_k = np.fft.fft(input)
-
-    mag = np.abs(Y_k) 
-    phase = np.unwrap(np.angle(Y_k), np.pi)
-
-    # Shift the frequency
-    shift = n_samp_shift
-    N_ = len(Y_k)
-
-    # First half
-    mag1 = mag[1:int(N_/2)]
-    phase1 = phase[1:int(N_/2)]
-
-    # Second half
-    mag2 = mag[int(N_/(2)):]
-    phase2 = phase[int(N_/(2)):]
-
-    # Lets pad the arrays to the right
-    mag1s = list(np.zeros(shift)) + list(mag1[:-shift])
-    phase1s = list(np.zeros(shift)) + list(phase1[:-shift])
-
-    # Then pad the arrays to the left
-    mag2s = list(mag2[shift:]) + list(np.zeros(shift))
-    phase2s = list(phase2[shift:]) + list(np.zeros(shift))
-    # And concatenate
-    magS = []
-    magS.append(mag[0])
-    magS = magS + list(mag1s) + list(mag2s)
-
-    phaseS = []
-    phaseS.append(phase[0])
-    phaseS = phaseS + list(phase1s) + list(phase2s)
-
-    x = magS*np.cos(phaseS)               # change from polar to rectangular
-    y = magS*np.sin(phaseS)
-    new_fft2 = x + 1j*y                     #store signal as complex numbers
-    new_ifft2 = np.real(np.fft.ifft(new_fft2))
-    return new_ifft2
-
 
 def singleShift(input, shift_):
     """
@@ -319,14 +254,14 @@ def vibratoFunc(input, Modfreq, width, W):
 def whiteChorus(input, width):
     """
     vibratoFunc can be used to implement an vibrato effect. The parameter "width" should be around:
-    ------------ 0.001 < width < 0.003. 
+    ------------ 0.001 < width < 0.03. 
 
     Inputs:
     -----------------------------
     input - dtype ndarray: Signal
     Modfreq - dtype float/int: The frequency the sinusoidal wave that creates vibrato should have
     width - dtype float/int: Length of the delay signal. 
-    W - dtype float/int: Speed of the increase in frequency. High W results in a larger low-frequency variance domain.
+ 
     Returns:
     ----------------------------
     x - dtype ndarray: Array with input filtered
@@ -338,8 +273,9 @@ def whiteChorus(input, width):
     """
     # Get lowpass noise
     
-    lp_noise = brownian_noise(len(input))
-    lowpass_noise = low_pass_Filter(lp_noise, 1)
+    lowpass_noise = pink_noise(len(input))
+    lowpass_noise = lowpass_noise / np.max(lowpass_noise)
+    #lowpass_noise = low_pass_Filter(lowpass_noise,10)
     Fs = 44100
     Delay = width 
 
@@ -348,14 +284,14 @@ def whiteChorus(input, width):
     WIDTH = int(width * Fs)
  
     length = len(input)
-    MODFREQ = lowpass_noise / Fs
+    MODFREQ = lowpass_noise
     L = 1 + DELAY + WIDTH*2
-    print(MODFREQ)
-    BL = 0.7
-    FF = 1
-    FB = -0.7
+    L = L*2
+
     x = np.zeros_like(input)
     Delayline = np.zeros(L)
+
+    FB = -0.7; BL = 0.7; FF = 1
     for n in range(length):
         
         DelaylineS = []
@@ -374,29 +310,47 @@ def whiteChorus(input, width):
         DelaylineS.append(DelaylineS_)
         Delayline = list(DelaylineS) + list(Delayline[:L-1])
         x[n] =  BL * Delayline[i] + FF * (DelaylineS_) + input[n]
+    
+    """ for n in range(length):
+        DelaylineS = []
+        # Time delay
+        MOD = MODFREQ[n]
+        TAP = 1 + DELAY + WIDTH * MOD 
+        i = int(TAP)
+        frac = TAP - i 
+        # Time index-delay -> K
+        # System of equations
+        # -------------------
+        # Delay Line and
+        # Spline Comb -> Chorus equation
+        g1 = (frac**(3))/6
+        g2 = ((1+frac)**3 - 4*(frac)**3)/6
+        g3 = ((2-frac)**3 - 4*(1 - frac)**3)/6
+        g4 = ((1 - frac)**(3))/6
 
+        DelaylineS.append(input[n]) 
+        Delayline = list(DelaylineS) + list(Delayline[:L-1])
 
+        x[n] = Delayline[i+1] * g1 + Delayline[i] * g2 \
+            + Delayline[i-1] * g3 + Delayline[i-2] * g4 
+     """
     # Normalize:
-    g = BL + FF + FB
-    x = (x * g)/ np.max(np.abs(x))
+    g = FF + BL + FB
+    #g = g1 + g2 + g3 + g4 
+    x = (x) / np.max(np.abs(x))
     return x
 
 
-def reverberatorFunc_unused(input, DryWet):
-    Fs = 44100
-    output = np.zeros_like(input)
-    DelayLine = np.zeros(int(Fs/20))
-
-    A_delay = 40 
-    DryWet = 0.7 
-
-    for i in range(1,len(input)):
-        tmp = DelayLine[A_delay] + input[i] * (-DryWet)
-        DelayLine = list(tmp * DryWet + input[i]) + list(DelayLine[len(DelayLine)-1])
-        output[i] = tmp
-
-    return output
-
+def pitchChorus(input):
+    """
+    Ongoing
+    """
+    y1 = singleShift(input, 0.1)
+    y2 = singleShift(input, 0.4)
+    y3 = singleShift(input, -0.1)
+    y4 = singleShift(input, -0.4)
+    chor = input + y1 + y2 + y3 + y4
+    return chor
 #z^-[M(n) + frac(n)] ---->>> x[M(n) + frac(n)]
 
 if __name__ == "__main__":

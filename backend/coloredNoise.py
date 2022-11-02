@@ -25,7 +25,8 @@ def noise_psd(N, psd = lambda f: 1):
     return np.fft.irfft(X_shaped)
 
 def PSDGenerator(f):
-    return lambda N, I: (noise_psd(N, f) / np.max(noise_psd(N, f))) * I
+    #return lambda N, I: (noise_psd(N, f) / np.max(noise_psd(N, f))) * I
+    return lambda N: noise_psd(N, f)
 
 @PSDGenerator
 def white_noise(f):
@@ -45,4 +46,5 @@ def brownian_noise(f):
 
 @PSDGenerator
 def pink_noise(f):
+    print("Hei")
     return 1 / np.where(f == 0, float('inf'), np.sqrt(f))
