@@ -1,22 +1,22 @@
 import { useRef } from 'react';
 
+const WIDTH = document.body.offsetWidth * 0.8;
+const HEIGHT = 150;
+
 interface IProps {
-  audioContext: AudioContext;
-  audioSource: AudioBufferSourceNode;
+  audioCtx: AudioContext;
+  audioSrc: AudioBufferSourceNode;
 }
 
-function BarGraphVisualizer({ audioContext, audioSource }: IProps) {
+function BarGraphVisualizer({ audioCtx, audioSrc }: IProps) {
   const node = useRef<HTMLCanvasElement>(document.createElement('canvas'));
 
-  const analyser = audioContext.createAnalyser();
-  audioSource.connect(analyser);
+  const analyser = audioCtx.createAnalyser();
+  audioSrc.connect(analyser);
   analyser.fftSize = 256; // 2048;
 
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
-
-  const WIDTH = document.body.offsetWidth * 0.8;
-  const HEIGHT = 100;
 
   const canvas = node.current;
   if (!canvas) return null;
@@ -58,8 +58,6 @@ function BarGraphVisualizer({ audioContext, audioSource }: IProps) {
       style={{
         border: '2px #1f939e solid',
         borderRadius: '10px',
-        marginTop: '1em',
-        marginBottom: '1em',
       }}
     />
   );

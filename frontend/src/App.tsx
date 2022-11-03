@@ -46,6 +46,7 @@ function App() {
   const buffer = useRef<AudioBuffer>();
   const [isReady, setIsReady] = useState<boolean>(false);
   const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
+  const [visToggle, setVisToggle] = useState(true);
 
   const composeAudio = (data: any, buffer: any) => {
     const chunk = new Float32Array(data);
@@ -150,11 +151,23 @@ function App() {
         <header>
           <h1>W.O.K.</h1>
         </header>
-        <OscilloscopeVisualizer audioCtx={context} audioSrc={source.current} />
-        <BarGraphVisualizer
-          audioContext={context}
-          audioSource={source.current}
-        />
+        <button
+          className='btn-toggle btn-small'
+          onClick={(e: any) => {
+            e.preventDefault();
+            setVisToggle(!visToggle);
+          }}>
+          Switch
+        </button>
+        {visToggle ? (
+          <OscilloscopeVisualizer
+            audioCtx={context}
+            audioSrc={source.current}
+          />
+        ) : (
+          <BarGraphVisualizer audioCtx={context} audioSrc={source.current} />
+        )}
+
         <div
           style={{
             width: '80vw',

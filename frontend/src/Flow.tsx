@@ -10,9 +10,10 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   OnSelectionChangeParams,
+  ReactFlowInstance,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import './flow-node.css';
+//import './flow-node.css';
 
 import { ContextMenu } from './components/ContextMenu';
 import ControllButtons from './components/ControlButtons';
@@ -71,12 +72,13 @@ const defaultData: Map<string, Object> = new Map([
 const Flow = ({ submit }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const currentNode = useRef<Node>();
-  const [instance, setInstance] = useState<any>(null);
-  const edgeUpdateSuccessful = useRef(true);
+  const [instance, setInstance] = useState<ReactFlowInstance>();
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
   const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 1 });
+
+  const edgeUpdateSuccessful = useRef(true);
+  const currentNode = useRef<Node>();
   const idRef = useRef<any>({
     oscillator: 0,
     envelope: 0,
@@ -129,8 +131,6 @@ const Flow = ({ submit }: any) => {
       if (data) {
         nodeData = data;
       } else {
-        //perform a deep copy of defaultData of nodeType
-        // const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
         const def = defaultData.get(nodeType);
         nodeData = def !== undefined ? JSON.parse(JSON.stringify(def)) : {};
       }
@@ -245,6 +245,46 @@ const Flow = ({ submit }: any) => {
     setCurrView(view);
   }, []);
 
+  const saveProfile = useCallback(() => {
+    if (!instance) throw Error('Cannot find reactFlowInstance.');
+    const saveKey = prompt('What would you like to save this profile as?');
+    if (!saveKey) return;
+    const saveObj = {
+      profile: instance.toObject(),
+      ids: idRef.current,
+    };
+    localStorage.setItem(saveKey, JSON.stringify(saveObj));
+  }, [instance]);
+
+  const restoreProfile = useCallback(async (loadKey: string) => {
+    if (!loadKey) throw Error('No key provided.');
+    console.log(loadKey);
+    const loadObj = await JSON.parse(localStorage.getItem(loadKey) || '');
+    if (!loadObj) throw Error('getItem() failed or stored value is empty.');
+    const { x = 0, y = 0, zoom = 1 } = loadObj.profile.viewport;
+    setNodes(loadObj.profile.nodes || []);
+    setEdges(loadObj.profile.edges || []);
+    setCurrView({ x, y, zoom });
+    idRef.current = loadObj.ids;
+  }, []);
+
+  // const onLoad = useCallback((event: any, profileToLoad: string) => {
+  //   event.preventDefault();
+  //   const restoreProfile = async () => {
+  //     if (!profileToLoad) return;
+  //     console.log('jkbnasdf');
+  //     const loadObj = JSON.parse(localStorage.getItem(profileToLoad) || '');
+  //     if (loadObj) {
+  //       const { x = 0, y = 0, zoom = 1 } = loadObj.profile.viewport;
+  //       setNodes(loadObj.profile.nodes || []);
+  //       setEdges(loadObj.profile.edges || []);
+  //       setCurrView({ x, y, zoom });
+  //       idRef.current = loadObj.ids;
+  //     }
+  //   };
+  //   restoreProfile();
+  // }, []);
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -271,7 +311,12 @@ const Flow = ({ submit }: any) => {
         position={contextPosition}
         onClick={(n: any) => addNode(n, contextPosition, currView)}
       />
-      <ControllButtons getFlow={getFlow} />
+      <ControllButtons
+        saveProfile={saveProfile}
+        instance={instance}
+        restoreProfile={restoreProfile}
+        getFlow={getFlow}
+      />
       <Background />
     </ReactFlow>
   );
