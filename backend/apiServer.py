@@ -39,6 +39,9 @@ def recClean(json: Union[dict, str, float, int]) -> dict:
     if dType == "effect":
         return {dData["effectName"] : dict([(k, recClean(dData["params"][k])) for k in dData["params"].keys()]+[("points", recClean(dChildren[0]))])}
 
+    if dType == "noise":
+        return {"color" : dData["color"]}
+
     if dType == "mix":
         return {dType : dict([(k, recClean(dData[k])) for k in dData.keys()])}
 

@@ -3,12 +3,13 @@ from enum import Enum
 from typing import List, Dict, Union
 import random
 import functools
-import soundGen
-import pointsNoise
+import reverberator
+import coloredNoise
 import filterAudio
 import envelope
 import operator
 import bezierCurve
+import soundGen
 
 
 def square(x: float) -> float:
@@ -137,11 +138,25 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
         for k in data.keys():
             v = data[k]
 
+            if k == "vibrato":
+                _, points = recParse(v["points"])
+                _, modFreq = recParse(v["speed"]) #float between 0.1, 5
+                _, width = recParse(v["intensity"]) #float between 0, 1
+                width = 0.0003 + width*0.003 #float between 0.0003, 0.003
+                _, W = recParse(v["variation"]) #positive float
+                return ("points", filterAudio.vibratoFunc(points, modFreq, width, W))
+
+            if k == "tune":
+                _, points = recParse(v["points"])
+                _, shift = recParse(v["shift"])
+                return ("points", filterAudio.singleShift(points, shift))
+
             if k == "reverb":
                 _, points = recParse(v["points"])
-                _, duration = recParse(v["duration"])
-                _, mixPercent = recParse(v["mixPercent"]) #float in 0, 100
-                return ("points", filterAudio.Rev_Conv_Filter(points, duration, mixPercent)[0])
+                _, duration = recParse(v["duration"]) #>=1
+                if not (duration >= 1):
+                    duration = 1
+                return ("points", reverberator.main_reverb(points, duration))
 
             if k == "lpf":
                 _, points = recParse(v["points"])
@@ -168,6 +183,17 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                 _, precision = recParse(v["precision"])
                 _, rate = recParse(v["rate"])
                 return ("points", filterAudio.dirac_comb_discrete(points, int(precision), int(rate)))
+
+            if k == "noise":
+                color = v["color"]
+                colToFunc = {
+                    "white" : coloredNoise.white_noise,
+                    "pink" : coloredNoise.pink_noise,
+                    "blue" : coloredNoise.blue_noise,
+                    "violet" : coloredNoise.violet_noise,
+                    "brownian" : coloredNoise.brownian_noise,
+                }
+                return ("points", colToFunc[color](seconds*samples))
 
             if k == "wave":
                 func = conversionTable[v["shape"]]
@@ -325,5 +351,26 @@ def starWars():
 
 
 if __name__ == "__main__":
-    pass
-    # soundGen.play(starWars())
+    note = {
+        "vibrato" : 
+            {
+                "points": {"wave": {"frequency" : {"num" : 220}, "amplitude": {"num": 1}, "shape" : "sin"}},
+                "speed" : {"num" : 6},
+                "intensity" : {"num" : 5},
+                "variation" : {"num" : 1},
+            }
+    }
+            # if k == "lpf":
+            #     _, points = recParse(v["points"])
+            #     _, cutoff = recParse(v["cutoff"])
+            #     return ("points", filterAudio.low_pass_Filter(points, cutoff))
+    noise = {"noise" : {"color" : "white"}}
+    thunder = {"lpf": {"points": noise, "cutoff": {"num" : 200}}}
+
+    a3 = {"wave": {"frequency" : {"num" : 220}, "amplitude": {"num": 1}, "shape" : "sin"}}
+
+    note = {"tune" : {"points" : a3, "shift" : {"num" : 100}}}
+
+    envelopedA3 = {"envelope": {"points": a3, "attack": {"num": 0.1}, "decay": {"num": 0.3}, "sustain": {"num": 0.5}, "release":  {"num": 0.3}}}
+    note = {"reverb" : {"points" : envelopedA3, "duration" : {"num" : 3}}}
+    soundGen.play(newparse(note, 44100, 2, 2+0.3+0.1+0.3)[0])
