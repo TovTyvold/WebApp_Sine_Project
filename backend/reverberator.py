@@ -100,8 +100,8 @@ def genDelays(delay_length):
 def main_reverb(input, delay_length):
     Fs = 44100 
     delays_early, delays = genDelays(delay_length)
-    gains_early = [0.8, 0.718, 0.635, 0.719, 0.267, 0.242]    
-    g = 0.7
+    gains_early = [1.02, 0.818, 0.635, 0.719, 0.267, 0.242]    
+    g = 0.9
     allpass_g = 0.7
     rev_to_er_delay = mutuallyPrime([1800 * (delay_length)])[0] 
     if delay_length == 2:
