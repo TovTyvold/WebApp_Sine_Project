@@ -179,10 +179,13 @@ def singleShift(input, shift_):
     ----------------------------
     input = signal
     shift_ = 40
+
+    TODO 
+    Be able to shift the 
     """
     t = np.linspace(0,1,len(input))
     Fshift = shift_/10
-    sigHil = signal.hilbert(input)
+    sigHil = shift_ *  signal.hilbert(input)
     sigHilShifted = sigHil * np.exp(1j * 2 * np.pi * Fshift * t)
     sigShifted = np.real(sigHilShifted)
     return sigShifted

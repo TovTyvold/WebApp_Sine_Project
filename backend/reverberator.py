@@ -60,6 +60,21 @@ def is_prime(n):
         f += 6
     return True
 
+def mutuallyPrime(n):
+    primes = [11, 17, 19, 23, 29, 31]
+    m = []
+    for i in range(len(n)):
+        val = int(np.round(np.log(n[i])/np.log(primes[i])))
+        m.append(val)
+
+    new_list = []
+
+    for i in range(len(n)):
+        m_del = primes[i] **(m[i])
+        new_list.append(m_del)    
+    return new_list
+
+
 def newPrime(list):
     new_list = []
     for i in list:
@@ -70,30 +85,36 @@ def newPrime(list):
     return new_list
 
 def genDelays(delay_length):
-    delays_early = [877, 1563, 1718, 1828, 3083, 3511] #Between  10-50ms Comb/early echos
+    delays_early = [877, 1561, 1715, 1825, 3082, 3510] #Between  10-50ms Comb/early echos
     delays_early = [int(i*delay_length) for i in delays_early] 
-    new_early_delays = newPrime(delays_early)
+    new_early_delays = mutuallyPrime(delays_early)
     delays_early = new_early_delays
 
-    delays = [2206, 2469, 2692, 2998, 3176, 3442] # Betweem 50-80ms
+    delays = [2205, 2469, 2690, 2998, 3175, 3439] # Betweem 50-80ms
     delays = [int(j*delay_length) for j in delays]
-    new_delays = newPrime(delays)
+    new_delays = mutuallyPrime(delays)
     delays = new_delays
     return delays_early, delays 
 
 
 def main_reverb(input, delay_length):
-    Fs = 44100
+    Fs = 44100 
     delays_early, delays = genDelays(delay_length)
-    gains_early = [0.9, 0.818, 0.635, 0.719, 0.267, 0.242]
-
+    gains_early = [0.8, 0.718, 0.635, 0.719, 0.267, 0.242]    
     g = 0.7
     allpass_g = 0.7
-    rev_to_er_delay = 2000
+    rev_to_er_delay = mutuallyPrime([1800 * (delay_length)])[0] 
+    if delay_length == 2:
+        delay_length = 1
+        delays_early, delays = genDelays(delay_length)
+        rev_to_er_delay = mutuallyPrime([1800 * (delay_length)])[0] 
+
+
     rev_time = 1 / (Fs/rev_to_er_delay)
     T = rev_time
-    gain_list = [10**((-3 * T * Fs) / m) for m in delays]
-    g1_list = gain_list
+    #gain_list = [10**((-3 * (T) * Fs) / m) for m in delays_early]
+    #g1_list = gain_list
+    g1_list = [0.41, 0.43, 0.45, 0.47, 0.48, 0.50]
     allpass_delay = 286 
 
     output_gain = 0.075 
@@ -118,6 +139,6 @@ def main_reverb(input, delay_length):
     reverb = delay(reverb, rev_to_er_delay)
     reverb_out = early_reflections + reverb 
     reverb_out = output_gain * ((reverb_out * wet1 + reverb_out * wet2) + np.concatenate((input, np.zeros(rev_to_er_delay))) * dry)
-
-    return reverb_out
+    revout = (reverb_out/ np.max(reverb_out)) 
+    return revout
 

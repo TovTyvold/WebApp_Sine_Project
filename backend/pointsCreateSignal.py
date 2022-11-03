@@ -6,7 +6,7 @@ from numpy.linalg import norm
 from matplotlib.widgets import Slider, Button
 
 from filterAudio import low_pass_Filter, high_pass_Filter, dirac_comb_discrete, weierstrassFunc,\
-    semitoneFunc, singleShift, vibratoFunc, whiteChorus, pitchChorus
+    singleShift, vibratoFunc, whiteChorus, pitchChorus
 from reverberator import main_reverb
 from coloredNoise import plot_spectrum, white_noise, brownian_noise, violet_noise, pink_noise, blue_noise
 from soundGen import play
@@ -22,11 +22,11 @@ def Create_Sine(amplitudes, frequencies):
     Fs = 44100
     T = 1/(Fs) 
     N = Fs
-    t = 0.1
+    t = 1
     t_vec = np.arange(t*N) * (T * t)
     omega = 2* np.pi 
-    #sine_add = np.sin(np.linspace(-4 * np.pi,4 * np.pi,len(t_vec)))
-    #omega = 2 * np.pi* sine_add
+    sine_add = np.sin(np.linspace(-4 * np.pi,4 * np.pi,len(t_vec)))
+    omega = 2 * np.pi* sine_add
     y_sum = 0
     k = 0
     for i in frequencies:
@@ -36,15 +36,17 @@ def Create_Sine(amplitudes, frequencies):
 
     width = 0.03
     #corout = pitchChorus(normy.copy())
-    shift = np.linspace(-2,2,20-1)
+    shift = np.linspace(-100,100,20-1)
     choru = 0
-    plt.figure()
+    """ plt.figure()
     for i in shift:
         choru += singleShift(normy.copy(), i)
         plt.plot(t_vec, choru)
         if i == 0:
             continue
     plt.plot(t_vec, normy.copy(), 'k', label="MAIN")
+    plt.plot(t_vec, singleShift(normy.copy(), -1), 'g', label="-100")
+    #plt.plot(t_vec, singleShift(normy.copy(), 100), 'y', label="100")
     plt.legend()
 
     y1 = singleShift(normy.copy(), 0.1)
@@ -59,11 +61,8 @@ def Create_Sine(amplitudes, frequencies):
     chor = normy.copy() + y1 + y2 + y3 + y4
     plt.figure()
     plt.plot(t_vec, chor)
-    plt.show()
-    #play(normy.copy())
-    #play(corout)    
-
-    """ plt.ion()
+    plt.show() 
+    plt.ion()
     plt.figure()
     plt.show()
     plt.pause(4)
