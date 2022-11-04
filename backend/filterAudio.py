@@ -1,12 +1,7 @@
 from scipy import signal
-from scipy.stats import norm
 import numpy as np
-import matplotlib.pyplot as plt
-from pointsFrequency import signal_to_hertz
-from plotting import plot_array 
-from pointsNoise import cNoise
 from coloredNoise import white_noise, brownian_noise, pink_noise, blue_noise, violet_noise
-
+from pedalboard import Pedalboard, Reverb
 
 
 #LOW PASS
@@ -57,7 +52,6 @@ def high_pass_Filter(y_sum, cutoff):
     return filtered
 
 
-#LFO
 def Low_frequency_Oscillator_sine(input, t):
     """
     Layer input with the sine function, adds a sinusoidal effect.
@@ -75,7 +69,6 @@ def Low_frequency_Oscillator_sine(input, t):
     return (1 + np.sin(2 * np.pi * 20 * t_vec)) / 2
     
 
-#LFO
 def Low_frequency_Oscillator_saw(input, t):
     """
     Layer input with the saw function, adds a Sawtooth effect.
@@ -91,32 +84,6 @@ def Low_frequency_Oscillator_saw(input, t):
     """
     t_vec = np.linspace(0, t, len(input))
     return 2 * 20 * (t_vec % (1 / 20)) - 1
-
-def weierstrassFunc(input, a):
-    """
-    Layer input with the Weierstrass function, adds a metallic effect.
-
-    Inputs 
-    -----------------------------
-    input - dtype ndarray: Signal
-    a - dtype float: Scalar variable, must be 0 < a < 1. Sets the 
-    precision of the weier function
-
-    Returns
-    ----------------------------
-    weier - dtype ndarray: Fitlered signal
-    """
-
-    t_vec = np.linspace(-2 * np.pi, 2 * np.pi, len(input))
-    a = 0.5
-    tol = 0.1
-    b = 1/a + (3 / (2 * a)) * np.pi + tol
-    
-    weier = np.zeros_like(input)
-    for i in range(100):
-        weier  += a **i * np.cos((b**(i) * np.pi * t_vec))
-    return weier
-
 
 def dirac_comb_discrete(y, N_, K_):
     """
@@ -160,35 +127,6 @@ def hilbert(y):
      dtype [ndarray]: Fitlered signal
     """
     return np.imag(signal.hilbert(y))
-
-def singleShift(input, shift_):
-    """
-    singleShit can be used to change a single frequency of the signal.   
-
-    Inputs:
-    -----------------------------
-    input - dtype ndarray: Signal
-    shift_ - dtype float/int: The addition or subtraction on the current frequnecy.
-
-    Returns:
-    ----------------------------
-    sigShifted - dtype ndarray: Array with a changed frequency
-
-
-    Example input for parameters:
-    ----------------------------
-    input = signal
-    shift_ = 40
-
-    TODO 
-    Be able to shift the 
-    """
-    t = np.linspace(0,1,len(input))
-    Fshift = shift_/10
-    sigHil = shift_ *  signal.hilbert(input)
-    sigHilShifted = sigHil * np.exp(1j * 2 * np.pi * Fshift * t)
-    sigShifted = np.real(sigHilShifted)
-    return sigShifted
 
 
 def vibratoFunc(input, Modfreq, width, W):
@@ -252,109 +190,62 @@ def vibratoFunc(input, Modfreq, width, W):
         x[n] = Delayline[i+1] * frac + Delayline[i] * (1-frac)
     return x
 
-
-
-def whiteChorus(input, width):
+def singleShift(input, shift_):
     """
-    vibratoFunc can be used to implement an vibrato effect. The parameter "width" should be around:
-    ------------ 0.001 < width < 0.03. 
+    singleShit can be used to change a single frequency of the signal.   
 
     Inputs:
     -----------------------------
     input - dtype ndarray: Signal
-    Modfreq - dtype float/int: The frequency the sinusoidal wave that creates vibrato should have
-    width - dtype float/int: Length of the delay signal. 
- 
+    shift_ - dtype float/int: The addition or subtraction on the current frequnecy.
+
     Returns:
     ----------------------------
-    x - dtype ndarray: Array with input filtered
+    sigShifted - dtype ndarray: Array with a changed frequency
 
 
     Example input for parameters:
     ----------------------------
-    input = signal; width = 0.003; 
+    input = signal
+    shift_ = 40
     """
-    # Get lowpass noise
-    
-    lowpass_noise = pink_noise(len(input))
-    lowpass_noise = lowpass_noise / np.max(lowpass_noise)
-    #lowpass_noise = low_pass_Filter(lowpass_noise,10)
-    Fs = 44100
-    Delay = width 
+    t = np.linspace(0, 1, len(input))
+    Fshift = shift_/100
+    sigHil = signal.hilbert(input)
+    sigHilShifted = sigHil * np.exp(1j * 2 * np.pi * Fshift * t)
+    sigShifted = np.real(sigHilShifted)
+    return sigShifted
 
-    # WIDTH can't be greater than DELAY.
-    DELAY = int(Delay * Fs)
-    WIDTH = int(width * Fs)
- 
-    length = len(input)
-    MODFREQ = lowpass_noise
-    L = 1 + DELAY + WIDTH*2
-    L = L*2
-
-    x = np.zeros_like(input)
-    Delayline = np.zeros(L)
-
-    FB = -0.7; BL = 0.7; FF = 1
-    for n in range(length):
-        
-        DelaylineS = []
-        # Time delay
-        MOD = MODFREQ[n]
-        TAP = 1 + DELAY + WIDTH * MOD 
-        i = int(np.floor(TAP))
-        frac = TAP - i 
-        # Time index-delay -> K
-        K = MOD + frac
-        # System of equations
-        # -------------------
-        # Delay Line and
-        # All-Pass Comb -> Chorus equation 
-        DelaylineS_ = input[n] + FB * input[int(n-K)]
-        DelaylineS.append(DelaylineS_)
-        Delayline = list(DelaylineS) + list(Delayline[:L-1])
-        x[n] =  BL * Delayline[i] + FF * (DelaylineS_) + input[n]
-    
-    """ for n in range(length):
-        DelaylineS = []
-        # Time delay
-        MOD = MODFREQ[n]
-        TAP = 1 + DELAY + WIDTH * MOD 
-        i = int(TAP)
-        frac = TAP - i 
-        # Time index-delay -> K
-        # System of equations
-        # -------------------
-        # Delay Line and
-        # Spline Comb -> Chorus equation
-        g1 = (frac**(3))/6
-        g2 = ((1+frac)**3 - 4*(frac)**3)/6
-        g3 = ((2-frac)**3 - 4*(1 - frac)**3)/6
-        g4 = ((1 - frac)**(3))/6
-
-        DelaylineS.append(input[n]) 
-        Delayline = list(DelaylineS) + list(Delayline[:L-1])
-
-        x[n] = Delayline[i+1] * g1 + Delayline[i] * g2 \
-            + Delayline[i-1] * g3 + Delayline[i-2] * g4 
-     """
-    # Normalize:
-    g = FF + BL + FB
-    #g = g1 + g2 + g3 + g4 
-    x = (x) / np.max(np.abs(x))
-    return x
-
-
-def pitchChorus(input):
+def Reverb_(input, room_size = 1, wet_level = 0.5, dry_level = 0.4, width = 0.25):
     """
-    Ongoing
+    Reverb_ is a module taken from the class padelboard. Can be used to generate a reverb effect.
+
+    Inputs:
+    -----------------------------
+    input - dtype ndarray: Signal
+    room_size - dtype float: The attack of the reverb.
+    wet_level - dtype float: 
+    dry_level - dtype float:
+    width - dtype float: 
+
+    Returns:
+    ----------------------------
+    dtype ndarray: Filtered signal, 1-d array
+
+    Example input for parameters:
+    ----------------------------
+    input = signal
+    room_size = 0.5
+    wet_level = 0.33
+    dry_level = 0.4
+    width = 0.25
     """
-    y1 = singleShift(input, 0.1)
-    y2 = singleShift(input, 0.4)
-    y3 = singleShift(input, -0.1)
-    y4 = singleShift(input, -0.4)
-    chor = input + y1 + y2 + y3 + y4
-    return chor
-#z^-[M(n) + frac(n)] ---->>> x[M(n) + frac(n)]
+    sample_rate = 44100
+    board = Pedalboard([Reverb(room_size, wet_level, dry_level, width)])
+    return board(input.copy(), sample_rate)
+
+
+
 
 if __name__ == "__main__":
     abcd = 1
