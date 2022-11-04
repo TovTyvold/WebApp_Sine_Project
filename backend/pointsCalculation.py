@@ -82,26 +82,6 @@ def genSamples(samples: int, seconds: float):
     return [i / samples for i in range(int(seconds * samples))]
 
 
-def advSine(amplFunction, freqFunction, samples, seconds):
-    offsets = [0]*int(seconds*samples)
-    for i in range(1, int(samples*seconds)):
-        fp = freqFunction((i-1)/samples)
-        fn = freqFunction(i/samples)
-        offsets[i] = 2*math.pi*(i/samples)*(fp-fn)
-
-    #compute prefix sum
-    for i in range(1, int(samples*seconds)):
-        offsets[i] += offsets[i-1]
-
-    ypoints = [0]*int(seconds*samples)
-    for i in range(int(samples*seconds)):
-        x = i/samples
-        ypoints[i] = amplFunction(
-            x)*math.sin(2*math.pi*freqFunction(x)*x + offsets[i])
-
-    return ypoints
-
-
 def advSinePoints(ampls, freqs, samples, seconds, func=sin):
     #changing frequencies yielsd differnet phases,
     #this syncs them
@@ -120,8 +100,10 @@ def advSinePoints(ampls, freqs, samples, seconds, func=sin):
     return ypoints
 
 
-def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
-    #TODO generate the xpoints here, and let recParse use them rather than generating them
+#given recursive tree description of sound,
+#generate a signal sustainTime + envelopeTime seconds long
+#with samples sampels per second, in total sampels(sustainTime + envelopeTime) many samples
+def parse(data: dict, samples: int, sustainTime:float, envelopeTime:float) -> List[float]:
     seconds = envelopeTime + sustainTime
     xpoints = genSamples(samples, seconds)
     strToOp = {
@@ -133,8 +115,19 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
     def dimensionalise(p): return [p[1]] * \
         int(samples*seconds) if p[0] == "num" else p[1]
 
+    def percentageFix(xs, debug=False):
+        for i in range(len(xs)):
+            x = xs[i]
+            if not (0 <= x and x <= 1):
+                if debug:
+                    print("WARNING: " + str(x) + " is out of range, value will be clipped to be in range [0,1]")
+                x = 0 if x < 0 else x
+                x = 1 if x > 1 else x
+
+                xs[i] = x
+
     #recursively parse the ast
-    def recParse(data: dict) -> Dict[str, Union[List[float], Union[float, int]]]:
+    def recParse(data: dict) -> Dict[str, Union[List[float], Union[List[float], int]]]:
         for k in data.keys():
             v = data[k]
 
@@ -153,7 +146,7 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
 
             if k == "reverb":
                 _, points = recParse(v["points"])
-                _, duration = recParse(v["duration"]) #>=1
+                _, duration = recParse(v["duration"])
                 if not (duration >= 1):
                     duration = 1
                 return ("points", reverberator.main_reverb(points, duration))
@@ -219,6 +212,7 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
             #pan = {percent : {}, points : {}}
             if k == "pan":
                 percents = dimensionalise(recParse(v["percent"]))
+                percentageFix(percents)
                 (_, points) = recParse(v["points"])
 
                 points0 = [(1-per)*poi for per,poi in zip(percents, points)]
@@ -262,6 +256,9 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                 v1s = dimensionalise(recParse(v["value0"]))
                 v2s = dimensionalise(recParse(v["value1"]))
 
+                percentageFix(v1s)
+                percentageFix(v2s)
+
                 ypoints = []
                 for i in range(len(percents)):
                     percent = percents[i]
@@ -278,6 +275,9 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
         raise Exception("Unknown key: " + k)
 
     #normalize input
+    if data == {}:
+        return ([], 1)
+
     t, parseddata = recParse(data)
     if t == "points":
         ypoints = parseddata
@@ -294,34 +294,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
         return (ypoints0, ypoints1), 2
 
 
-def freqToSamples(freq):
-    return {'+': [
-        {'envelope':
-            {
-                'points': {'wave': {'shape': 'sin', 'frequency': freq, 'amplitude': 15}},
-                'numbers': {'list': [
-                    {'num': 100},
-                    {'num': 200},
-                    {'num': 50},
-                    {'num': 100}
-                ]}
-            }
-         }
-    ]}
-
-
-def noteNameToSamples(note):
-    freq = noteToFreq(note)
-
-    return freqToSamples(freq)
-
-
 #generate samples for imperial march from star wars
 def starWars():
-    def noteToSound(p):
-        return newparse(noteNameToSamples(p[0]), 44100, p[1])
-
-    completeSounds = []
     s = """
             G4,1 G4,1 G4,1 Eb4,0.75 Bb4,0.25
             G4,1 Eb4,0.75 A#4,0.25 G4,2 
@@ -337,18 +311,7 @@ def starWars():
             G4,1 Eb4,0.75 Bb4,0.25 G4,2
         """
 
-    a = []
-    for n in s.split(" "):
-        if not (n == '\n' or n == ''):
-            print(n)
-            q = n.split(",")
-            a.append((q[0], 0.66*float(q[1])))
-
-    for p in a:
-        completeSounds += noteToSound(p)
-
-    return completeSounds
-
+    return s
 
 if __name__ == "__main__":
     note = {
@@ -373,4 +336,4 @@ if __name__ == "__main__":
 
     envelopedA3 = {"envelope": {"points": a3, "attack": {"num": 0.1}, "decay": {"num": 0.3}, "sustain": {"num": 0.5}, "release":  {"num": 0.3}}}
     note = {"reverb" : {"points" : envelopedA3, "duration" : {"num" : 3}}}
-    soundGen.play(newparse(note, 44100, 2, 2+0.3+0.1+0.3)[0])
+    soundGen.play(parse(note, 44100, 2, 2+0.3+0.1+0.3)[0])

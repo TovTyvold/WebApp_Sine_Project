@@ -60,6 +60,7 @@ def recClean(json: Union[dict, str, float, int]) -> dict:
     if dType == "operation":
         return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
 
+
 #go through the tree and find the largest topmost envelope time
 def recFindEnv(tree : dict):
     if (type(tree) != dict):
@@ -86,29 +87,75 @@ def recFindEnv(tree : dict):
     # we want the longest one
     return max(a)
 
-def handleInput(query):
+
+def cycleDetect(adj):
+    visited = {}
+    finished = {}
+    for v in adj.keys():
+        visited[v] = False
+        finished[v] = False
+
+    def dfs(adj, v, visited, finished):
+        if finished[v]:
+            return False
+
+        if visited[v]:
+            #cycle found
+            return True
+
+        visited[v] = True
+
+        cycleFound = False
+        for _, w in adj[v]:
+            cycleFound |= dfs(adj, w, visited, finished)
+
+        finished[v] = True
+        return cycleFound
+
+    found = False
+    for v in adj.keys():
+        found |= dfs(adj, v, visited, finished)
+
+    if found:
+        print("WARNING: cycle found")
+
+    return found
+
+
+def handleInput(query, debug=False):
     #query is a (V,E) pair
     nodes = query["nodes"]
     edges = query["edges"]
 
-    recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
-    recTree = dict((key, d[key]) for d in recTree for key in d)
-
+    #check if there are any cycles in the graph
+    adj = dict((vert, []) for vert in [node["id"] for node in nodes])
     for e in edges:
         _, source = e["sourceHandle"].split("-")
         tpos, target = e["targetHandle"].split("-")
-        source = source
-        target = target
 
-        if tpos == "in":
-            recTree[target][tpos].append(recTree[source])
-        else:
-            recTree[target]["data"][tpos] = recTree[source]
+        adj[target].append((tpos, source))
+
+    if cycleDetect(adj) or len(adj["output0"]) == 0:
+        return {},0,0
+
+    #build recursive tree structure
+    recTree = list(map(lambda a : {a["id"] : {**a, "in" : []}}, nodes))
+    recTree = dict((key, d[key]) for d in recTree for key in d)
+    for v in adj.keys():
+        for place, w in adj[v]:
+            if place == "in":
+                recTree[v][place].append(recTree[w])
+            else:
+                recTree[v]["data"][place] = recTree[w]
 
     soundTree = recClean(recTree["output0"])
     panTree = recClean(recTree["output0"]["data"]["pan"])
-    print("\nsoundtree\n",soundTree)
-    print("\npantree\n",panTree)
+    if debug:
+        print("\nsoundtree\n",soundTree)
+        print("\npantree\n",panTree)
+
+
+    print(soundTree)
 
     #do not add panning if pan percent is set to 0.5
     if not ("num" in panTree and panTree["num"] == 0.5):
@@ -129,6 +176,13 @@ SAMPLES = 44100
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
+    #expect a (V,E) encoding a nodetree,
+    #will send back json with SampleCount and Channels
+    #corresponding to the total count of samples and the amount of channels in the signal
+    #if there are more channels the samples will be interleaved
+    #in practice channels will either be 1 or 2
+    #then the samples are send in CHUNKSIZE sized chunks
+    
     try:
         while (True):
             #recieve wave information
@@ -138,14 +192,12 @@ async def websocket_endpoint(websocket: WebSocket):
             print("\nprocessesing: \n", query)
             print("\ntotalTime: ", envelopeTime+sustainTime, ", consisting of:", "\n\tsustainTime:", sustainTime, "\n\tenvelopeTime:", envelopeTime, "\n")
 
-            soundData, channels = pointsCalculation.newparse(query, SAMPLES, sustainTime, envelopeTime)
+            soundData, channels = pointsCalculation.parse(query, SAMPLES, sustainTime, envelopeTime)
 
             print("done processesing")
 
-            sampleCount = len(soundData) if type(soundData) is not tuple else len(soundData[0])
+            sampleCount = len(soundData) if channels == 1 else len(soundData[0])
             await websocket.send_json({"SampleCount": sampleCount, "Channels": channels})
-
-            # soundGen.play(soundData, channels)
 
             #send chunkSize chunks of the sounddata until all is sent
             cb = soundGen.samplesToCB(soundData)
@@ -158,7 +210,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("apiServer:app", port=5000,
-                            log_level="info", reload=True)
-    server = uvicorn.Server(config)
-    server.run()
+    uvicorn.run("apiServer:app", port=5000, reload=True)
