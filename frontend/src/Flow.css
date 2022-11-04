@@ -104,7 +104,7 @@
   border-radius: 15px;
 }
 
-.osc-input {
+.number-input {
   display: block;
   color: #777;
   font-size: 12px;
@@ -119,14 +119,6 @@
 .osc-input-dd {
   font-size: 12px;
   padding-inline: 1rem;
-}
-
-.op-radio {
-  font-size: 18pt;
-}
-
-.op-radio input {
-  accent-color: #1f939e;
 }
 
 .react-flow .react-flow__handle {
@@ -188,6 +180,7 @@ select {
 .btn {
   font-weight: 0;
   font-size: 18px;
+  width: 121px;
   color: #fff;
   background-color: #1f939e;
   padding: 13px 38px;
@@ -206,7 +199,6 @@ select {
 
 .btn:hover {
   transition: 106ms;
-  /* padding: 10px 48px; */
   transform: translateY(-0px);
   background-color: #fff;
   color: #1f939e;

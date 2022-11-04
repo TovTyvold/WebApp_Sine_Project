@@ -49,6 +49,8 @@ export const ContextMenu = memo(
                 return option;
               } else if (option.includes(searchTerm.toLocaleLowerCase())) {
                 return option;
+              } else {
+                return null;
               }
             })
             .map((option) => {

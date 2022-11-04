@@ -35,14 +35,17 @@ const ControllButtons = ({ saveProfile, restoreProfile, getFlow }: any) => {
         }
       }
     },
-    [showSaves]
+    [showSaves, getSavedProfiles]
   );
 
-  const handleLoad = useCallback((event: any, profile: string) => {
-    event.preventDefault();
-    restoreProfile(profile);
-    setShowSaves(false);
-  }, []);
+  const handleLoad = useCallback(
+    (event: any, profile: string) => {
+      event.preventDefault();
+      restoreProfile(profile);
+      setShowSaves(false);
+    },
+    [restoreProfile]
+  );
 
   return (
     <div
@@ -53,16 +56,20 @@ const ControllButtons = ({ saveProfile, restoreProfile, getFlow }: any) => {
         width: '100%',
         marginRight: '1rem',
       }}>
-      <div style={{ left: 0 }}>
-        <button className='btn' onClick={openSaves}>
-          Load
-        </button>
-        <button className='btn' onClick={onSave}>
-          Save
-        </button>
-      </div>
+      <button className='btn' onClick={onSave}>
+        Save
+      </button>
+      <button className='btn' onClick={openSaves}>
+        Load
+      </button>
+
       {showSaves && (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            display: 'flex',
+            height: '30px',
+            marginTop: '1rem',
+          }}>
           {savedProfiles.map((profile: string) => {
             return (
               <button

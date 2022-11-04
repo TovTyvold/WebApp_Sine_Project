@@ -2,9 +2,12 @@ import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
 function OperationNode({ data, id, selected }: any) {
-  const onChange = useCallback((event: any) => {
-    data.opType = event.target.value;
-  }, []);
+  const onChange = useCallback(
+    (event: any) => {
+      data.opType = event.target.value;
+    },
+    [data]
+  );
   return (
     <div className={'op-node' + (selected ? ' node-selected' : '')}>
       <Handle id={'in-' + id} type='target' position={Position.Left} />

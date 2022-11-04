@@ -35,7 +35,7 @@ function EffectNode({ data, id, selected }: any) {
       params[event.target.name] = event.target.value;
       data.params = params;
     },
-    [selection]
+    [selection, data]
   );
 
   return (

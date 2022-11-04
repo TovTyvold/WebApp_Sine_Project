@@ -11,11 +11,14 @@ function SliderInput({
   onChange,
 }: any) {
   const [sliderValue, setSliderValue] = useState(defaultValue);
-  const onValueChange = useCallback((event: any) => {
-    event.preventDefault();
-    setSliderValue(event.target.value);
-    onChange(event, unit);
-  }, []);
+  const onValueChange = useCallback(
+    (event: any) => {
+      event.preventDefault();
+      setSliderValue(event.target.value);
+      onChange(event, unit);
+    },
+    [onChange, unit]
+  );
 
   return (
     <div style={{ marginTop: '10px' }}>
