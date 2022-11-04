@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
-import SliderInput from './SliderInput';
+import NumberInput from '../components/NumberInput';
+import SliderInput from '../components/SliderInput';
 
 function MixNode({ data, id, selected }: any) {
   const onChange0 = useCallback(

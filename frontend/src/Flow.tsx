@@ -10,20 +10,23 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   OnSelectionChangeParams,
+  ReactFlowInstance,
+  Viewport,
+  XYPosition,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import './flow-node.css';
+import './Flow.css';
 
 import { ContextMenu } from './components/ContextMenu';
 import ControllButtons from './components/ControlButtons';
-import EnvelopeNode from './components/EnvelopeNode';
-import OscillatorNode from './components/OscillatorNode';
-import OperationNode from './components/OperationNode';
-import EffectNode from './components/EffectNode';
-import OutputNode from './components/OutputNode';
-import MixNode from './components/MixNode';
-import ValueNode from './components/ValueNode';
-import BezierNode from './components/BezierNode';
+import EnvelopeNode from './nodes/EnvelopeNode';
+import OscillatorNode from './nodes/OscillatorNode';
+import OperationNode from './nodes/OperationNode';
+import EffectNode from './nodes/EffectNode';
+import OutputNode from './nodes/OutputNode';
+import MixNode from './nodes/MixNode';
+import ValueNode from './nodes/ValueNode';
+import BezierNode from './nodes/BezierNode';
 
 const initialNodes: Node[] = [
   {
@@ -71,12 +74,16 @@ const defaultData: Map<string, Object> = new Map([
 const Flow = ({ submit }: any) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const currentNode = useRef<Node>();
-  const [instance, setInstance] = useState<any>(null);
-  const edgeUpdateSuccessful = useRef(true);
+  const [instance, setInstance] = useState<ReactFlowInstance>();
   const [showContextMenu, setShowContextMenu] = useState(false);
-  const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
-  const [currView, setCurrView] = useState({ x: 0, y: 0, zoom: 1 });
+  const [contextPosition, setContextPosition] = useState<XYPosition>({
+    x: 0,
+    y: 0,
+  });
+  const [currView, setCurrView] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
+
+  const edgeUpdateSuccessful = useRef(true);
+  const currentNode = useRef<Node>();
   const idRef = useRef<any>({
     oscillator: 0,
     envelope: 0,
@@ -108,7 +115,7 @@ const Flow = ({ submit }: any) => {
 
       submit({ nodes: nodesList, edges: edgesList });
     }
-  }, [instance]);
+  }, [instance, submit]);
 
   useEffect(() => {
     const playListener = (event: any) => {
@@ -122,34 +129,6 @@ const Flow = ({ submit }: any) => {
       document.removeEventListener('keydown', playListener);
     };
   }, [getFlow]);
-
-  const addNode = useCallback(
-    (nodeType: string, nodePos: any, view: any, data?: any) => {
-      let nodeData: Object;
-      if (data) {
-        nodeData = data;
-      } else {
-        //perform a deep copy of defaultData of nodeType
-        // const def = JSON.parse(JSON.stringify(defaultData.get(nodeType)));
-        const def = defaultData.get(nodeType);
-        nodeData = def !== undefined ? JSON.parse(JSON.stringify(def)) : {};
-      }
-
-      const x = (1 / view.zoom) * (nodePos.x - view.x);
-      const y = (1 / view.zoom) * (nodePos.y - view.y);
-
-      const newNode = {
-        id: `${nodeType}${idRef.current[nodeType]++}`,
-        position: { x: x, y: y },
-        type: nodeType,
-        data: nodeData,
-      };
-
-      setNodes((nds) => nds.concat(newNode));
-      setShowContextMenu(false);
-    },
-    []
-  );
 
   useEffect(() => {
     const duplicateListener = (event: any) => {
@@ -170,7 +149,7 @@ const Flow = ({ submit }: any) => {
 
   useEffect(() => {
     const ctxMenuListener = (event: any) => {
-      if (event.ctrlKey && event.key === 'a') {
+      if (event.shiftKey && event.key === 'A') {
         event.preventDefault();
         onPaneContextMenu(event, true);
       }
@@ -181,6 +160,32 @@ const Flow = ({ submit }: any) => {
     };
   }, []);
 
+  const addNode = useCallback(
+    (nodeType: string, nodePos: XYPosition, view: Viewport, data?: Object) => {
+      let nodeData: Object;
+      if (data) {
+        nodeData = data;
+      } else {
+        const def = defaultData.get(nodeType);
+        nodeData = def !== undefined ? JSON.parse(JSON.stringify(def)) : {};
+      }
+
+      const x = (1 / view.zoom) * (nodePos.x - view.x);
+      const y = (1 / view.zoom) * (nodePos.y - view.y);
+
+      const newNode = {
+        id: `${nodeType}${idRef.current[nodeType]++}`,
+        position: { x: x, y: y },
+        type: nodeType,
+        data: nodeData,
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+      setShowContextMenu(false);
+    },
+    [setNodes]
+  );
+
   const onSelectionChange = useCallback(
     ({ nodes, edges }: OnSelectionChangeParams) => {
       nodes.forEach((node: Node) => {
@@ -190,9 +195,12 @@ const Flow = ({ submit }: any) => {
     []
   );
 
-  const removeNode = useCallback((n: Node) => {
-    setNodes((nds) => nds.filter((node) => node.id !== n.id));
-  }, []);
+  const removeNode = useCallback(
+    (n: Node) => {
+      setNodes((nds) => nds.filter((node) => node.id !== n.id));
+    },
+    [setNodes]
+  );
 
   const onConnect = useCallback(
     (params: Edge | Connection) =>
@@ -211,22 +219,23 @@ const Flow = ({ submit }: any) => {
       edgeUpdateSuccessful.current = true;
       setEdges((els) => updateEdge(oldEdge, newConnection, els));
     },
-    []
+    [setEdges]
   );
 
-  const onEdgeUpdateEnd = useCallback((_: any, edge: Edge) => {
-    if (!edgeUpdateSuccessful.current) {
-      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
-    }
-  }, []);
+  const onEdgeUpdateEnd = useCallback(
+    (_: any, edge: Edge) => {
+      if (!edgeUpdateSuccessful.current) {
+        setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+      }
+    },
+    [setEdges]
+  );
 
   const onPaneContextMenu = useCallback((event: any, hotkey?: boolean) => {
     event.preventDefault();
     let viewport_x;
     let viewport_y;
     const boundingBox = event.target.getBoundingClientRect();
-
-    console.log(boundingBox);
     if (hotkey) {
       viewport_x = 300;
       viewport_y = 200;
@@ -243,9 +252,35 @@ const Flow = ({ submit }: any) => {
     setShowContextMenu(false);
   }, []);
 
-  const onMoveEnd = useCallback((event: any, view: any) => {
+  const onMoveEnd = useCallback((event: any, view: Viewport) => {
     setCurrView(view);
   }, []);
+
+  const saveProfile = useCallback(() => {
+    if (!instance) throw Error('Cannot find reactFlowInstance.');
+    const saveKey = prompt('What would you like to save this profile as?');
+    if (!saveKey) return;
+    const saveObj = {
+      profile: instance.toObject(),
+      ids: idRef.current,
+    };
+    localStorage.setItem(saveKey, JSON.stringify(saveObj));
+  }, [instance]);
+
+  const restoreProfile = useCallback(
+    async (loadKey: string) => {
+      if (!loadKey) throw Error('No key provided.');
+      console.log(loadKey);
+      const loadObj = await JSON.parse(localStorage.getItem(loadKey) || '');
+      if (!loadObj) throw Error('getItem() failed or stored value is empty.');
+      const { x = 0, y = 0, zoom = 1 } = loadObj.profile.viewport;
+      setNodes(loadObj.profile.nodes || []);
+      setEdges(loadObj.profile.edges || []);
+      setCurrView({ x, y, zoom });
+      idRef.current = loadObj.ids;
+    },
+    [setNodes, setEdges]
+  );
 
   return (
     <ReactFlow
@@ -271,9 +306,14 @@ const Flow = ({ submit }: any) => {
       <ContextMenu
         show={showContextMenu}
         position={contextPosition}
-        onClick={(n: any) => addNode(n, contextPosition, currView)}
+        onClick={(n: string) => addNode(n, contextPosition, currView)}
       />
-      <ControllButtons getFlow={getFlow} />
+      <ControllButtons
+        saveProfile={saveProfile}
+        instance={instance}
+        restoreProfile={restoreProfile}
+        getFlow={getFlow}
+      />
       <Background />
     </ReactFlow>
   );

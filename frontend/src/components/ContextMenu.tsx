@@ -13,11 +13,11 @@ export const ContextMenu = memo(
       'mix',
     ];
 
+    useEffect(() => {}, [searchTerm]);
+
     useEffect(() => {
       if (!show) setSearchTerm('');
     }, [show]);
-
-    useEffect(() => {}, [searchTerm]);
 
     return show ? (
       <div
@@ -36,6 +36,7 @@ export const ContextMenu = memo(
         <input
           type='text'
           placeholder='Search'
+          autoFocus
           onChange={(event: any) => {
             setSearchTerm(event.target.value);
           }}
@@ -48,6 +49,8 @@ export const ContextMenu = memo(
                 return option;
               } else if (option.includes(searchTerm.toLocaleLowerCase())) {
                 return option;
+              } else {
+                return null;
               }
             })
             .map((option) => {

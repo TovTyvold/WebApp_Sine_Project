@@ -1,13 +1,16 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import SliderInput from './SliderInput';
+import SliderInput from '../components/SliderInput';
 
 function OutputNode({ data, id }: any) {
-  const onChange = useCallback((event: any) => {
-    if (event.target.name === 'pan') data.pan.percent = event.target.value;
-    if (event.target.name === 'sustain')
-      data.sustainTime.sec = event.target.value;
-  }, []);
+  const onChange = useCallback(
+    (event: any) => {
+      if (event.target.name === 'pan') data.pan.percent = event.target.value;
+      if (event.target.name === 'sustain')
+        data.sustainTime.sec = event.target.value;
+    },
+    [data]
+  );
   return (
     <div className='out-node'>
       <Handle

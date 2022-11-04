@@ -1,28 +1,31 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import SliderInput from './SliderInput';
+import SliderInput from '../components/SliderInput';
 
 function EnvelopeNode({ data, id, selected }: any) {
-  const onChange = useCallback((event: any) => {
-    event.preventDefault();
-    const value = event.target.value;
-    switch (event.target.name) {
-      case 'attack':
-        data.attack = { ms: value };
-        break;
-      case 'decay':
-        data.decay = { ms: value };
-        break;
-      case 'sustain':
-        data.sustain = { percent: value };
-        break;
-      case 'release':
-        data.release = { ms: value };
-        break;
-      default:
-        console.log('Error: incorrect target');
-    }
-  }, []);
+  const onChange = useCallback(
+    (event: any) => {
+      event.preventDefault();
+      const value = event.target.value;
+      switch (event.target.name) {
+        case 'attack':
+          data.attack = { ms: value };
+          break;
+        case 'decay':
+          data.decay = { ms: value };
+          break;
+        case 'sustain':
+          data.sustain = { percent: value };
+          break;
+        case 'release':
+          data.release = { ms: value };
+          break;
+        default:
+          console.log('Error: incorrect target');
+      }
+    },
+    [data]
+  );
 
   return (
     <div className={'env-node' + (selected ? ' node-selected' : '')}>

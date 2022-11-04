@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
+import NumberInput from '../components/NumberInput';
 
 function ValueNode({ data, id, selected }: any) {
   const onChange = useCallback(

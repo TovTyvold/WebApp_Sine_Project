@@ -1,62 +1,18 @@
 .App {
   display: grid;
   justify-content: center;
-
-  height: 100%;
+  height: 100vh;
   background: whitesmoke;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
-.container {
-  display: grid;
-  width: 100vw;
-  height: 100vh;
-  justify-content: center;
-  /* align-content: center; */
-}
-
 header {
   text-align: center;
 }
 
-.graph-section {
-  margin-bottom: 4rem;
-  background-color: white;
-  padding: 4rem;
-  border-radius: 20px;
-  float: left;
-}
-
-.inputs-section {
-  width: 100%;
-}
-
-.oscillator {
-  background-color: white;
-  border: solid #1f939e 1px;
-  border-radius: 15px;
-  padding: 2rem;
-  margin: 1rem;
-}
-.osc-input {
-  margin-inline: 1rem;
-}
-
-.envelope {
-  float: right;
-  margin-inline: 1rem;
-}
-
-.add-input-button {
-  margin-bottom: 1rem;
-}
-
-.play-button {
-  width: 10rem;
-  background-color: #1f939e;
-
-  border-radius: 12px;
-  padding: 0.5rem;
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* For Chrome and Safari  */

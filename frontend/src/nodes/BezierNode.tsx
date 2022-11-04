@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { BezierCurveEditor } from 'react-bezier-curve-editor';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
+import NumberInput from '../components/NumberInput';
 
 function BezierNode({ data, id, selected }: any) {
   const point = useRef<[number, number, number, number]>([0.5, 0.5, 1, 1]);
@@ -25,22 +25,28 @@ function BezierNode({ data, id, selected }: any) {
         [end.current, 1],
       ];
     },
-    [point, start.current, end.current]
+    [point, data]
   );
 
-  const onChangeStart = useCallback((event: any) => {
-    event.preventDefault();
-    start.current = parseFloat(event.target.value);
+  const onChangeStart = useCallback(
+    (event: any) => {
+      event.preventDefault();
+      start.current = parseFloat(event.target.value);
 
-    bezierOnChange(point.current);
-  }, []);
+      bezierOnChange(point.current);
+    },
+    [bezierOnChange]
+  );
 
-  const onChangeEnd = useCallback((event: any) => {
-    event.preventDefault();
-    end.current = parseFloat(event.target.value);
+  const onChangeEnd = useCallback(
+    (event: any) => {
+      event.preventDefault();
+      end.current = parseFloat(event.target.value);
 
-    bezierOnChange(point.current);
-  }, []);
+      bezierOnChange(point.current);
+    },
+    [bezierOnChange]
+  );
 
   return (
     <div className={'bezier-node' + (selected ? ' node-selected' : '')}>

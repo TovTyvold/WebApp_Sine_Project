@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from './NumberInput';
-import WaveTypeInput from './WaveTypeInput';
+import NumberInput from '../components/NumberInput';
+import WaveTypeInput from '../components/WaveTypeInput';
 
 function OscillatorNode({ data, id, selected }: any) {
   const onChange = useCallback(
