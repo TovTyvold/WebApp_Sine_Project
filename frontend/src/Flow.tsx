@@ -27,6 +27,7 @@ import OutputNode from './nodes/OutputNode';
 import MixNode from './nodes/MixNode';
 import ValueNode from './nodes/ValueNode';
 import BezierNode from './nodes/BezierNode';
+import NoiseNode from './nodes/NoiseNode';
 
 const initialNodes: Node[] = [
   {
@@ -69,6 +70,7 @@ const defaultData: Map<string, Object> = new Map([
     },
   ],
   ['mix', { percent: 50, value0: 0, value1: 1 }],
+  ['noise', { color: 'white' }],
 ]);
 
 const Flow = ({ submit }: any) => {
@@ -92,6 +94,7 @@ const Flow = ({ submit }: any) => {
     value: 0,
     bezier: 0,
     mix: 0,
+    noise: 0,
   });
 
   const nodeTypes = useMemo(
@@ -104,6 +107,7 @@ const Flow = ({ submit }: any) => {
       out: OutputNode,
       bezier: BezierNode,
       mix: MixNode,
+      noise: NoiseNode,
     }),
     []
   );

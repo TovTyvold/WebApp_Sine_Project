@@ -11,9 +11,8 @@ export const ContextMenu = memo(
       'value',
       'bezier',
       'mix',
+      'noise',
     ];
-
-    useEffect(() => {}, [searchTerm]);
 
     useEffect(() => {
       if (!show) setSearchTerm('');
