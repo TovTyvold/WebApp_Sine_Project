@@ -1,22 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import NumberInput from '../components/NumberInput';
 
-function FilterEffect1({ name, onChange }: any) {
-  return (
-    <>
-      <NumberInput name={name} onChange={onChange} />
-    </>
-  );
-}
-function FilterEffect2(props: any) {
-  return (
-    <>
-      <NumberInput name={props.name1} onChange={props.onChange} />
-      <NumberInput name={props.name2} onChange={props.onChange} />
-    </>
-  );
-}
+import SliderInput from '../components/SliderInput';
 
 const params: any = {};
 
@@ -47,36 +32,106 @@ function EffectNode({ data, id, selected }: any) {
       <div className='select'>
         <select name='effect-type' onChange={onSelectionChange}>
           <option value='reverb'>Reverb</option>
+          <option value='vibrato'>Vibrato</option>
           <option value='lpf'>Low Pass Filter</option>
           <option value='hpf'>High Pass Filter</option>
           <option value='dirac'>Dirac Comb Filter</option>
-          <option value='lfo-sin'>LFO Sine</option>
-          <option value='lfo-saw'>LFO Saw</option>
-          <option value='phase'>Phase Shifter</option>
+          {/* <option value='lfo-sin'>LFO Sine</option>
+          <option value='lfo-saw'>LFO Saw</option> */}
         </select>
       </div>
       <hr />
       {
         {
           reverb: (
-            <FilterEffect2
-              name1={'duration'}
-              name2={'mixPercent'}
+            <SliderInput
+              name='roomsize'
+              label='Room Size'
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              defaultValue={0.5}
               onChange={onChange}
             />
           ),
-          lpf: <FilterEffect1 name={'cutoff'} onChange={onChange} />,
-          hpf: <FilterEffect1 name={'cutoff'} onChange={onChange} />,
           dirac: (
-            <FilterEffect2
-              name1={'precision'}
-              name2={'rate'}
+            <>
+              <SliderInput
+                name='precision'
+                min={0.1}
+                max={5.0}
+                step={0.1}
+                defaultValue={0.5}
+                onChange={onChange}
+              />
+              <SliderInput
+                name='rate'
+                min={0.0}
+                max={1.0}
+                step={0.01}
+                defaultValue={0.5}
+                onChange={onChange}
+              />
+            </>
+          ),
+          vibrato: (
+            <>
+              <SliderInput
+                name='speed'
+                min={0.1}
+                max={5.0}
+                step={0.1}
+                defaultValue={0.5}
+                onChange={onChange}
+              />
+              <SliderInput
+                name='intensity'
+                min={0.0}
+                max={1.0}
+                step={0.01}
+                defaultValue={0.5}
+                onChange={onChange}
+              />
+              <SliderInput
+                name='variation'
+                min={0.0}
+                max={30.0}
+                step={0.1}
+                defaultValue={1}
+                onChange={onChange}
+              />
+            </>
+          ),
+          tune: (
+            <SliderInput
+              name='shift'
+              min={-3000}
+              max={3000}
+              unit='Hz'
+              defaultValue={1}
               onChange={onChange}
             />
           ),
-          'lfo-sin': <FilterEffect1 name={'rate'} onChange={onChange} />,
-          'lfo-saw': <FilterEffect1 name={'rate'} onChange={onChange} />,
-          phase: <FilterEffect1 name={'level'} onChange={onChange} />,
+          lpf: (
+            <SliderInput
+              name={'cutoff'}
+              unit='Hz'
+              min={20}
+              max={5000}
+              onChange={onChange}
+            />
+          ),
+          hpf: (
+            <SliderInput
+              name={'cutoff'}
+              unit='Hz'
+              min={20}
+              max={5000}
+              onChange={onChange}
+            />
+          ),
+          // 'lfo-sin': <SliderInput name={'rate'} unit='Hz' onChange={onChange} />,
+          // 'lfo-saw': <SliderInput name={'rate'} unit='Hz' onChange={onChange} />,
         }[selection]
       }
 

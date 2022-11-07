@@ -25,6 +25,7 @@ function App() {
   //when a tree is ready send it
   useEffect(() => {
     if (ws.readyState === webSocket.OPEN && tree && !isReady) {
+      console.log(JSON.stringify(tree, null, 2));
       ws.send(JSON.stringify(tree));
     }
   }, [ws, tree]);
