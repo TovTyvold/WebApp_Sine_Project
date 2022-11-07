@@ -3,7 +3,6 @@ from enum import Enum
 from typing import List, Dict, Union
 import random
 import functools
-import reverberator
 import coloredNoise
 import filterAudio
 import envelope
@@ -153,10 +152,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
 
             if k == "reverb":
                 _, points = recParse(v["points"])
-                _, duration = recParse(v["duration"]) #>=1
-                if not (duration >= 1):
-                    duration = 1
-                return ("points", reverberator.main_reverb(points, duration))
+                _, roomsize = recParse(v["roomsize"])
+                return ("points", filterAudio.Reverb_(points, roomsize))
 
             if k == "lpf":
                 _, points = recParse(v["points"])

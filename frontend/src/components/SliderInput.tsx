@@ -22,7 +22,7 @@ function SliderInput({
 
   return (
     <div style={{ marginTop: '10px' }}>
-      <div style={{ display: 'inline-block', width: '65px' }}>
+      <div style={{ display: 'inline-block', width: '75px' }}>
         <label htmlFor={name} style={{ margin: '5px' }}>
           {label ? label : name.charAt(0).toUpperCase() + name.slice(1)}
         </label>
