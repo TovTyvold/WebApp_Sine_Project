@@ -103,7 +103,7 @@ def dirac_comb_discrete(y, N_, K_):
 
     Example input:
     ----------------------------
-    dirac_comb_filt = dirac_comb_discrete(y_sum, N_ = 2, K = len(y[0])/5)
+    dirac_comb_filt = dirac_comb_discrete(y_sum, N_ = 2, K = 5)
     """
     K = len(y)/K_
     n = np.arange(len(y))
