@@ -15,7 +15,10 @@ function NoiseNode({ data, id, selected }: any) {
       <b>Noise</b>
 
       <div className='select'>
-        <select name='noise-type' onChange={onSelectionChange}>
+        <select
+          name='noise-type'
+          defaultValue={data.color}
+          onChange={onSelectionChange}>
           <option value='white'>White</option>
           <option value='pink'>Pink</option>
           <option value='blue'>Blue</option>
@@ -29,6 +32,7 @@ function NoiseNode({ data, id, selected }: any) {
         min={0}
         max={2}
         step={0.1}
+        defaultValue={data.intensity}
         onChange={onChange}
       />
       <Handle id={'out-' + id} type='source' position={Position.Right} />

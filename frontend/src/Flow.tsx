@@ -70,7 +70,7 @@ const defaultData: Map<string, Object> = new Map([
     },
   ],
   ['mix', { percent: 50, value0: 0, value1: 1 }],
-  ['noise', { color: 'white' }],
+  ['noise', { color: 'white', intensity: 0.8 }],
 ]);
 
 const Flow = ({ submit }: any) => {
