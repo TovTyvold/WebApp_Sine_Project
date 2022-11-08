@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 import NumberInput from '../components/NumberInput';
-import WaveTypeInput from '../components/WaveTypeInput';
 
 function OscillatorNode({ data, id, selected }: any) {
   const onChange = useCallback(
@@ -54,7 +53,17 @@ function OscillatorNode({ data, id, selected }: any) {
         defaultValue={data.amplitude}
         onChange={onChange}
       />
-      <WaveTypeInput onChange={onChange} />
+      <label htmlFor='shape' className='osc-input-dd'>
+        Wave Type
+      </label>
+      <div className='select'>
+        <select name='shape' defaultValue={data.shape} onChange={onChange}>
+          <option value='sin'>Sine</option>
+          <option value='saw'>Saw</option>
+          <option value='square'>Square</option>
+          <option value='triangle'>Triangle</option>
+        </select>
+      </div>
       <Handle id={'out-' + id} type='source' position={Position.Right} />
     </div>
   );

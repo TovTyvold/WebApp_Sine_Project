@@ -6,10 +6,17 @@ import SliderInput from '../components/SliderInput';
 const params: any = {};
 
 function EffectNode({ data, id, selected }: any) {
-  const [selection, setSelection] = useState('reverb');
+  let defaultSelect: string = 'reverb';
+  if (data.effectName) {
+    console.log(data.effectName);
+    defaultSelect = data.effectName;
+  }
+
+  const [selection, setSelection] = useState(defaultSelect);
 
   const onSelectionChange = useCallback((event: any) => {
     event.preventDefault();
+    data.effectName = selection;
     setSelection(event.target.value);
   }, []);
 
@@ -30,7 +37,10 @@ function EffectNode({ data, id, selected }: any) {
       <b>Effect</b>
       <br />
       <div className='select'>
-        <select name='effect-type' onChange={onSelectionChange}>
+        <select
+          name='effect-type'
+          defaultValue={defaultSelect}
+          onChange={onSelectionChange}>
           <option value='reverb'>Reverb</option>
           <option value='vibrato'>Vibrato</option>
           <option value='lpf'>Low Pass Filter</option>
