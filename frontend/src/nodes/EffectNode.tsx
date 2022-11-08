@@ -7,10 +7,7 @@ const params: any = {};
 
 function EffectNode({ data, id, selected }: any) {
   let defaultSelect: string = 'reverb';
-  if (data.effectName) {
-    console.log(data.effectName);
-    defaultSelect = data.effectName;
-  }
+  if (data.effectName) defaultSelect = data.effectName;
 
   const [selection, setSelection] = useState(defaultSelect);
 
@@ -46,8 +43,6 @@ function EffectNode({ data, id, selected }: any) {
           <option value='lpf'>Low Pass Filter</option>
           <option value='hpf'>High Pass Filter</option>
           <option value='dirac'>Dirac Comb Filter</option>
-          {/* <option value='lfo-sin'>LFO Sine</option>
-          <option value='lfo-saw'>LFO Saw</option> */}
         </select>
       </div>
       <hr />
@@ -128,6 +123,7 @@ function EffectNode({ data, id, selected }: any) {
               unit='Hz'
               min={20}
               max={5000}
+              defaultValue={200}
               onChange={onChange}
             />
           ),
@@ -137,6 +133,7 @@ function EffectNode({ data, id, selected }: any) {
               unit='Hz'
               min={20}
               max={5000}
+              defaultValue={800}
               onChange={onChange}
             />
           ),
