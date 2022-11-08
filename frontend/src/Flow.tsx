@@ -112,6 +112,7 @@ const Flow = ({ submit }: any) => {
     []
   );
 
+  // SUBMIT CURRENT FLOW STATE
   const getFlow = useCallback(() => {
     if (instance) {
       const nodesList = instance.getNodes();
@@ -121,6 +122,7 @@ const Flow = ({ submit }: any) => {
     }
   }, [instance, submit]);
 
+  // KEYDOWN EVENT LISTENERS
   useEffect(() => {
     const playListener = (event: any) => {
       if (event.code === 'Space') {
@@ -164,6 +166,7 @@ const Flow = ({ submit }: any) => {
     };
   }, []);
 
+  // ADD NODE
   const addNode = useCallback(
     (nodeType: string, nodePos: XYPosition, view: Viewport, data?: Object) => {
       let nodeData: Object;
@@ -260,6 +263,7 @@ const Flow = ({ submit }: any) => {
     setCurrView(view);
   }, []);
 
+  // SAVE TO LOCAL STORAGE
   const saveProfile = useCallback(() => {
     if (!instance) throw Error('Cannot find reactFlowInstance.');
     const saveKey = prompt('What would you like to save this profile as?');
@@ -271,6 +275,7 @@ const Flow = ({ submit }: any) => {
     localStorage.setItem(saveKey, JSON.stringify(saveObj));
   }, [instance]);
 
+  // LOAD FROM LOCAL STORAGE
   const restoreProfile = useCallback(
     async (loadKey: string) => {
       if (!loadKey) throw Error('No key provided.');

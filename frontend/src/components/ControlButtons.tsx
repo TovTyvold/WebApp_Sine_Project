@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const ControllButtons = ({ saveProfile, restoreProfile, getFlow }: any) => {
   const [savedProfiles, setSavedProfiles] = useState<string[]>([]);
@@ -12,6 +12,20 @@ const ControllButtons = ({ saveProfile, restoreProfile, getFlow }: any) => {
     }
     setSavedProfiles(arr);
   }, []);
+
+  useEffect(() => {
+    const saveListener = (event: any) => {
+      if (event.ctrlKey && event.key === 's') {
+        event.preventDefault();
+        saveProfile();
+        getSavedProfiles();
+      }
+    };
+    document.addEventListener('keydown', saveListener);
+    return () => {
+      document.removeEventListener('keydown', saveListener);
+    };
+  }, [saveProfile, getSavedProfiles]);
 
   const onSave = useCallback(
     (event: any) => {
