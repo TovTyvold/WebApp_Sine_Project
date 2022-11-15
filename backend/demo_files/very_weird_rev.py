@@ -20,28 +20,28 @@ def Create_Sine(amplitudes, frequencies):
     Fs = 44100
     T = 1/(Fs) 
     N = Fs
-    t = 3
+    t = 4
     t_vec = np.arange(t*N) * (T * t)
     omega = 2* np.pi 
-    #sine_add = 0.4*np.sin(np.linspace(-8 * np.pi,0 * np.pi,int(len(t_vec))))
-    #omega = 2 * np.pi* sine_add
+    sine_add = 0.4*np.sin(np.linspace(-8 * np.pi,0 * np.pi,int(len(t_vec)/2)))
+    sin_add = 0.3*np.sin(np.linspace(16 * np.pi,-32 * np.pi,int(len(t_vec)/2)))
+    trig = np.zeros(len(t_vec))
+    trig[:int(len(t_vec)/2)] = sine_add 
+    trig[int(len(t_vec)/2):] = sin_add 
+    omega = 2 * np.pi* trig
     y_sum = 0
     k = 0
     for i in frequencies:
         y_sum += amplitudes[k] * np.sin(omega * i * t_vec)
     
-    adsr = envelope.getSymmEnv([0.3,0.2,1,0.2], 0.75, 0, t)
-    y_sum = list(map(lambda a,b : a*b, bezierCurve.compositeOn(adsr, t_vec), y_sum))
+    #adsr = envelope.getSymmEnv([0.2,0.2,0.6,0.2], 0.75, 0, t)
+    #y_sum = list(map(lambda a,b : a*b, bezierCurve.compositeOn(adsr, t_vec), y_sum))
 
     norm_y = y_sum / np.max(np.abs(y_sum))
-    #play(norm_y.copy())
-    combed = dirac_comb_discrete(norm_y.copy(), 5, 10)
-    play(combed)
-    revout = Reverb_(combed.copy(), room_size=1, wet_level = 0.6, dry_level = 0.4, width = 1)
+    play(norm_y.copy())
+    revout = Reverb_(norm_y.copy(), room_size=0.5, wet_level = 0.8, dry_level = 0.2, width = 0.15)
     play(revout)
     wav = list(norm_y) + list(np.zeros(int(Fs/2))) + list(revout)
     wave_file(wav, wav2=None, fname="Reverb3.wav", amp=1, sample_rate=44100)
     return None
 Create_Sine([1, 1, 1], [50, 100, 150])
-
-

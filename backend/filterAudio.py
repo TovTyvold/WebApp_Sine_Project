@@ -112,6 +112,7 @@ def dirac_comb_discrete(y, N_, K_):
         part = (1/N_) *np.exp(2j * np.pi * n * i / K)
         sigSum = sigSum + part
     output = sigSum.real * y
+    output /= np.max(np.abs(output))
     return output 
 
 def hilbert(y):
@@ -216,7 +217,7 @@ def singleShift(input, shift_):
     sigShifted = np.real(sigHilShifted)
     return sigShifted
 
-def Reverb_(input, room_size = 1, wet_level = 0.5, dry_level = 0.4, width = 0.25):
+def Reverb_(input, room_size = None, wet_level = None, dry_level = None, width = None):
     """
     Reverb_ is a module taken from the class padelboard. Can be used to generate a reverb effect.
 
@@ -242,10 +243,9 @@ def Reverb_(input, room_size = 1, wet_level = 0.5, dry_level = 0.4, width = 0.25
     """
     sample_rate = 44100
     board = Pedalboard([Reverb(room_size, wet_level, dry_level, width)])
-    return board(input.copy(), sample_rate)
-
-
-
+    revout = board(input.copy(), sample_rate)
+    revout /= np.max(np.abs(revout))
+    return  revout
 
 if __name__ == "__main__":
     abcd = 1
