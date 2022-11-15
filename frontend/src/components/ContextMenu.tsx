@@ -6,12 +6,16 @@ export const ContextMenu = memo(
     const options = [
       'oscillator',
       'envelope',
-      'effect',
-      'operation',
       'value',
+      'sum',
+      'multi',
       'bezier',
       'mix',
       'noise',
+      'filter',
+      'vibrato',
+      'dirac',
+      'reverb',
     ];
 
     useEffect(() => {

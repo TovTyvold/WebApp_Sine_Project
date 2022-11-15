@@ -7,11 +7,37 @@
 .eff-node,
 .op-node,
 .noise-node,
+.filter-node,
+.dirac-node,
+.reverb-node,
+.vibrato-node,
+.sum-node,
+.multi-node,
 .out-node {
   height: auto;
   padding: 16px;
   border-radius: 10px;
   background: white;
+}
+
+.sum-node {
+  border: 2px solid #88dd44;
+}
+.sum-node hr {
+  height: 2px;
+  border: none;
+  background-color: #88dd44;
+  border-radius: 15px;
+}
+
+.multi-node {
+  border: 2px solid #e37cf0;
+}
+.multi-node hr {
+  height: 2px;
+  border: none;
+  background-color: #e37cf0;
+  border-radius: 15px;
 }
 
 .pan-node {
@@ -74,13 +100,43 @@
   border-radius: 15px;
 }
 
-.eff-node {
+.reverb-node {
   border: 2px solid #1f9e3d;
 }
-.eff-node hr {
+.reverb-node hr {
   height: 2px;
   border: none;
   background-color: #1f9e3d;
+  border-radius: 15px;
+}
+
+.vibrato-node {
+  border: 2px solid #9f8744;
+}
+.vibrato-node hr {
+  height: 2px;
+  border: none;
+  background-color: #9f8744;
+  border-radius: 15px;
+}
+
+.dirac-node {
+  border: 2px solid #7359a3;
+}
+.dirac-node hr {
+  height: 2px;
+  border: none;
+  background-color: #7359a3;
+  border-radius: 15px;
+}
+
+.filter-node {
+  border: 2px solid #8fad22;
+}
+.filter-node hr {
+  height: 2px;
+  border: none;
+  background-color: #8fad22;
   border-radius: 15px;
 }
 

@@ -36,11 +36,14 @@ def recClean(json: Union[dict, str, float, int]) -> dict:
     if dType == "out":
         return recClean(json["in"][0])
 
-    if dType == "effect":
-        return {dData["effectName"] : dict([(k, recClean(dData["params"][k])) for k in dData["params"].keys()]+[("points", recClean(dChildren[0]))])}
+    if dType in ["vibrato", "reverb", "dirac"]:
+        return {dType : dict([(k, recClean(dData[k])) for k in dData.keys()] + [("points" , recClean(dChildren[0]))])}
+
+    if dType == "filter":
+        return {dData["filterType"] : { "cutoff" : recClean(dData["cutoff"]), "points" : recClean(dChildren[0])}}
 
     if dType == "noise":
-        return {"color" : dData["color"]}
+        return {"noise": { "color" : dData["color"], "intensity" : recClean(dData["intensity"])}  }
 
     if dType == "mix":
         return {dType : dict([(k, recClean(dData[k])) for k in dData.keys()])}
@@ -57,8 +60,8 @@ def recClean(json: Union[dict, str, float, int]) -> dict:
     if dType == "oscillator": 
         return {"wave": dict([k,dData[k]] if k == "shape" else [k, recClean(dData[k])] for k in dData.keys())}
 
-    if dType == "operation":
-        return {("+" if dData["opType"] == "sum" else "*") : [recClean(child) for child in dChildren]}
+    if dType in ["sum", "multi"]:
+        return {("+" if dType == "sum" else "*") : [recClean(child) for child in dChildren]}
 
 #go through the tree and find the largest topmost envelope time
 def recFindEnv(tree : dict):
@@ -158,7 +161,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("apiServer:app", port=5000,
+    config = uvicorn.run("apiServer:app", port=5000,
                             log_level="info", reload=True)
-    server = uvicorn.Server(config)
-    server.run()

@@ -179,10 +179,11 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                 _, points = recParse(v["points"])
                 _, precision = recParse(v["precision"])
                 _, rate = recParse(v["rate"])
-                return ("points", filterAudio.dirac_comb_discrete(points, int(precision), int(rate)))
+                return ("points", filterAudio.dirac_comb_discrete(points, int(precision), float(rate)))
 
             if k == "noise":
                 color = v["color"]
+                _, intensity = recParse(v["intensity"])
                 colToFunc = {
                     "white" : coloredNoise.white_noise,
                     "pink" : coloredNoise.pink_noise,
@@ -190,7 +191,8 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
                     "violet" : coloredNoise.violet_noise,
                     "brownian" : coloredNoise.brownian_noise,
                 }
-                return ("points", colToFunc[color](seconds*samples))
+                print(type(intensity))
+                return ("points", colToFunc[color](int(seconds*samples), intensity))
 
             if k == "wave":
                 func = conversionTable[v["shape"]]

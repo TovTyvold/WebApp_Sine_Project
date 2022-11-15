@@ -7,7 +7,7 @@ function OutputNode({ data, id }: any) {
     (event: any) => {
       if (event.target.name === 'pan') data.pan.percent = event.target.value;
       if (event.target.name === 'sustain')
-        data.sustainTime.sec = event.target.value;
+        data.sustainTime.sec = parseFloat(event.target.value);
     },
     [data]
   );
