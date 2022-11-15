@@ -118,7 +118,8 @@ function App() {
   return (
     <div className='App'>
       <header>
-        <h1>W.O.K.</h1>
+        {/* <h1>W.O.K.</h1> */}
+        <img src='/wok.png' width={200} height={200} />
       </header>
       <main>
         <section

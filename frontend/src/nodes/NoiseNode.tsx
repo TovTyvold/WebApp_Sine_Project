@@ -7,7 +7,7 @@ function NoiseNode({ data, id, selected }: any) {
     data.color = event.target.value;
   }, []);
   const onChange = useCallback((event: any) => {
-    data.intensity = event.target.value;
+    data.intensity = parseFloat(event.target.value);
   }, []);
 
   return (

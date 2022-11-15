@@ -21,13 +21,17 @@ import { ContextMenu } from './components/ContextMenu';
 import ControllButtons from './components/ControlButtons';
 import EnvelopeNode from './nodes/EnvelopeNode';
 import OscillatorNode from './nodes/OscillatorNode';
-import OperationNode from './nodes/OperationNode';
-import EffectNode from './nodes/EffectNode';
 import OutputNode from './nodes/OutputNode';
 import MixNode from './nodes/MixNode';
 import ValueNode from './nodes/ValueNode';
 import BezierNode from './nodes/BezierNode';
 import NoiseNode from './nodes/NoiseNode';
+import FilterNode from './nodes/FilterNode';
+import VibratoNode from './nodes/VibratoNode';
+import DiracNode from './nodes/DiracNode';
+import ReverbNode from './nodes/ReverbNode';
+import SumNode from './nodes/SumNode';
+import MultiNode from './nodes/MultiNode';
 
 const initialNodes: Node[] = [
   {
@@ -71,6 +75,10 @@ const defaultData: Map<string, Object> = new Map([
   ],
   ['mix', { percent: 50, value0: 0, value1: 1 }],
   ['noise', { color: 'white', intensity: 0.8 }],
+  ['filter', { filterType: 'hpf', cutoff: 500 }],
+  ['vibrato', { speed: 0.5, intensity: 0.5, variation: 1 }],
+  ['dirac', { precision: 3, rate: 2.0 }],
+  ['reverb', { roomsize: 0.5, wet: 0.5, dry: 0.5, width: 0.55 }],
 ]);
 
 const Flow = ({ submit }: any) => {
@@ -89,25 +97,33 @@ const Flow = ({ submit }: any) => {
   const idRef = useRef<any>({
     oscillator: 0,
     envelope: 0,
-    operation: 0,
-    effect: 0,
     value: 0,
+    sum: 0,
+    multi: 0,
     bezier: 0,
     mix: 0,
     noise: 0,
+    filter: 0,
+    vibrato: 0,
+    dirac: 0,
+    reverb: 0,
   });
 
   const nodeTypes = useMemo(
     () => ({
       oscillator: OscillatorNode,
       envelope: EnvelopeNode,
-      operation: OperationNode,
-      effect: EffectNode,
       value: ValueNode,
+      sum: SumNode,
+      multi: MultiNode,
       out: OutputNode,
       bezier: BezierNode,
       mix: MixNode,
       noise: NoiseNode,
+      filter: FilterNode,
+      vibrato: VibratoNode,
+      dirac: DiracNode,
+      reverb: ReverbNode,
     }),
     []
   );
