@@ -38,7 +38,7 @@ def Create_Sine(amplitudes, frequencies):
     revout = Reverb_(vibrato.copy(), room_size=1, wet_level = 0.6, dry_level = 0.4, width = 1)
     play(revout)
     wav = list(norm_y) + list(np.zeros(int(Fs/2))) + list(revout)
-    wave_file(wav, wav2=None, fname="bee_reverb.wav", amp=1, sample_rate=44100)
+    wave_file(wav, wav2=None, fname="Reverb3.wav", amp=1, sample_rate=44100)
     return None
 Create_Sine([1, 1, 1], [50, 100, 150])
 
