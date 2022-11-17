@@ -2,8 +2,7 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import Flow from './Flow';
-import BarGraphVisualizer from './components/BarGraphVisualizer';
-import OscilloscopeVisualizer from './components/OscilloscopeVisualizer';
+import Visualizer from './components/Visualizer';
 
 const API_WS = 'ws://localhost:5000/sound';
 const webSocket = new WebSocket(API_WS);
@@ -20,7 +19,6 @@ function App() {
   const buffer = useRef<AudioBuffer>();
   const [isReady, setIsReady] = useState<boolean>(false);
   const source = useRef<AudioBufferSourceNode>(context.createBufferSource());
-  const [visToggle, setVisToggle] = useState(true);
 
   //when a tree is ready send it
   useEffect(() => {
@@ -117,44 +115,21 @@ function App() {
 
   return (
     <div className='App'>
-      <header>
-        {/* <h1>W.O.K.</h1> */}
-        <img src='/wok.png' width={200} height={200} />
-      </header>
       <main>
         <section
           style={{
+            width: '80vw',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
           }}>
-          {visToggle ? (
-            <OscilloscopeVisualizer
-              audioCtx={context}
-              audioSrc={source.current}
-            />
-          ) : (
-            <BarGraphVisualizer audioCtx={context} audioSrc={source.current} />
-          )}
-          <button
-            style={{
-              color: 'white',
-              backgroundColor: '#1f939e',
-              border: '2px #1f939e solid',
-              width: '130px',
-              padding: '3px',
-              margin: '0.5rem',
-              borderRadius: '10px',
-            }}
-            onClick={(e: any) => {
-              e.preventDefault();
-              setVisToggle(!visToggle);
-            }}>
-            {visToggle ? 'Frequency Graph' : 'Oscilloscope'}
-          </button>
+          <img src='/wok.png' width={200} height={200} />
+          <Visualizer audioCtx={context} audioSrc={source.current} />
         </section>
 
         <section
+          id='flow-container'
           style={{
             width: '80vw',
             height: '65vh',

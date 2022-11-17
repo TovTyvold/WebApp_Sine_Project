@@ -153,7 +153,10 @@ def newparse(data: dict, samples, sustainTime, envelopeTime) -> List[float]:
             if k == "reverb":
                 _, points = recParse(v["points"])
                 _, roomsize = recParse(v["roomsize"])
-                return ("points", filterAudio.Reverb_(points, roomsize))
+                _, wet = recParse(v["wet"])
+                _, dry = recParse(v["dry"])
+                _, width = recParse(v["width"])
+                return ("points", filterAudio.Reverb_(points, roomsize, wet, dry, width))
 
             if k == "lpf":
                 _, points = recParse(v["points"])

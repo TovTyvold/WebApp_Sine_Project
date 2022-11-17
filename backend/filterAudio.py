@@ -241,10 +241,13 @@ def Reverb_(input, room_size = None, wet_level = None, dry_level = None, width =
     dry_level = 0.4
     width = 0.25
     """
-    sample_rate = 44100
-    board = Pedalboard([Reverb(room_size, wet_level, dry_level, width)])
-    revout = board(input.copy(), sample_rate)
-    revout /= np.max(np.abs(revout))
+    sample_rate = 44100.0
+    board = Pedalboard([Reverb(room_size = room_size,
+        wet_level = wet_level, 
+        dry_level = dry_level, 
+        width = width)])
+    revout = board(np.array(input), sample_rate)
+    # revout /= np.max(np.abs(revout))
     return  revout
 
 if __name__ == "__main__":

@@ -17,9 +17,9 @@ function ReverbNode({ data, id, selected }: any) {
       <SliderInput
         name='roomsize'
         label='Room Size'
-        min={0.1}
+        min={0.0}
         max={1.0}
-        step={0.1}
+        step={0.01}
         defaultValue={data.roomsize}
         onChange={onChange}
       />
@@ -43,7 +43,7 @@ function ReverbNode({ data, id, selected }: any) {
         name='width'
         min={0.01}
         max={1.0}
-        step={0.1}
+        step={0.01}
         defaultValue={data.width}
         onChange={onChange}
       />
